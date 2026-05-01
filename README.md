@@ -10,13 +10,51 @@ vibe-coders. Mirá la "Constitution" en `specs/`:
 ## Quickstart
 
 ```bash
-bun install      # deps
-bun dev          # dev server con HMR (http://localhost:3000)
+bun install                              # deps
+cp .env.example .env                     # config local
+docker compose up -d postgres redis      # data services
+bun dev                                  # app en host con HMR
+```
+
+App en `http://localhost:3000`. `GET /health` → `{"ok":true}`. SPA en `/`.
+
+```bash
 bun test         # tests
 bun run build    # build de producción a dist/
 ```
 
-`GET /health` → `{"ok":true}`. La SPA se sirve en `/`.
+## Dev environment
+
+**Pre-requisitos**: Bun (>= 1.3), Docker (Docker Desktop, colima o
+podman compose). El daily workflow es **híbrido**: Postgres y Redis
+corren en Docker, la app corre con `bun dev` en el host (HMR limpio,
+sin volúmenes ni file-watching dentro de un container).
+
+| Servicio | Puerto host | Imagen              |
+| -------- | ----------- | ------------------- |
+| app      | 3000        | (host con `bun dev`)|
+| postgres | 5432        | postgres:16-alpine  |
+| redis    | 6379        | redis:7-alpine      |
+
+### Comandos
+
+```bash
+# Workflow diario (modo hybrid)
+docker compose up -d postgres redis      # data services en background
+bun dev                                  # app con HMR
+
+# Validación end-to-end (los 3 servicios containerizados)
+docker compose --profile full up --build
+curl http://localhost:3000/health        # esperado: {"ok":true}
+
+# Parar
+docker compose down                      # mantiene volumes
+docker compose down -v                   # borra volumes (DB limpia)
+```
+
+Credenciales dev de Postgres: usuario `promptstash`, password
+`promptstash`, db `promptstash`. La connection string ya viene en
+`.env.example` como `DATABASE_URL`.
 
 ## Estructura del repo
 
