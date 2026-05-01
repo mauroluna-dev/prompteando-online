@@ -80,6 +80,51 @@ aplicaron.
 > conectá TablePlus / DBeaver / pgAdmin a `localhost:5432` con las
 > credenciales de `.env.example`.
 
+## Auth setup
+
+promptstash usa [Auth.js](https://authjs.dev) (`@auth/core`) con el
+Drizzle adapter. El login en P3 es **GitHub-only**; Google llega en P4.
+
+### A. Local-only (sin tunnel)
+
+1. Registrá una GitHub OAuth App:
+   - https://github.com/settings/applications/new
+   - **Application name**: `promptstash (local)`
+   - **Homepage URL**: `http://localhost:3010`
+   - **Authorization callback URL**: `http://localhost:3010/auth/callback/github`
+2. Copiá el **Client ID**, generá un **Client Secret**.
+3. En `.env`:
+   ```env
+   AUTH_URL=http://localhost:3010
+   AUTH_SECRET=<openssl rand -base64 32>
+   GITHUB_CLIENT_ID=<paste>
+   GITHUB_CLIENT_SECRET=<paste>
+   ```
+4. Reiniciá `bun dev`. Visitá `http://localhost:3010/login` y
+   clickeá "Continuar con GitHub".
+
+### B. Detrás de un tunnel HTTPS público
+
+Si exponés `localhost:3010` por un tunnel (Cloudflare, ngrok,
+tailscale funnel, etc.), GitHub no permite múltiples callbacks por
+app, así que registrá **otra** OAuth App con la URL pública:
+
+- **Homepage URL**: `https://<sub>.<domain>`
+- **Authorization callback URL**: `https://<sub>.<domain>/auth/callback/github`
+- En `.env`:
+  ```env
+  AUTH_URL=https://<sub>.<domain>
+  GITHUB_CLIENT_ID=<...>
+  GITHUB_CLIENT_SECRET=<...>
+  ```
+
+`trustHost: true` ya está en el config; Auth.js infiere el host
+del request, así que el flow funciona aunque `AUTH_URL` esté
+desactualizado, pero seteándolo evita ambigüedades en redirects.
+
+> Tip: generá `AUTH_SECRET` con `openssl rand -base64 32` y guardá
+> el valor; rotarlo invalida todas las sesiones activas.
+
 ## Estructura del repo
 
 ```
@@ -122,8 +167,8 @@ src/
 
 ## Stack
 
-Bun · Elysia · React 19 · Tailwind 4 · shadcn/ui · Postgres + Drizzle ·
-Redis (Bun.redis) · Auth.js (en P3) · Octokit (en P10).
+Bun · Elysia · React 19 · React Router · SWR · Tailwind 4 · shadcn/ui ·
+Postgres + Drizzle · Redis (Bun.redis) · Auth.js · Octokit (en P10).
 
 Detalle completo y razonamiento en
 [`specs/tech-stack.md`](specs/tech-stack.md).
