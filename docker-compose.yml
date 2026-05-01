@@ -1,0 +1,68 @@
+networks:
+  promptstash:
+    name: promptstash
+
+volumes:
+  postgres_data:
+  redis_data:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: promptstash
+      POSTGRES_PASSWORD: promptstash
+      POSTGRES_DB: promptstash
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - promptstash
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U promptstash"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - promptstash
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  app:
+    profiles: [full]
+    build:
+      context: .
+      target: prod
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://promptstash:promptstash@postgres:5432/promptstash
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - promptstash
+    healthcheck:
+      test:
+        - CMD
+        - bun
+        - --eval
+        - "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 10
