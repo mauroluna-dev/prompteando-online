@@ -56,6 +56,30 @@ Credenciales dev de Postgres: usuario `promptstash`, password
 `promptstash`, db `promptstash`. La connection string ya viene en
 `.env.example` como `DATABASE_URL`.
 
+## DB ops
+
+Drizzle ORM sobre `Bun.sql` (driver nativo). Schema en
+`src/infrastructure/persistence/schema/` (split per aggregate),
+migrations en `src/infrastructure/persistence/migrations/`.
+
+```bash
+# Editar schema/<aggregate>.ts y luego:
+bun run db:generate    # produce el SQL diff bajo migrations/
+bun run db:migrate     # aplica migrations contra Postgres (idempotente)
+bun run db:psql        # abre psql en el container (con DB ya seleccionada)
+```
+
+`db:migrate` usa `drizzle-orm/bun-sql/migrator` directamente —
+sin `pg` ni `postgres.js`. La primera corrida crea la tabla
+`drizzle.__drizzle_migrations` que registra qué archivos ya se
+aplicaron.
+
+> **Inspección visual de la DB**: `drizzle-kit studio` requiere un
+> driver Postgres directo (`pg` / `postgres.js`) y no es compatible
+> con Bun.sql, por lo que no se incluye. Para un cliente visual,
+> conectá TablePlus / DBeaver / pgAdmin a `localhost:5432` con las
+> credenciales de `.env.example`.
+
 ## Estructura del repo
 
 ```
@@ -98,8 +122,8 @@ src/
 
 ## Stack
 
-Bun · Elysia · React 19 · Tailwind 4 · shadcn/ui · Postgres (Drizzle,
-en P2) · Redis (Bun.redis) · Auth.js (en P3) · Octokit (en P10).
+Bun · Elysia · React 19 · Tailwind 4 · shadcn/ui · Postgres + Drizzle ·
+Redis (Bun.redis) · Auth.js (en P3) · Octokit (en P10).
 
 Detalle completo y razonamiento en
 [`specs/tech-stack.md`](specs/tech-stack.md).
