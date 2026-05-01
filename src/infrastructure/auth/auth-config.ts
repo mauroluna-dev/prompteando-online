@@ -12,10 +12,14 @@ import {
 if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
   throw new Error("GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are required");
 }
+if (!process.env.AUTH_SECRET) {
+  throw new Error("AUTH_SECRET is required (openssl rand -base64 32)");
+}
 
 export const authConfig: AuthConfig = {
   basePath: "/auth",
   trustHost: true,
+  secret: process.env.AUTH_SECRET,
   adapter: DrizzleAdapter(db, {
     usersTable: users,
     accountsTable: accounts,
