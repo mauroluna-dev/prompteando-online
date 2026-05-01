@@ -4,7 +4,7 @@ import index from "../../frontend/index.html";
 const app = new Elysia().get("/health", () => ({ ok: true }));
 
 const server = Bun.serve({
-  port: 3000,
+  port: 3010,
   routes: {
     "/": index,
   },

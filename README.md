@@ -16,7 +16,7 @@ docker compose up -d postgres redis      # data services
 bun dev                                  # app en host con HMR
 ```
 
-App en `http://localhost:3000`. `GET /health` → `{"ok":true}`. SPA en `/`.
+App en `http://localhost:3010`. `GET /health` → `{"ok":true}`. SPA en `/`.
 
 ```bash
 bun test         # tests
@@ -32,7 +32,7 @@ sin volúmenes ni file-watching dentro de un container).
 
 | Servicio | Puerto host | Imagen              |
 | -------- | ----------- | ------------------- |
-| app      | 3000        | (host con `bun dev`)|
+| app      | 3010        | (host con `bun dev`)|
 | postgres | 5432        | postgres:16-alpine  |
 | redis    | 6379        | redis:7-alpine      |
 
@@ -45,7 +45,7 @@ bun dev                                  # app con HMR
 
 # Validación end-to-end (los 3 servicios containerizados)
 docker compose --profile full up --build
-curl http://localhost:3000/health        # esperado: {"ok":true}
+curl http://localhost:3010/health        # esperado: {"ok":true}
 
 # Parar
 docker compose down                      # mantiene volumes

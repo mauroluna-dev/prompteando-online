@@ -17,5 +17,5 @@ COPY --from=build /app/dist ./dist
 COPY src ./src
 COPY styles ./styles
 COPY package.json ./
-EXPOSE 3000
+EXPOSE 3010
 CMD ["bun", "start"]
