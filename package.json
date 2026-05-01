@@ -12,6 +12,8 @@
     "db:psql": "docker compose exec postgres psql -U promptstash -d promptstash"
   },
   "dependencies": {
+    "@auth/core": "^0.34.3",
+    "@auth/drizzle-adapter": "^1.11.2",
     "@elysiajs/cors": "^1.4.2",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-select": "^2.2.6",
