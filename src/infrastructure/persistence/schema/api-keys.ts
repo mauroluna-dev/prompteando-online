@@ -19,5 +19,8 @@ export const apiKeys = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (t) => [index("api_keys_user_active_idx").on(t.userId, t.revokedAt)],
+  (t) => [
+    index("api_keys_user_active_idx").on(t.userId, t.revokedAt),
+    index("api_keys_prefix_idx").on(t.prefix),
+  ],
 );
