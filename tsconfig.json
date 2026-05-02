@@ -23,7 +23,13 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/domain/*": ["./src/domain/*"],
+      "@/application/*": ["./src/application/*"],
+      "@/infrastructure/*": ["./src/infrastructure/*"],
+      "@/interfaces/*": ["./src/interfaces/*"],
+      "@/frontend/*": ["./src/frontend/*"],
+      "@/components/*": ["./src/frontend/components/*"],
+      "@/lib/*": ["./src/frontend/lib/*"]
     },
 
     // Some stricter flags (disabled by default)
@@ -32,5 +38,5 @@
     "noPropertyAccessFromIndexSignature": false
   },
 
-  "exclude": ["dist", "node_modules"]
+  "exclude": ["dist", "node_modules", "build.ts"]
 }
