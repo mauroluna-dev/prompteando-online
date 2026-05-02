@@ -9,3 +9,4 @@
 // type-safe en drizzle({ schema }).
 export * from "./auth";
 export * from "./prompts";
+export * from "./prompt-versions";

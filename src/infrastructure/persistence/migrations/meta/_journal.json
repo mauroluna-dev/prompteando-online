@@ -15,6 +15,13 @@
       "when": 1777691480633,
       "tag": "0001_living_donald_blake",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777702095097,
+      "tag": "0002_colossal_kylun",
+      "breakpoints": true
     }
   ]
 }
