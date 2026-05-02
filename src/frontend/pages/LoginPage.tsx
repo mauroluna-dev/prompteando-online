@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { Github, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,32 +9,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useCurrentUser } from "@/frontend/hooks/use-current-user";
+import { signInWith } from "@/frontend/lib/auth-actions";
 
 type Provider = "github" | "google";
-
-async function signInWith(provider: Provider) {
-  const csrfRes = await fetch("/auth/csrf", { credentials: "same-origin" });
-  const { csrfToken } = (await csrfRes.json()) as { csrfToken: string };
-
-  const form = document.createElement("form");
-  form.method = "POST";
-  form.action = `/auth/signin/${provider}`;
-
-  const tokenInput = document.createElement("input");
-  tokenInput.type = "hidden";
-  tokenInput.name = "csrfToken";
-  tokenInput.value = csrfToken;
-  form.appendChild(tokenInput);
-
-  const callbackInput = document.createElement("input");
-  callbackInput.type = "hidden";
-  callbackInput.name = "callbackUrl";
-  callbackInput.value = "/";
-  form.appendChild(callbackInput);
-
-  document.body.appendChild(form);
-  form.submit();
-}
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -64,7 +43,13 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 export function LoginPage() {
+  const { data: me } = useCurrentUser();
+  const navigate = useNavigate();
   const [pending, setPending] = useState<Provider | null>(null);
+
+  useEffect(() => {
+    if (me) navigate("/", { replace: true });
+  }, [me, navigate]);
 
   const handleClick = (provider: Provider) => {
     setPending(provider);
