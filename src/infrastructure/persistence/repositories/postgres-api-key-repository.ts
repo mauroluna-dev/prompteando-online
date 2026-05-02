@@ -44,6 +44,15 @@ export class PostgresApiKeyRepository implements ApiKeyRepository {
     return rows[0] ? mapRow(rows[0]) : null;
   }
 
+  async findByPrefix(prefix: string): Promise<ApiKey | null> {
+    const rows = await this.db
+      .select()
+      .from(apiKeys)
+      .where(eq(apiKeys.prefix, prefix))
+      .limit(1);
+    return rows[0] ? mapRow(rows[0]) : null;
+  }
+
   async findAllByUserId(userId: string): Promise<ApiKey[]> {
     const rows = await this.db
       .select()
