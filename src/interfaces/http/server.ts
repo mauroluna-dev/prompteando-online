@@ -6,6 +6,8 @@ import { authJsSessionResolver } from "@/infrastructure/auth/auth-js-session-res
 import { db } from "@/infrastructure/persistence/db";
 import { PostgresPromptRepository } from "@/infrastructure/persistence/repositories/postgres-prompt-repository";
 import { PostgresVersionRepository } from "@/infrastructure/persistence/repositories/postgres-version-repository";
+import { PostgresApiKeyRepository } from "@/infrastructure/persistence/repositories/postgres-api-key-repository";
+import { BunPasswordApiKeyHasher } from "@/infrastructure/auth/bun-password-api-key-hasher";
 import { GetCurrentUserQuery } from "@/application/queries/get-current-user";
 import { CreatePromptCommand } from "@/application/commands/create-prompt";
 import { DeletePromptCommand } from "@/application/commands/delete-prompt";
@@ -15,6 +17,16 @@ import { SaveNewVersionCommand } from "@/application/commands/save-new-version";
 import { RestoreVersionCommand } from "@/application/commands/restore-version";
 import { GetVersionQuery } from "@/application/queries/get-version";
 import { ListVersionsQuery } from "@/application/queries/list-versions";
+import { CreateApiKeyCommand } from "@/application/commands/create-api-key";
+import { RevokeApiKeyCommand } from "@/application/commands/revoke-api-key";
+import { ListApiKeysForUserQuery } from "@/application/queries/list-api-keys-for-user";
+import {
+  ApiKeyAlreadyRevokedError,
+  ApiKeyNotFoundError,
+  ApiKeyQuotaExceededError,
+  InvalidApiKeyNameError,
+  toApiKeyView,
+} from "@/domain/api-key";
 import {
   InvalidPromptNameError,
   InvalidSlugError,
@@ -29,11 +41,14 @@ import {
 } from "@/domain/prompt-version";
 import { createPromptSchema } from "./schemas/prompt";
 import { saveVersionSchema } from "./schemas/prompt-version";
+import { createApiKeySchema } from "./schemas/api-key";
 import { requireUser } from "./lib/require-user";
 
 // ───────────────── Composition root ─────────────────
 const promptRepo = new PostgresPromptRepository(db);
 const versionRepo = new PostgresVersionRepository(db);
+const apiKeyRepo = new PostgresApiKeyRepository(db);
+const apiKeyHasher = new BunPasswordApiKeyHasher();
 const getCurrentUser = new GetCurrentUserQuery(authJsSessionResolver);
 const createPrompt = new CreatePromptCommand(promptRepo);
 const deletePrompt = new DeletePromptCommand(promptRepo);
@@ -43,6 +58,9 @@ const saveNewVersion = new SaveNewVersionCommand(promptRepo, versionRepo);
 const restoreVersion = new RestoreVersionCommand(promptRepo, versionRepo);
 const getVersion = new GetVersionQuery(promptRepo, versionRepo);
 const listVersions = new ListVersionsQuery(promptRepo, versionRepo);
+const createApiKey = new CreateApiKeyCommand(apiKeyRepo, apiKeyHasher);
+const revokeApiKey = new RevokeApiKeyCommand(apiKeyRepo);
+const listApiKeys = new ListApiKeysForUserQuery(apiKeyRepo);
 
 // ───────────────── Helpers ─────────────────
 function jsonError(status: number, message: string) {
@@ -225,6 +243,59 @@ const app = new Elysia()
       if (err instanceof InvalidSlugError) return jsonError(404, "Prompt not found");
       throw err;
     }
+  })
+  .post("/api/keys", async ({ request }) => {
+    const userOr401 = await requireUser(request, getCurrentUser);
+    if (userOr401 instanceof Response) return userOr401;
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return jsonError(400, "Invalid JSON body");
+    }
+
+    try {
+      const parsed = createApiKeySchema.parse(body);
+      const result = await createApiKey.execute({
+        userId: userOr401.id,
+        name: parsed.name,
+      });
+      return new Response(
+        JSON.stringify({
+          apiKey: toApiKeyView(result.apiKey),
+          plaintext: result.plaintext,
+        }),
+        {
+          status: 201,
+          headers: { "content-type": "application/json" },
+        },
+      );
+    } catch (err) {
+      if (err instanceof ZodError) return jsonError(400, err.issues[0]?.message ?? "Invalid input");
+      if (err instanceof InvalidApiKeyNameError) return jsonError(400, err.message);
+      if (err instanceof ApiKeyQuotaExceededError) return jsonError(429, err.message);
+      throw err;
+    }
+  })
+  .get("/api/keys", async ({ request }) => {
+    const userOr401 = await requireUser(request, getCurrentUser);
+    if (userOr401 instanceof Response) return userOr401;
+    const keys = await listApiKeys.execute(userOr401.id);
+    return keys.map(toApiKeyView);
+  })
+  .delete("/api/keys/:id", async ({ request, params }) => {
+    const userOr401 = await requireUser(request, getCurrentUser);
+    if (userOr401 instanceof Response) return userOr401;
+
+    try {
+      await revokeApiKey.execute({ userId: userOr401.id, id: params.id });
+      return new Response(null, { status: 204 });
+    } catch (err) {
+      if (err instanceof ApiKeyNotFoundError) return jsonError(404, err.message);
+      if (err instanceof ApiKeyAlreadyRevokedError) return jsonError(410, err.message);
+      throw err;
+    }
   });
 
 const server = Bun.serve({
@@ -235,6 +306,8 @@ const server = Bun.serve({
     "/api/me": (req) => app.handle(req),
     "/api/prompts": (req) => app.handle(req),
     "/api/prompts/*": (req) => app.handle(req),
+    "/api/keys": (req) => app.handle(req),
+    "/api/keys/*": (req) => app.handle(req),
     "/*": index,
   },
   fetch: app.fetch,
