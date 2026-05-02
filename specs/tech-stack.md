@@ -26,8 +26,8 @@ src/
 │   ├── user/
 │   └── api-key/
 ├── application/            # Use cases. Commands y Queries separados.
-│   ├── commands/           # CreatePrompt, SaveNewVersion, RotateApiKey, ConnectGitHub.
-│   ├── queries/            # GetPromptBySlug, ListPrompts, GetLatestVersion.
+│   ├── commands/           # CreatePromptCommand, SaveNewVersionCommand, RotateApiKeyCommand, ConnectGitHubCommand.
+│   ├── queries/            # GetPromptBySlugQuery, ListPromptsQuery, GetLatestVersionQuery.
 │   └── ports/              # Interfaces (PromptRepository, GitHubGateway, etc).
 ├── infrastructure/         # Adapters concretos. Único lugar que importa libs externas.
 │   ├── persistence/        # Drizzle repositories.
@@ -50,9 +50,34 @@ Reglas duras:
   inyecta en commands/queries antes de dispatchar.
 
 CQS:
-- **Commands**: una clase/función por mutación. Devuelven `void` o el
-  ID/entidad creada. Lanzan errores de dominio.
-- **Queries**: devuelven DTOs read-optimizados. Nunca mutan.
+- **Una clase por use case**. Naming canónico:
+  - Commands: `<Verb><Noun>Command` (ej. `CreatePromptCommand`,
+    `SaveNewVersionCommand`).
+  - Queries: `<Verb><Noun>Query` (ej. `GetPromptBySlugQuery`,
+    `ListPromptsForUserQuery`).
+- **API pública uniforme**: cada clase expone un único método público
+  `execute(...params)`. El constructor recibe los ports (deps) que
+  el composition root inyecta.
+- **Commands** mutan estado y devuelven `void` o la entidad creada;
+  lanzan errores de dominio.
+- **Queries** devuelven DTOs read-optimizados; nunca mutan.
+- Forma esperada:
+  ```ts
+  export class CreatePromptCommand {
+    constructor(private readonly repo: PromptRepository) {}
+    async execute(input: CreatePromptInput): Promise<Prompt> { ... }
+  }
+
+  export class GetPromptBySlugQuery {
+    constructor(private readonly repo: PromptRepository) {}
+    async execute(userId: string, slug: Slug): Promise<Prompt> { ... }
+  }
+  ```
+- Composition root (en `interfaces/http/server.ts`) instancia cada
+  command/query con sus deps:
+  ```ts
+  const createPrompt = new CreatePromptCommand(promptRepo);
+  ```
 - V1 sin event sourcing ni event bus. Camino abierto a CQRS completo
   si el roadmap lo justifica.
 

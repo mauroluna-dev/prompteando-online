@@ -78,7 +78,7 @@ El JSON devuelto contiene exactamente las keys: `id`, `name`,
 - `src/infrastructure/auth/auth-js-session-resolver.ts` implementa
   el port y es el único lugar que importa de `@auth/core`.
 - `src/interfaces/http/server.ts` (composition root) instancia
-  `makeGetCurrentUser(authJsSessionResolver)` y la usa.
+  `new GetCurrentUserQuery(authJsSessionResolver)` y la usa.
 
 ```bash
 # Sanity grep: domain no toca infra/auth.
@@ -108,7 +108,7 @@ grep -rn "from \"@auth\|drizzle\|elysia" src/domain
 
 ### 14. Composition root explícito
 - `src/interfaces/http/server.ts` tiene una línea que arma la query:
-  `const getCurrentUser = makeGetCurrentUser(authJsSessionResolver);`
+  `const getCurrentUser = new GetCurrentUserQuery(authJsSessionResolver);`
 
 ### 15. Gitkeep redundantes eliminados
 - `src/application/commands/.gitkeep` (no aún), `queries/.gitkeep`
