@@ -1,5 +1,12 @@
-import { pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  type AnyPgColumn,
+} from "drizzle-orm/pg-core";
 import { users } from "./auth";
+import { promptVersions } from "./prompt-versions";
 
 export const prompts = pgTable(
   "prompts",
@@ -13,7 +20,10 @@ export const prompts = pgTable(
     name: text("name").notNull(),
     slug: text("slug").notNull(),
     description: text("description"),
-    currentVersionId: text("current_version_id"),
+    currentVersionId: text("current_version_id").references(
+      (): AnyPgColumn => promptVersions.id,
+      { onDelete: "set null" },
+    ),
     createdAt: timestamp("created_at", { mode: "date" })
       .notNull()
       .defaultNow(),
