@@ -2,25 +2,40 @@
  * This file is the entry point for the React app, it sets up the root
  * element and renders the App component to the DOM.
  *
- * It is included in `src/index.html`.
+ * It is included in `src/frontend/index.html`.
  */
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { BrowserRouter, Routes, Route } from "react-router";
 import { App } from "./App";
+import { LoginPage } from "./pages/LoginPage";
+import { RequireAuth } from "./RequireAuth";
 
 const elem = document.getElementById("root")!;
-const app = (
+const tree = (
   <StrictMode>
-    <App />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/*"
+          element={
+            <RequireAuth>
+              <App />
+            </RequireAuth>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
   </StrictMode>
 );
 
 if (import.meta.hot) {
   // With hot module reloading, `import.meta.hot.data` is persisted.
   const root = (import.meta.hot.data.root ??= createRoot(elem));
-  root.render(app);
+  root.render(tree);
 } else {
   // The hot module reloading API is not available in production.
-  createRoot(elem).render(app);
+  createRoot(elem).render(tree);
 }
