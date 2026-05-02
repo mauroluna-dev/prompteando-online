@@ -8,6 +8,8 @@ import { PostgresPromptRepository } from "@/infrastructure/persistence/repositor
 import { PostgresVersionRepository } from "@/infrastructure/persistence/repositories/postgres-version-repository";
 import { PostgresApiKeyRepository } from "@/infrastructure/persistence/repositories/postgres-api-key-repository";
 import { BunPasswordApiKeyHasher } from "@/infrastructure/auth/bun-password-api-key-hasher";
+import { BunRedisCache } from "@/infrastructure/cache/bun-redis-cache";
+import { BunRedisRateLimiter } from "@/infrastructure/cache/bun-redis-rate-limiter";
 import { GetCurrentUserQuery } from "@/application/queries/get-current-user";
 import { CreatePromptCommand } from "@/application/commands/create-prompt";
 import { DeletePromptCommand } from "@/application/commands/delete-prompt";
@@ -20,6 +22,8 @@ import { ListVersionsQuery } from "@/application/queries/list-versions";
 import { CreateApiKeyCommand } from "@/application/commands/create-api-key";
 import { RevokeApiKeyCommand } from "@/application/commands/revoke-api-key";
 import { ListApiKeysForUserQuery } from "@/application/queries/list-api-keys-for-user";
+import { AuthenticateApiKeyQuery } from "@/application/queries/authenticate-api-key";
+import { GetLatestPublishedVersionQuery } from "@/application/queries/get-latest-published-version";
 import {
   ApiKeyAlreadyRevokedError,
   ApiKeyNotFoundError,
@@ -43,24 +47,40 @@ import { createPromptSchema } from "./schemas/prompt";
 import { saveVersionSchema } from "./schemas/prompt-version";
 import { createApiKeySchema } from "./schemas/api-key";
 import { requireUser } from "./lib/require-user";
+import { requireApiKey } from "./lib/require-api-key";
 
 // ───────────────── Composition root ─────────────────
 const promptRepo = new PostgresPromptRepository(db);
 const versionRepo = new PostgresVersionRepository(db);
 const apiKeyRepo = new PostgresApiKeyRepository(db);
 const apiKeyHasher = new BunPasswordApiKeyHasher();
+const cache = new BunRedisCache();
+const rateLimiter = new BunRedisRateLimiter();
 const getCurrentUser = new GetCurrentUserQuery(authJsSessionResolver);
 const createPrompt = new CreatePromptCommand(promptRepo);
-const deletePrompt = new DeletePromptCommand(promptRepo);
+const deletePrompt = new DeletePromptCommand(promptRepo, cache);
 const getPromptBySlug = new GetPromptBySlugQuery(promptRepo);
 const listPromptsForUser = new ListPromptsForUserQuery(promptRepo);
-const saveNewVersion = new SaveNewVersionCommand(promptRepo, versionRepo);
-const restoreVersion = new RestoreVersionCommand(promptRepo, versionRepo);
+const saveNewVersion = new SaveNewVersionCommand(promptRepo, versionRepo, cache);
+const restoreVersion = new RestoreVersionCommand(promptRepo, versionRepo, cache);
 const getVersion = new GetVersionQuery(promptRepo, versionRepo);
 const listVersions = new ListVersionsQuery(promptRepo, versionRepo);
 const createApiKey = new CreateApiKeyCommand(apiKeyRepo, apiKeyHasher);
 const revokeApiKey = new RevokeApiKeyCommand(apiKeyRepo);
 const listApiKeys = new ListApiKeysForUserQuery(apiKeyRepo);
+const authenticateApiKey = new AuthenticateApiKeyQuery(apiKeyRepo, apiKeyHasher);
+const getLatestPublishedVersion = new GetLatestPublishedVersionQuery(
+  promptRepo,
+  versionRepo,
+  cache,
+);
+
+const corsHeaders: Record<string, string> = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, OPTIONS",
+  "access-control-allow-headers": "Authorization, Content-Type",
+  "access-control-max-age": "86400",
+};
 
 // ───────────────── Helpers ─────────────────
 function jsonError(status: number, message: string) {
@@ -296,6 +316,46 @@ const app = new Elysia()
       if (err instanceof ApiKeyAlreadyRevokedError) return jsonError(410, err.message);
       throw err;
     }
+  })
+  // ───────────────── Public consumption API ─────────────────
+  .options("/v1/prompts/:slug", () => new Response(null, { status: 204, headers: corsHeaders }))
+  .get("/v1/prompts/:slug", async ({ request, params }) => {
+    const keyOr401 = await requireApiKey(request, authenticateApiKey, corsHeaders);
+    if (keyOr401 instanceof Response) return keyOr401;
+
+    const rl = await rateLimiter.consume(`apikey:${keyOr401.id}`, 100, 60);
+    if (!rl.allowed) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          "content-type": "application/json",
+          "retry-after": String(rl.retryAfter),
+        },
+      });
+    }
+
+    const dto = await getLatestPublishedVersion.execute({
+      userId: keyOr401.userId,
+      slug: params.slug,
+    });
+    if (!dto) {
+      return new Response(JSON.stringify({ error: "Prompt not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "content-type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify(dto), {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        "content-type": "application/json",
+        "x-ratelimit-limit": "100",
+        "x-ratelimit-remaining": String(rl.remaining),
+        "x-ratelimit-reset": String(rl.resetAt),
+      },
+    });
   });
 
 const server = Bun.serve({
@@ -308,6 +368,7 @@ const server = Bun.serve({
     "/api/prompts/*": (req) => app.handle(req),
     "/api/keys": (req) => app.handle(req),
     "/api/keys/*": (req) => app.handle(req),
+    "/v1/prompts/*": (req) => app.handle(req),
     "/*": index,
   },
   fetch: app.fetch,
