@@ -48,4 +48,15 @@ export const authConfig: AuthConfig = {
     }),
   ],
   session: { strategy: "database" },
+  callbacks: {
+    // Auth.js v5 default omits `user.id` from the /auth/session
+    // response. Expose it so the frontend (and our /api/me query)
+    // can identify the user.
+    session({ session, user }) {
+      return {
+        ...session,
+        user: { ...session.user, id: user.id },
+      };
+    },
+  },
 };
