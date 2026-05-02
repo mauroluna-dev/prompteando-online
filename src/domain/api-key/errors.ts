@@ -29,3 +29,31 @@ export class ApiKeyAlreadyRevokedError extends Error {
     this.name = "ApiKeyAlreadyRevokedError";
   }
 }
+
+/**
+ * Public API authentication errors. Both map to a unified
+ * 401 response so the body never leaks why auth failed.
+ */
+export class MissingAuthorizationHeaderError extends Error {
+  readonly code = "MISSING_AUTHORIZATION_HEADER" as const;
+  constructor() {
+    super("Missing or malformed Authorization header");
+    this.name = "MissingAuthorizationHeaderError";
+  }
+}
+
+export class InvalidApiKeyError extends Error {
+  readonly code = "INVALID_API_KEY" as const;
+  constructor(reason: string) {
+    super(`Invalid API key: ${reason}`);
+    this.name = "InvalidApiKeyError";
+  }
+}
+
+export class RateLimitExceededError extends Error {
+  readonly code = "RATE_LIMIT_EXCEEDED" as const;
+  constructor(readonly retryAfter: number) {
+    super(`Rate limit exceeded; retry after ${retryAfter}s`);
+    this.name = "RateLimitExceededError";
+  }
+}
