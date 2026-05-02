@@ -83,47 +83,77 @@ aplicaron.
 ## Auth setup
 
 promptstash usa [Auth.js](https://authjs.dev) (`@auth/core`) con el
-Drizzle adapter. El login en P3 es **GitHub-only**; Google llega en P4.
-
-### A. Local-only (sin tunnel)
-
-1. Registrá una GitHub OAuth App:
-   - https://github.com/settings/applications/new
-   - **Application name**: `promptstash (local)`
-   - **Homepage URL**: `http://localhost:3010`
-   - **Authorization callback URL**: `http://localhost:3010/auth/callback/github`
-2. Copiá el **Client ID**, generá un **Client Secret**.
-3. En `.env`:
-   ```env
-   AUTH_URL=http://localhost:3010
-   AUTH_SECRET=<openssl rand -base64 32>
-   GITHUB_CLIENT_ID=<paste>
-   GITHUB_CLIENT_SECRET=<paste>
-   ```
-4. Reiniciá `bun dev`. Visitá `http://localhost:3010/login` y
-   clickeá "Continuar con GitHub".
-
-### B. Detrás de un tunnel HTTPS público
-
-Si exponés `localhost:3010` por un tunnel (Cloudflare, ngrok,
-tailscale funnel, etc.), GitHub no permite múltiples callbacks por
-app, así que registrá **otra** OAuth App con la URL pública:
-
-- **Homepage URL**: `https://<sub>.<domain>`
-- **Authorization callback URL**: `https://<sub>.<domain>/auth/callback/github`
-- En `.env`:
-  ```env
-  AUTH_URL=https://<sub>.<domain>
-  GITHUB_CLIENT_ID=<...>
-  GITHUB_CLIENT_SECRET=<...>
-  ```
-
-`trustHost: true` ya está en el config; Auth.js infiere el host
-del request, así que el flow funciona aunque `AUTH_URL` esté
-desactualizado, pero seteándolo evita ambigüedades en redirects.
+Drizzle adapter. Login con **GitHub** o **Google** (OAuth-only,
+sin email/password). El mismo email vía distintos providers se
+unifica al mismo `users` row (`allowDangerousEmailAccountLinking`
+habilitado en ambos providers — ambos verifican email server-side).
 
 > Tip: generá `AUTH_SECRET` con `openssl rand -base64 32` y guardá
 > el valor; rotarlo invalida todas las sesiones activas.
+
+### GitHub OAuth App
+
+**A. Local-only (sin tunnel)**
+
+1. https://github.com/settings/applications/new
+2. **Application name**: `promptstash (local)`
+3. **Homepage URL**: `http://localhost:3010`
+4. **Authorization callback URL**: `http://localhost:3010/auth/callback/github`
+5. Copiar Client ID y generar Client Secret.
+
+**B. Detrás de un tunnel HTTPS** (Cloudflare Tunnel, ngrok, etc.)
+
+GitHub no permite múltiples callbacks por app, así que registrá
+**otra** OAuth App apuntando al hostname público:
+
+- **Homepage URL**: `https://<sub>.<domain>`
+- **Authorization callback URL**: `https://<sub>.<domain>/auth/callback/github`
+
+### Google OAuth Client
+
+**A. Local-only**
+
+1. https://console.cloud.google.com/ → crear o reusar un proyecto.
+2. **APIs & Services** → **OAuth consent screen** → tipo *External*,
+   completar los campos requeridos (app name, support email, scopes:
+   `email`, `profile`, `openid`).
+3. **APIs & Services** → **Credentials** → **Create Credentials** →
+   **OAuth client ID** → tipo *Web application*.
+4. **Authorized JavaScript origins**: `http://localhost:3010`
+5. **Authorized redirect URIs**: `http://localhost:3010/auth/callback/google`
+6. Copiar Client ID y Client Secret.
+
+**B. Detrás de un tunnel HTTPS**
+
+A diferencia de GitHub, Google permite múltiples authorized redirect
+URIs en el mismo OAuth client. Agregá:
+
+- **Authorized JavaScript origins**: `https://<sub>.<domain>`
+- **Authorized redirect URIs**: `https://<sub>.<domain>/auth/callback/google`
+
+### `.env`
+
+```env
+# Local
+AUTH_URL=http://localhost:3010
+# o detrás de tunnel:
+# AUTH_URL=https://<sub>.<domain>
+
+AUTH_SECRET=<openssl rand -base64 32>
+
+GITHUB_CLIENT_ID=<...>
+GITHUB_CLIENT_SECRET=<...>
+
+GOOGLE_CLIENT_ID=<...>
+GOOGLE_CLIENT_SECRET=<...>
+```
+
+`trustHost: true` está activado, así que Auth.js infiere el host del
+request. Cuando `AUTH_URL` está seteada, el handler en
+`src/infrastructure/auth/handler.ts` reescribe protocol/host/port
+del request para que las callback URLs siempre apunten al origen
+público — esto evita que un tunnel sin `X-Forwarded-Proto: https`
+genere `redirect_uri` con `http://`.
 
 ## Estructura del repo
 
