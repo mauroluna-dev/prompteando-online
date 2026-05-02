@@ -1,5 +1,7 @@
+import type { Cache } from "@/application/ports/cache";
 import type { PromptRepository } from "@/application/ports/prompt-repository";
 import type { VersionRepository } from "@/application/ports/version-repository";
+import { publicPromptCacheKey } from "@/application/queries/get-latest-published-version";
 import { PromptNotFoundError, parseSlug } from "@/domain/prompt";
 import {
   VersionNotFoundError,
@@ -23,6 +25,7 @@ export class RestoreVersionCommand {
   constructor(
     private readonly promptRepo: PromptRepository,
     private readonly versionRepo: VersionRepository,
+    private readonly cache: Cache,
   ) {}
 
   async execute(input: RestoreVersionInput): Promise<RestoreVersionResult> {
@@ -52,6 +55,7 @@ export class RestoreVersionCommand {
       createdAt: new Date(),
     };
     await this.versionRepo.appendNewVersion(version);
+    await this.cache.del(publicPromptCacheKey(input.userId, prompt.slug));
     return { version, isNoOp: false };
   }
 }
