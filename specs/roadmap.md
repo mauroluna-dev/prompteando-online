@@ -84,7 +84,7 @@ posterior caiga en su lugar.
 ## P5 — Session UX (current user, logout, layout)
 **Goal**: UI consciente de la sesión.
 **Deliverables**:
-- Query `GetCurrentUser` (application) → endpoint `GET /api/me`.
+- `GetCurrentUserQuery` (application) → endpoint `GET /api/me`.
 - SWR hook `useCurrentUser()`.
 - Layout con avatar + email + dropdown con "Sign out".
 - Redirect: usuarios no autenticados → `/login`; autenticados en `/login` → `/`.
@@ -98,7 +98,7 @@ posterior caiga en su lugar.
 **Goal**: crear/listar/borrar prompts. El "save" todavía no genera versiones.
 **Deliverables**:
 - **Domain** (`src/domain/prompt/`): entity `Prompt`, VOs `Slug`, `PromptName`, errores.
-- **Application**: commands `CreatePrompt`, `DeletePrompt`; queries `GetPromptBySlug`, `ListPromptsForUser`; port `PromptRepository`.
+- **Application**: `CreatePromptCommand`, `DeletePromptCommand`, `GetPromptBySlugQuery`, `ListPromptsForUserQuery`; port `PromptRepository`.
 - **Infrastructure**: `PostgresPromptRepository` (Drizzle), schema `prompts`.
 - **HTTP**: `POST /api/prompts`, `GET /api/prompts`, `GET /api/prompts/:slug`, `DELETE /api/prompts/:slug`.
 - **Frontend**: lista (dashboard), form crear, detalle (read-only), borrar.
@@ -112,7 +112,7 @@ posterior caiga en su lugar.
 **Goal**: cada save crea una versión inmutable. Historial completo.
 **Deliverables**:
 - **Domain**: entity `PromptVersion`, VO `VersionNumber`.
-- **Application**: command `SaveNewVersion`; queries `GetVersion`, `ListVersions`; command `RestoreVersion` (crea nueva versión copiando contenido de una histórica); port `VersionRepository`.
+- **Application**: `SaveNewVersionCommand`, `RestoreVersionCommand` (crea nueva versión copiando contenido de una histórica), `GetVersionQuery`, `ListVersionsQuery`; port `VersionRepository`.
 - **Infrastructure**: `PostgresVersionRepository`, schema `prompt_versions`, FK `prompts.current_version_id → prompt_versions.id`.
 - **HTTP**: `POST /api/prompts/:slug/versions`, `GET /api/prompts/:slug/versions`, `GET /api/prompts/:slug/versions/:n`, `POST /api/prompts/:slug/versions/:n/restore`.
 - **Frontend**: editor (textarea + commit message), botón Save, panel lateral con historial (numero, mensaje, fecha, autor), click en versión → vista readonly, botón "Restaurar".
@@ -126,7 +126,7 @@ posterior caiga en su lugar.
 **Goal**: el usuario puede crear/revocar keys desde el dashboard.
 **Deliverables**:
 - **Domain**: entity `ApiKey` (id, name, prefix, hash, last_used_at, revoked_at).
-- **Application**: commands `CreateApiKey` (returns plaintext una sola vez), `RevokeApiKey`; query `ListApiKeysForUser`; port `ApiKeyRepository`, port `ApiKeyHasher`.
+- **Application**: `CreateApiKeyCommand` (returns plaintext una sola vez), `RevokeApiKeyCommand`, `ListApiKeysForUserQuery`; port `ApiKeyRepository`, port `ApiKeyHasher`.
 - **Infrastructure**: `PostgresApiKeyRepository`, `BunPasswordApiKeyHasher` (argon2id).
 - **HTTP**: `POST /api/keys`, `GET /api/keys`, `DELETE /api/keys/:id`.
 - **Frontend**: pantalla `/settings/api-keys`, botón "Generate", modal mostrando plaintext con copy + warning, lista con name/prefix/last_used/revoke.
@@ -139,7 +139,7 @@ posterior caiga en su lugar.
 ## P9 — API pública de consumo + rate limiting
 **Goal**: leer un prompt desde n8n / curl con `Authorization: Bearer ps_live_xxx`.
 **Deliverables**:
-- **Application**: query `GetLatestPublishedVersion` (by user_id + slug); port `RateLimiter`, port `Cache`.
+- **Application**: `GetLatestPublishedVersionQuery` (by user_id + slug); port `RateLimiter`, port `Cache`.
 - **Infrastructure**: `BunRedisRateLimiter` (sliding window 100 req/min default), `BunRedisCache` (TTL 5min, invalidate on save), `ApiKeyAuthMiddleware` (Elysia).
 - **HTTP**: `GET /v1/prompts/:slug` → `{ content, version, updated_at, commit_message }`.
 - Cache invalidation hook en `SaveNewVersion`.
@@ -153,7 +153,7 @@ posterior caiga en su lugar.
 **Goal**: usuario conecta GitHub → se crea repo `promptstash-<username>` privado.
 **Deliverables**:
 - **Domain**: entity `GitHubConnection`.
-- **Application**: command `ConnectGitHub`, command `DisconnectGitHub`; query `GetGitHubConnection`; port `GitHubGateway`.
+- **Application**: `ConnectGitHubCommand`, `DisconnectGitHubCommand`, `GetGitHubConnectionQuery`; port `GitHubGateway`.
 - **Infrastructure**: `OctokitGitHubGateway` (`createRepo`, `commitFile`, `getRepo`); `TokenEncryption` helper (envelope encryption con `AUTH_SECRET`-derived key).
 - Schema: `user_github_connection`.
 - **HTTP**: `POST /api/integrations/github/connect`, `DELETE /api/integrations/github/disconnect`, `GET /api/integrations/github`.
@@ -168,7 +168,7 @@ posterior caiga en su lugar.
 ## P11 — Auto-commit on SaveNewVersion
 **Goal**: cada save commitea en el repo del usuario (cuando está conectado).
 **Deliverables**:
-- `SaveNewVersion` command extendido: si hay `GitHubConnection`, dispara `gateway.commitVersion()` después de persistir en Postgres.
+- `SaveNewVersionCommand` extendido: si hay `GitHubConnection`, dispara `gateway.commitVersion()` después de persistir en Postgres.
 - Retry con backoff (3 intentos, ~1s/3s/9s). Final fail → `github_commit_sha = null` + log warning.
 - Path en repo: `prompts/<slug>.md`. Commit message: `<prompt_name> v<N>: <commit_message>`.
 - **Frontend**: lista de versiones muestra ícono GitHub linkeando al commit cuando `github_commit_sha != null`. Warning visible si falló sync.
@@ -181,7 +181,7 @@ posterior caiga en su lugar.
 ## P12 — Backfill al conectar GitHub tarde
 **Goal**: usuario que tenía prompts antes de conectar GitHub no pierde su historial — se replica cronológicamente.
 **Deliverables**:
-- **Application**: command `BackfillGitHubHistory` (itera prompts del user, ordena versiones por created_at, commitea una a una con timestamps de commit alineados).
+- **Application**: `BackfillGitHubHistoryCommand` (itera prompts del user, ordena versiones por created_at, commitea una a una con timestamps de commit alineados).
 - Disparo: tras `ConnectGitHub` exitoso, en background.
 - Estado de progreso persistido (campo en `user_github_connection`).
 - **Frontend**: indicador "Syncing X of Y commits..." en `/settings/integrations`. Toast al terminar.
@@ -194,7 +194,7 @@ posterior caiga en su lugar.
 ## P13 — Export ZIP/JSON
 **Goal**: anti-vendor-lock-in incluso sin GitHub. Bajarte todo en un click.
 **Deliverables**:
-- **Application**: query `ExportAllPrompts` → ZIP stream con estructura `prompts/<slug>/v<N>.md` + `index.json` con metadata.
+- **Application**: `ExportAllPromptsQuery` → ZIP stream con estructura `prompts/<slug>/v<N>.md` + `index.json` con metadata.
 - **HTTP**: `GET /api/export.zip` (auth con sesión).
 - **Frontend**: botón "Download my data" en `/settings`.
 

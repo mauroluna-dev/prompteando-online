@@ -17,8 +17,8 @@ interface http). Los siguientes (P6 prompts CRUD) reusan el patrón.
 
 ## In scope
 - **Domain**: tipo `CurrentUserDTO` en `src/domain/user/`.
-- **Application**: port `SessionResolver` y query `GetCurrentUser`
-  que lo consume.
+- **Application**: port `SessionResolver` y `GetCurrentUserQuery`
+  (clase) que lo consume.
 - **Infrastructure**: `AuthJsSessionResolver` (adapter del port)
   que delega a `Auth(request, config)` con action `session`.
 - **HTTP**: route `GET /api/me` que llama a la query, devuelve
@@ -45,11 +45,11 @@ interface http). Los siguientes (P6 prompts CRUD) reusan el patrón.
 
 ## Decisiones acordadas (este turno)
 
-### 1. `/api/me` con query GetCurrentUser hexagonal
-**Decisión**: GET `/api/me` consume una `Query` en
-`application/queries/get-current-user.ts` que depende de un port
-`SessionResolver`. El adapter en infrastructure usa Auth.js para
-resolver la sesión.
+### 1. `/api/me` con `GetCurrentUserQuery` hexagonal
+**Decisión**: GET `/api/me` consume `GetCurrentUserQuery` (clase
+en `application/queries/get-current-user.ts`) que depende de un
+port `SessionResolver`. El adapter en infrastructure usa Auth.js
+para resolver la sesión.
 
 **Razón**:
 - Hexagonal coherente: dominio define DTO, application orquesta,
@@ -127,30 +127,35 @@ export const authJsSessionResolver: SessionResolver = (req) =>
   getSession(req);
 ```
 
-### Query
+### Query (clase con `execute`)
 ```ts
 // application/queries/get-current-user.ts
-export const makeGetCurrentUser =
-  (resolveSession: SessionResolver) =>
-  async (request: Request): Promise<CurrentUserDTO | null> => {
-    const session = await resolveSession(request);
+import type { CurrentUserDTO } from "@/domain/user";
+import type { SessionResolver } from "@/application/ports/session-resolver";
+
+export class GetCurrentUserQuery {
+  constructor(private readonly resolveSession: SessionResolver) {}
+
+  async execute(request: Request): Promise<CurrentUserDTO | null> {
+    const session = await this.resolveSession(request);
     return session?.user ?? null;
-  };
+  }
+}
 ```
 
 ### Composition root
 ```ts
 // src/interfaces/http/server.ts (excerpt)
-import { makeGetCurrentUser } from "@/application/queries/get-current-user";
+import { GetCurrentUserQuery } from "@/application/queries/get-current-user";
 import { authJsSessionResolver } from "@/infrastructure/auth/auth-js-session-resolver";
 
-const getCurrentUser = makeGetCurrentUser(authJsSessionResolver);
+const getCurrentUser = new GetCurrentUserQuery(authJsSessionResolver);
 
 const app = new Elysia()
   .get("/health", () => ({ ok: true }))
   .all("/auth/*", ({ request }) => handleAuth(request))
   .get("/api/me", async ({ request }) => {
-    const user = await getCurrentUser(request);
+    const user = await getCurrentUser.execute(request);
     if (!user) return new Response(null, { status: 401 });
     return user;
   });

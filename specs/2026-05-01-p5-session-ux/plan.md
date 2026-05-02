@@ -37,17 +37,20 @@ export type SessionResolver = (
 ) => Promise<{ user: CurrentUserDTO } | null>;
 ```
 
-3.2. Crear `src/application/queries/get-current-user.ts`:
+3.2. Crear `src/application/queries/get-current-user.ts` —
+clase con method `execute` (convención CQS de tech-stack.md):
 ```ts
 import type { CurrentUserDTO } from "@/domain/user";
 import type { SessionResolver } from "@/application/ports/session-resolver";
 
-export const makeGetCurrentUser =
-  (resolveSession: SessionResolver) =>
-  async (request: Request): Promise<CurrentUserDTO | null> => {
-    const session = await resolveSession(request);
+export class GetCurrentUserQuery {
+  constructor(private readonly resolveSession: SessionResolver) {}
+
+  async execute(request: Request): Promise<CurrentUserDTO | null> {
+    const session = await this.resolveSession(request);
     return session?.user ?? null;
-  };
+  }
+}
 ```
 
 3.3. Eliminar
@@ -72,12 +75,12 @@ export const authJsSessionResolver: SessionResolver = (req) =>
 
 ## 5. HTTP route /api/me + composition root
 5.1. En `src/interfaces/http/server.ts`:
-- Importar `makeGetCurrentUser` y `authJsSessionResolver`.
-- Instanciar `const getCurrentUser = makeGetCurrentUser(authJsSessionResolver);`
+- Importar `GetCurrentUserQuery` y `authJsSessionResolver`.
+- Instanciar `const getCurrentUser = new GetCurrentUserQuery(authJsSessionResolver);`
 - Agregar a Elysia:
   ```ts
   .get("/api/me", async ({ request }) => {
-    const user = await getCurrentUser(request);
+    const user = await getCurrentUser.execute(request);
     if (!user) return new Response(null, { status: 401 });
     return user;
   });

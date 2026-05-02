@@ -1,11 +1,11 @@
 import type { CurrentUserDTO } from "@/domain/user";
 import type { SessionResolver } from "@/application/ports/session-resolver";
 
-export type GetCurrentUser = (request: Request) => Promise<CurrentUserDTO | null>;
+export class GetCurrentUserQuery {
+  constructor(private readonly resolveSession: SessionResolver) {}
 
-export const makeGetCurrentUser =
-  (resolveSession: SessionResolver): GetCurrentUser =>
-  async (request) => {
-    const session = await resolveSession(request);
+  async execute(request: Request): Promise<CurrentUserDTO | null> {
+    const session = await this.resolveSession(request);
     return session?.user ?? null;
-  };
+  }
+}

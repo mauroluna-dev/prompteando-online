@@ -10,6 +10,9 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router";
 import { App } from "./App";
 import { LoginPage } from "./pages/LoginPage";
+import { PromptsListPage } from "./pages/PromptsListPage";
+import { PromptCreatePage } from "./pages/PromptCreatePage";
+import { PromptDetailPage } from "./pages/PromptDetailPage";
 import { RequireAuth } from "./RequireAuth";
 
 const elem = document.getElementById("root")!;
@@ -19,13 +22,17 @@ const tree = (
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route
-          path="/*"
+          path="/"
           element={
             <RequireAuth>
               <App />
             </RequireAuth>
           }
-        />
+        >
+          <Route index element={<PromptsListPage />} />
+          <Route path="prompts/new" element={<PromptCreatePage />} />
+          <Route path="prompts/:slug" element={<PromptDetailPage />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   </StrictMode>

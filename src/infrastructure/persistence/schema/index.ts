@@ -8,3 +8,4 @@
 // db.ts importa este barrel completo para habilitar relaciones
 // type-safe en drizzle({ schema }).
 export * from "./auth";
+export * from "./prompts";
