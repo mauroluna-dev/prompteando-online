@@ -2,15 +2,15 @@ import { Elysia } from "elysia";
 import index from "../../frontend/index.html";
 import { handleAuth } from "@/infrastructure/auth/handler";
 import { authJsSessionResolver } from "@/infrastructure/auth/auth-js-session-resolver";
-import { makeGetCurrentUser } from "@/application/queries/get-current-user";
+import { GetCurrentUserQuery } from "@/application/queries/get-current-user";
 
-const getCurrentUser = makeGetCurrentUser(authJsSessionResolver);
+const getCurrentUser = new GetCurrentUserQuery(authJsSessionResolver);
 
 const app = new Elysia()
   .get("/health", () => ({ ok: true }))
   .all("/auth/*", ({ request }) => handleAuth(request))
   .get("/api/me", async ({ request }) => {
-    const user = await getCurrentUser(request);
+    const user = await getCurrentUser.execute(request);
     if (!user) return new Response(null, { status: 401 });
     return user;
   });
