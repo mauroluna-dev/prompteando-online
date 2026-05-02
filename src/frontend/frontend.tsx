@@ -13,6 +13,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { PromptsListPage } from "./pages/PromptsListPage";
 import { PromptCreatePage } from "./pages/PromptCreatePage";
 import { PromptDetailPage } from "./pages/PromptDetailPage";
+import { ApiKeysPage } from "./pages/ApiKeysPage";
 import { RequireAuth } from "./RequireAuth";
 
 const elem = document.getElementById("root")!;
@@ -32,6 +33,7 @@ const tree = (
           <Route index element={<PromptsListPage />} />
           <Route path="prompts/new" element={<PromptCreatePage />} />
           <Route path="prompts/:slug" element={<PromptDetailPage />} />
+          <Route path="settings/api-keys" element={<ApiKeysPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
