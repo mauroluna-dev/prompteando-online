@@ -22,6 +22,13 @@
       "when": 1777702095097,
       "tag": "0002_colossal_kylun",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777704414248,
+      "tag": "0003_round_moondragon",
+      "breakpoints": true
     }
   ]
 }
