@@ -1,5 +1,9 @@
 # Tech Stack — promptstash
 
+> **Convenciones canónicas: ver [`conventions.md`](./conventions.md)**.
+> Si algo de este doc entra en conflicto con `conventions.md`, gana
+> `conventions.md`.
+
 ## Filosofía
 - 100% Bun (runtime, package manager, bundler, test runner).
 - Preferir APIs nativas de Bun antes que libs externas (per CLAUDE.md).
@@ -49,37 +53,47 @@ Reglas duras:
 - `interfaces/http/` es composition root: instancia adapters y los
   inyecta en commands/queries antes de dispatchar.
 
-CQS:
+CQS (ver `conventions.md` §6 para reglas exactas):
 - **Una clase por use case**. Naming canónico:
-  - Commands: `<Verb><Noun>Command` (ej. `CreatePromptCommand`,
-    `SaveNewVersionCommand`).
-  - Queries: `<Verb><Noun>Query` (ej. `GetPromptBySlugQuery`,
-    `ListPromptsForUserQuery`).
+  - Commands: `<Verb><Noun>Command` en `*.command.ts`.
+  - Queries: `<Verb><Noun>Query` en `*.query.ts`.
 - **API pública uniforme**: cada clase expone un único método público
-  `execute(...params)`. El constructor recibe los ports (deps) que
-  el composition root inyecta.
+  `execute(...)`. El constructor recibe los ports (deps).
+- **Param shape**:
+  - 1–4 inputs → posicionales (opcionales al final).
+  - 5+ inputs → un único `input: { ... }` object.
 - **Commands** mutan estado y devuelven `void` o la entidad creada;
   lanzan errores de dominio.
 - **Queries** devuelven DTOs read-optimizados; nunca mutan.
 - Forma esperada:
   ```ts
   export class CreatePromptCommand {
-    constructor(private readonly repo: PromptRepository) {}
-    async execute(input: CreatePromptInput): Promise<Prompt> { ... }
+    constructor(
+      private readonly repo: PromptRepository,
+      private readonly crypto: CryptoPort,
+    ) {}
+    async execute(
+      userId: string,
+      name: string,
+      description?: string,
+    ): Promise<Prompt> { ... }
   }
+  ```
+- Composition root (`interfaces/http/server.ts`) instancia cada
+  command/query con sus deps inyectadas.
 
-  export class GetPromptBySlugQuery {
-    constructor(private readonly repo: PromptRepository) {}
-    async execute(userId: string, slug: Slug): Promise<Prompt> { ... }
-  }
-  ```
-- Composition root (en `interfaces/http/server.ts`) instancia cada
-  command/query con sus deps:
-  ```ts
-  const createPrompt = new CreatePromptCommand(promptRepo);
-  ```
-- V1 sin event sourcing ni event bus. Camino abierto a CQRS completo
-  si el roadmap lo justifica.
+### Domain entities & value objects
+Ver `conventions.md` §7 y §10 para detalle. Resumen:
+- **Entidades** son clases con invariantes en constructor + factories
+  `static create(...)` (input usuario) y `static fromRow(...)`
+  (reconstitución desde DB). Mutadores son métodos de instancia.
+  No hay `type Entity = { ... }` ni object literals.
+- **VOs** son clases con `static parse(...)` y, cuando aplica,
+  `static generate(...)`. Reemplaza el patrón anterior de
+  `unique symbol` brand + función `parseFoo`/`generateFoo`.
+
+V1 sin event sourcing ni event bus. Camino abierto a CQRS completo
+si el roadmap lo justifica.
 
 ## Database
 - **Postgres 16+** — source of truth.
@@ -124,10 +138,17 @@ Schemas core (V1):
 ## API Keys (consumo público)
 - Generadas en dashboard. Formato: `ps_live_<32 chars>`.
 - Plaintext mostrado UNA sola vez. En BD solo `key_hash`
-  (Bun.password con argon2id).
+  (argon2id vía `BunCryptoAdapter.hashPassword`).
 - Header de consumo: `Authorization: Bearer <key>`.
-- Middleware Elysia (`infrastructure/auth/api-key-middleware.ts`)
+- Middleware Elysia (`infrastructure/auth/api-key.middleware.ts`)
   verifica key + rate limit (Redis) antes de despachar al query.
+
+## Crypto
+Todo lo no-determinístico (UUIDs, random bytes, password hashing) vive
+detrás del `CryptoPort` (ver `conventions.md` §8). Único adapter:
+`BunCryptoAdapter` (`infrastructure/crypto/bun-crypto.adapter.ts`).
+Application/domain code nunca importa `crypto`, `node:crypto` ni
+`Bun.password` directamente.
 
 ## GitHub Integration
 - **Octokit** (`@octokit/rest` + `@octokit/auth-oauth-user`).
@@ -154,14 +175,39 @@ Schemas core (V1):
 - Bundling vía Bun HTML imports (sin Vite, per CLAUDE.md).
 
 ## Validation
-- **Zod** — schemas compartidos entre client y server (en `domain/`
-  o package `shared/` según convenga).
+- **Zod** — schemas compartidos entre client y server.
+- Caso canónico: `src/infrastructure/config/env.ts` parsea
+  `process.env` con un schema Zod y **falla al startup** si algo
+  falta o es inválido (ver `conventions.md` §1).
+- Otros usos: HTTP request schemas en `interfaces/http/schemas/`.
+
+## Configuración (env)
+Una sola fuente de verdad para envs:
+`src/infrastructure/config/env.ts`. Toda lectura de envs hace
+`import { env } from "@/infrastructure/config/env"`. Nunca
+`process.env.X` fuera de ese archivo.
 
 ## Testing
 - `bun test` para unit (domain + application puros, con fakes para
   los ports) + integration (Postgres dedicado).
 - **Playwright** para E2E del flujo crítico: signup → crear prompt
   → consumirlo por API desde curl.
+
+## Tooling — lint, hooks, commits
+Ver `conventions.md` §2–§4 y §9.
+
+- **ESLint flat config** + `eslint-plugin-sonarjs` (`recommended`)
+  + reglas TS strict. `bun run lint` con `--max-warnings=0`.
+- **commitlint** (`@commitlint/config-conventional`) enforced
+  por hook `commit-msg` (husky).
+- **Pre-push hook** (husky) corre
+  `bun run lint && bun run typecheck && bun run build && bun test`.
+- **Naming de archivos** con suffix por rol (`.command.ts`,
+  `.query.ts`, `.port.ts`, `.entity.ts`, `.vo.ts`, `.errors.ts`,
+  `.repository.ts`, `.adapter.ts`, `.handler.ts`, `.middleware.ts`).
+- **Constants per-feature**: cada módulo expone
+  `export const CONSTANTS = { ... } as const` desde su
+  `constants.ts`. No hay archivo global de constants.
 
 ## Observability (mínimo V1)
 - Logs estructurados (`console.log` con JSON) en middleware Elysia.
@@ -179,6 +225,7 @@ Prod: el mismo compose deployable a Railway / Fly / Hetzner / VPS.
 Secrets (OAuth client IDs, encryption key, etc.) vía `.env`.
 
 ## Dependencias a instalar (V1)
+Runtime:
 ```
 elysia
 @elysiajs/cors
@@ -194,5 +241,14 @@ swr
 react-hook-form
 @hookform/resolvers
 zod
+```
+Dev/tooling (Pα):
+```
+eslint
+typescript-eslint
+eslint-plugin-sonarjs
+husky
+@commitlint/cli
+@commitlint/config-conventional
 ```
 (React, Tailwind y shadcn ya están en `package.json`.)

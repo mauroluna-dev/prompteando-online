@@ -1,5 +1,9 @@
 # Roadmap — promptstash
 
+> **Convenciones canónicas: ver [`conventions.md`](./conventions.md)**.
+> Toda fase desde P10 sigue esas convenciones. P0–P9 fueron alineadas
+> retroactivamente en Pα/Pβ (2026-05-03).
+
 ## Principios
 - **Fases atómicas**: cada fase es un PR mergeable, demoable o
   testeable de forma independiente.
@@ -9,6 +13,11 @@
   fase necesita la anterior, no se arranca antes.
 - **Cada fase actualiza CLAUDE.md / README.md** si introduce
   convenciones nuevas.
+- **Toda fase respeta `conventions.md`**: env via `env.ts`, commits
+  conventional, hooks husky, ESLint+sonarjs, constants per-feature,
+  use cases con `execute(...)` (≤4 posicional / ≥5 object), entities
+  como clases con invariantes, VOs como clases con `static parse`,
+  `CryptoPort` para todo lo no-determinístico, file suffixes por rol.
 
 ---
 
@@ -149,6 +158,54 @@ posterior caiga en su lugar.
 
 ---
 
+## Pα — Constitution alignment & tooling
+**Goal**: codificar 10 decisiones arquitectónicas como conventions y
+agregar lint/hooks que las refuercen automáticamente. Sin refactor de
+código.
+**Deliverables**:
+- `specs/conventions.md` (NEW, single SoT).
+- `specs/tech-stack.md` actualizado (CQS, entities, VOs, env, crypto,
+  tooling, naming).
+- Memory updates: `project_constitution.md`,
+  `feedback_cqs_class_convention.md`, `MEMORY.md`.
+- DevDeps: `eslint`, `typescript-eslint`, `eslint-plugin-sonarjs`,
+  `husky`, `@commitlint/cli`, `@commitlint/config-conventional`.
+- `eslint.config.js`, `commitlint.config.js`,
+  `.husky/commit-msg`, `.husky/pre-push`.
+- npm scripts: `lint`, `lint:fix`, `test`, `typecheck`, `prepare`.
+
+**Verification**: `bun install` ok. `git commit -m "bad"` rechazado.
+`git commit -m "chore: ok"` aceptado. `git push` corre los 4 checks.
+**Depends on**: P9.
+
+---
+
+## Pβ — Retroactive refactor
+**Goal**: aplicar las 10 conventions al código existente (P0–P9).
+Después de Pβ, el baseline matchea la constitución antes de empezar
+P10.
+**Deliverables**:
+- `src/infrastructure/config/env.ts` con Zod schema; reemplazar
+  `process.env.X` en 7 callsites.
+- `constants.ts` per-feature (`src/domain/api-key/`,
+  `src/domain/prompt/`).
+- VOs como clases (`Slug`, `PromptName`, `ApiKeyName`,
+  `VersionNumber`, `ApiKeyPlaintext`).
+- Entidades como clases (`Prompt`, `ApiKey`, `PromptVersion`,
+  `User`) con `static create/fromRow` y métodos de comportamiento.
+- Unified `CryptoPort` + `BunCryptoAdapter`; eliminar
+  `ApiKeyHasher` y `BunPasswordApiKeyHasher`.
+- `execute()` con args posicionales (≤4) o object input (≥5).
+- File renames con suffix por rol.
+
+**Verification**: `bun run lint` 0 warnings, `bun run typecheck` 0
+errors, `bun test` pasa, `bun run build` ok, smoke manual end-to-end
+(login → create prompt → save version → restore → revoke API key →
+curl con Bearer ok).
+**Depends on**: Pα.
+
+---
+
 ## P10 — GitHub repo creation on connect
 **Goal**: usuario conecta GitHub → se crea repo `promptstash-<username>` privado.
 **Deliverables**:
@@ -228,8 +285,15 @@ posterior caiga en su lugar.
 - Script `scripts/deploy.sh`: SSH al VPS, `git pull`, `docker compose -f docker-compose.prod.yml up -d --build`.
 - `.env.production.example` documentado.
 - Sección "Deploy" en `README.md`: prerequisitos (Traefik ya corriendo, network compartida, dominio apuntando), pasos de primer deploy, rotación de secrets.
+- **Cron de cleanup de sesiones expiradas**: Auth.js (db strategy)
+  no borra filas de `sessions` cuando expiran — solo deja de
+  considerarlas válidas. Agregar cron diario que ejecute
+  `DELETE FROM sessions WHERE expires < NOW()`. Implementable como
+  servicio extra en `docker-compose.prod.yml` (imagen `postgres:16-alpine`
+  con cron interno) o como systemd timer en el VPS. Sin esto la tabla
+  crece monotónicamente con cada login.
 
-**Verification**: dominio público resuelve, HTTPS válido (cert emitido por Traefik), signup + crear prompt + consumir API funciona en prod.
+**Verification**: dominio público resuelve, HTTPS válido (cert emitido por Traefik), signup + crear prompt + consumir API funciona en prod. Cron de sesiones corre y deja la tabla `sessions` solo con filas no expiradas.
 **Depends on**: P14.
 
 ---
@@ -252,6 +316,6 @@ posterior caiga en su lugar.
 
 ## Resumen de cadena de dependencias
 ```
-P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 → P9 → P10 → P11 → P12 → P13 → P14 → P15 → P16
+P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 → P9 → Pα → Pβ → P10 → P11 → P12 → P13 → P14 → P15 → P16
 ```
-Lineal por diseño: cada fase extiende capacidades sobre la anterior. Paralelizable solo si hay 2 devs (ej. P13 export + P11 commit pueden hacerse en paralelo después de P10, pero la cadena oficial es lineal).
+Lineal por diseño: cada fase extiende capacidades sobre la anterior. Paralelizable solo si hay 2 devs (ej. P13 export + P11 commit pueden hacerse en paralelo después de P10, pero la cadena oficial es lineal). Pα/Pβ son fases de alineación — no entregan features de producto pero blindan la base para todas las fases siguientes.
