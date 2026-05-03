@@ -1,5 +1,5 @@
 import useSWR from "swr";
-import type { Prompt } from "@/domain/prompt";
+import type { PromptDTO as Prompt } from "@/domain/prompt";
 import { getPrompt, listPrompts } from "@/frontend/lib/api/prompts";
 
 export function usePrompts() {

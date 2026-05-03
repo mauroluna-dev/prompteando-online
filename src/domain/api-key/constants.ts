@@ -1,0 +1,14 @@
+const PREFIX = "ps_live_";
+const RANDOM_BYTES = 16;
+
+export const CONSTANTS = {
+  PREFIX,
+  RANDOM_BYTES,
+  // PREFIX (8) + RANDOM_BYTES (16) * 2 hex chars/byte = 40
+  PLAINTEXT_LENGTH: PREFIX.length + RANDOM_BYTES * 2,
+  // PREFIX (8) + 8 hex chars of the random part
+  PREFIX_LENGTH: PREFIX.length + 8,
+  QUOTA_PER_USER: 10,
+  NAME_MIN_LENGTH: 1,
+  NAME_MAX_LENGTH: 50,
+} as const;

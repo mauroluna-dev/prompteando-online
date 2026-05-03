@@ -1,10 +1,9 @@
 import { Auth } from "@auth/core";
 import { authConfig } from "./auth-config";
-import type { CurrentUserDTO } from "@/domain/user";
+import { env } from "@/infrastructure/config/env";
+import { User } from "@/domain/user";
 
-type Session = { user: CurrentUserDTO; expires: string };
-
-const AUTH_URL = process.env.AUTH_URL;
+type Session = { user: User; expires: string };
 
 export async function getSession(request: Request): Promise<Session | null> {
   const url = new URL(request.url);
@@ -13,12 +12,10 @@ export async function getSession(request: Request): Promise<Session | null> {
   // session cookies use `__Secure-` / `__Host-` prefixes that Auth.js
   // only accepts over https. The Request URL we build for Auth(..)
   // must reflect the public origin so the cookie is honored.
-  if (AUTH_URL) {
-    const authUrl = new URL(AUTH_URL);
-    url.protocol = authUrl.protocol;
-    url.host = authUrl.host;
-    url.port = authUrl.port;
-  }
+  const authUrl = new URL(env.AUTH_URL);
+  url.protocol = authUrl.protocol;
+  url.host = authUrl.host;
+  url.port = authUrl.port;
 
   const sessionRequest = new Request(url, { headers: request.headers });
   const response = await Auth(sessionRequest, authConfig);
@@ -38,11 +35,11 @@ export async function getSession(request: Request): Promise<Session | null> {
   // emailVerified) to the public /api/me response.
   return {
     expires: json.expires,
-    user: {
+    user: User.fromSession({
       id: u.id,
       email: u.email,
       name: typeof u.name === "string" ? u.name : null,
       image: typeof u.image === "string" ? u.image : null,
-    },
+    }),
   };
 }

@@ -3,6 +3,7 @@ import GitHub from "@auth/core/providers/github";
 import Google from "@auth/core/providers/google";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/infrastructure/persistence/db";
+import { env } from "@/infrastructure/config/env";
 import {
   users,
   accounts,
@@ -10,20 +11,10 @@ import {
   verificationTokens,
 } from "@/infrastructure/persistence/schema";
 
-if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
-  throw new Error("GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are required");
-}
-if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-  throw new Error("GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are required");
-}
-if (!process.env.AUTH_SECRET) {
-  throw new Error("AUTH_SECRET is required (openssl rand -base64 32)");
-}
-
 export const authConfig: AuthConfig = {
   basePath: "/auth",
   trustHost: true,
-  secret: process.env.AUTH_SECRET,
+  secret: env.AUTH_SECRET,
   adapter: DrizzleAdapter(db, {
     usersTable: users,
     accountsTable: accounts,
@@ -32,8 +23,8 @@ export const authConfig: AuthConfig = {
   }),
   providers: [
     GitHub({
-      clientId: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      clientId: env.GITHUB_CLIENT_ID,
+      clientSecret: env.GITHUB_CLIENT_SECRET,
       authorization: { params: { scope: "read:user user:email" } },
       // Both providers verify email server-side (Google always; GitHub
       // when the primary email is marked verified). Linking by email
@@ -42,8 +33,8 @@ export const authConfig: AuthConfig = {
       allowDangerousEmailAccountLinking: true,
     }),
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
       allowDangerousEmailAccountLinking: true,
     }),
   ],

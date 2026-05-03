@@ -1,26 +1,26 @@
 import { describe, test, expect } from "bun:test";
-import { parseApiKeyName } from "@/domain/api-key/api-key-name";
-import { InvalidApiKeyNameError } from "@/domain/api-key/errors";
+import { ApiKeyName } from "@/domain/api-key/api-key-name.vo";
+import { InvalidApiKeyNameError } from "@/domain/api-key/api-key.errors";
 
-describe("parseApiKeyName", () => {
+describe("ApiKeyName.parse", () => {
   test("trims and accepts a normal name", () => {
-    expect<string>(parseApiKeyName("  n8n prod  ")).toBe("n8n prod");
+    expect(ApiKeyName.parse("  n8n prod  ").value).toBe("n8n prod");
   });
 
   test("rejects empty string", () => {
-    expect(() => parseApiKeyName("")).toThrow(InvalidApiKeyNameError);
+    expect(() => ApiKeyName.parse("")).toThrow(InvalidApiKeyNameError);
   });
 
   test("rejects whitespace-only", () => {
-    expect(() => parseApiKeyName("   ")).toThrow(InvalidApiKeyNameError);
+    expect(() => ApiKeyName.parse("   ")).toThrow(InvalidApiKeyNameError);
   });
 
   test("accepts 50 chars", () => {
-    expect<string>(parseApiKeyName("x".repeat(50))).toBe("x".repeat(50));
+    expect(ApiKeyName.parse("x".repeat(50)).value).toBe("x".repeat(50));
   });
 
   test("rejects 51 chars", () => {
-    expect(() => parseApiKeyName("x".repeat(51))).toThrow(
+    expect(() => ApiKeyName.parse("x".repeat(51))).toThrow(
       InvalidApiKeyNameError,
     );
   });

@@ -1,7 +1,7 @@
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
-import type { CurrentUserDTO } from "@/domain/user";
+import type { UserDTO } from "@/domain/user";
 
 export function useCurrentUser() {
-  return useSWR<CurrentUserDTO | null>("/api/me", fetcher);
+  return useSWR<UserDTO | null>("/api/me", fetcher);
 }
