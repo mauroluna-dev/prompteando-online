@@ -1,4 +1,4 @@
-import type { Prompt } from "@/domain/prompt";
+import type { PromptDTO as Prompt } from "@/domain/prompt";
 
 const headers = { "Content-Type": "application/json" };
 const credentials: RequestCredentials = "same-origin";

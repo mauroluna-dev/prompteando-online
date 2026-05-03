@@ -1,4 +1,4 @@
-import type { PromptVersion } from "@/domain/prompt-version";
+import type { PromptVersionDTO as PromptVersion } from "@/domain/prompt-version";
 
 function timeAgo(d: Date | string): string {
   const ts = typeof d === "string" ? new Date(d).getTime() : d.getTime();

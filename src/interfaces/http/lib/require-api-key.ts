@@ -1,4 +1,4 @@
-import type { AuthenticateApiKeyQuery } from "@/application/queries/authenticate-api-key";
+import type { AuthenticateApiKeyQuery } from "@/application/queries/authenticate-api-key.query";
 import type { ApiKey } from "@/domain/api-key";
 import {
   InvalidApiKeyError,

@@ -1,43 +1,40 @@
 import { describe, test, expect } from "bun:test";
-import {
-  parseVersionNumber,
-  parseVersionNumberFromString,
-} from "@/domain/prompt-version/version-number";
-import { InvalidVersionNumberError } from "@/domain/prompt-version/errors";
+import { VersionNumber } from "@/domain/prompt-version/version-number.vo";
+import { InvalidVersionNumberError } from "@/domain/prompt-version/prompt-version.errors";
 
-describe("parseVersionNumber", () => {
+describe("VersionNumber.parse", () => {
   test("accepts positive integers", () => {
-    expect<number>(parseVersionNumber(1)).toBe(1);
-    expect<number>(parseVersionNumber(42)).toBe(42);
+    expect(VersionNumber.parse(1).value).toBe(1);
+    expect(VersionNumber.parse(42).value).toBe(42);
   });
 
   test("rejects zero", () => {
-    expect(() => parseVersionNumber(0)).toThrow(InvalidVersionNumberError);
+    expect(() => VersionNumber.parse(0)).toThrow(InvalidVersionNumberError);
   });
 
   test("rejects negatives", () => {
-    expect(() => parseVersionNumber(-1)).toThrow(InvalidVersionNumberError);
+    expect(() => VersionNumber.parse(-1)).toThrow(InvalidVersionNumberError);
   });
 
   test("rejects floats", () => {
-    expect(() => parseVersionNumber(1.5)).toThrow(InvalidVersionNumberError);
+    expect(() => VersionNumber.parse(1.5)).toThrow(InvalidVersionNumberError);
   });
 
   test("rejects NaN", () => {
-    expect(() => parseVersionNumber(NaN)).toThrow(InvalidVersionNumberError);
+    expect(() => VersionNumber.parse(NaN)).toThrow(InvalidVersionNumberError);
   });
 });
 
-describe("parseVersionNumberFromString", () => {
+describe("VersionNumber.parseFromString", () => {
   test("parses '1'", () => {
-    expect<number>(parseVersionNumberFromString("1")).toBe(1);
+    expect(VersionNumber.parseFromString("1").value).toBe(1);
   });
 
   test("rejects 'abc'", () => {
-    expect(() => parseVersionNumberFromString("abc")).toThrow(InvalidVersionNumberError);
+    expect(() => VersionNumber.parseFromString("abc")).toThrow(InvalidVersionNumberError);
   });
 
   test("rejects '0'", () => {
-    expect(() => parseVersionNumberFromString("0")).toThrow(InvalidVersionNumberError);
+    expect(() => VersionNumber.parseFromString("0")).toThrow(InvalidVersionNumberError);
   });
 });

@@ -1,5 +1,5 @@
 import useSWR from "swr";
-import type { PromptVersion } from "@/domain/prompt-version";
+import type { PromptVersionDTO as PromptVersion } from "@/domain/prompt-version";
 import { getVersion, listVersions } from "@/frontend/lib/api/versions";
 
 export function useVersions(slug: string | undefined) {

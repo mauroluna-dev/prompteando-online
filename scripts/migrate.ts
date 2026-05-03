@@ -1,12 +1,9 @@
 import { drizzle } from "drizzle-orm/bun-sql";
 import { migrate } from "drizzle-orm/bun-sql/migrator";
 import { SQL } from "bun";
+import { env } from "@/infrastructure/config/env";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is required");
-}
-
-const sql = new SQL(process.env.DATABASE_URL);
+const sql = new SQL(env.DATABASE_URL);
 const db = drizzle(sql);
 
 console.log("Running migrations...");

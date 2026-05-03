@@ -1,4 +1,4 @@
-import type { PromptVersion } from "@/domain/prompt-version";
+import type { PromptVersionDTO as PromptVersion } from "@/domain/prompt-version";
 
 const credentials: RequestCredentials = "same-origin";
 const headers = { "Content-Type": "application/json" };
