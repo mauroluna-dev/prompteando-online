@@ -20,6 +20,7 @@ export const promptVersions = pgTable(
     content: text("content").notNull(),
     commitMessage: text("commit_message"),
     githubCommitSha: text("github_commit_sha"),
+    githubSyncError: text("github_sync_error"),
     createdAt: timestamp("created_at", { mode: "date" })
       .notNull()
       .defaultNow(),

@@ -43,6 +43,13 @@
       "when": 1777853172292,
       "tag": "0005_sudden_arachne",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777856016532,
+      "tag": "0006_simple_skrulls",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "prompt_versions" ADD COLUMN "github_sync_error" text;
