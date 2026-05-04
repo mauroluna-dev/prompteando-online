@@ -13,3 +13,11 @@ export class VersionNotFoundError extends Error {
     this.name = "VersionNotFoundError";
   }
 }
+
+export class GitHubCommitFailedError extends Error {
+  readonly code = "GITHUB_COMMIT_FAILED" as const;
+  constructor(readonly reason: string) {
+    super(`GitHub commit failed: ${reason}`);
+    this.name = "GitHubCommitFailedError";
+  }
+}
