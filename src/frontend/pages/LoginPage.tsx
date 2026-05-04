@@ -41,7 +41,7 @@ export function LoginPage() {
   const [pending, setPending] = useState<Provider | null>(null);
 
   useEffect(() => {
-    if (me) navigate("/", { replace: true });
+    if (me) navigate("/prompts", { replace: true });
   }, [me, navigate]);
 
   const handleClick = (provider: Provider) => {
