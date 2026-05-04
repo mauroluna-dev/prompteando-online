@@ -50,13 +50,38 @@ Posicionamiento: **"PromptLayer pero gratis y sin vendor lock-in"**.
 promptstash V1 **no** incluye:
 - Evaluación / scoring de prompts
 - A/B testing entre versiones
-- Observabilidad / logging de invocaciones
+- Logging detallado de invocaciones (event-level tracing)
 - Playground multi-modelo
 - Análisis de costos / tokens
 - Colaboración / teams / permisos
 - Billing / planes pagos
+- **Templates con variables** (`{{var}}` substitution) — ver V2
+  abajo.
 
-V1 = **storage + versionado + consumo por API**. Nada más.
+V1 = **storage + versionado + consumo por API + métricas básicas
+de uso**. Nada más.
+
+> **Nota sobre métricas (sesión 2026-05-04)**: la observabilidad
+> de uso por API key (requests/día, p50/p95, error rate, top
+> prompts) entra en V1 vía P18 — no es "logging detallado" sino
+> agregados pre-computados que el usuario consume desde su
+> dashboard. El logging event-level (cada request como fila)
+> sigue out-of-scope por costo de storage y por no aportar valor
+> al persona target.
+
+## V2 — Próximo gran salto (post-MVP)
+Después de cerrar V1 (P0–P18 + Pγ), V2 abre con:
+- **Templates con variables**: `{{var}}` substitution server-side,
+  endpoint `POST /v1/prompts/:slug/render`. Activación opt-in
+  por prompt para no romper backward-compat. Detalles tentativos
+  en `roadmap.md` → sección V2.
+- **Evaluation framework** (TBD): comparar outputs entre versiones
+  contra un test set definido por el usuario.
+- **Teams / sharing** (TBD): un primer pase de colaboración chica
+  (1-3 personas), no enterprise IAM.
+
+Lo que decidamos en V2 emerge del feedback real de usuarios V1,
+no de hipótesis ahora.
 
 ## North Star (V1)
 Time-to-first-value < 5 minutos:
