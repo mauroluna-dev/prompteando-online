@@ -1,13 +1,7 @@
-import { Link, NavLink, Outlet } from "react-router";
+import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "./UserMenu";
-
-const NAV_ITEMS: { label: string; to: string; end?: boolean }[] = [
-  { label: "Prompts", to: "/", end: true },
-  { label: "API Keys", to: "/settings/api-keys" },
-  { label: "Settings", to: "/settings/profile" },
-];
 
 export function AppShell() {
   return (
@@ -21,6 +15,12 @@ export function AppShell() {
 }
 
 function AppHeader() {
+  const { pathname } = useLocation();
+  // Settings tab covers anything under /settings/* EXCEPT /settings/api-keys
+  // (which has its own top-level tab).
+  const settingsActive =
+    pathname.startsWith("/settings/") && !pathname.startsWith("/settings/api-keys");
+
   return (
     <header className="bg-card sticky top-0 z-10 flex h-14 w-full items-center justify-between border-b px-6">
       <div className="flex items-center gap-8">
@@ -31,23 +31,13 @@ function AppHeader() {
           promptstash
         </Link>
         <nav className="flex items-center gap-1 text-sm">
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                [
-                  "rounded-md px-3 py-1.5 transition-colors",
-                  isActive
-                    ? "bg-muted text-foreground font-medium"
-                    : "text-muted-foreground hover:text-foreground",
-                ].join(" ")
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
+          <TabLink to="/" end>
+            Prompts
+          </TabLink>
+          <TabLink to="/settings/api-keys">API Keys</TabLink>
+          <TabLink to="/settings/profile" forceActive={settingsActive}>
+            Settings
+          </TabLink>
         </nav>
       </div>
       <div className="flex items-center gap-1">
@@ -62,5 +52,34 @@ function AppHeader() {
         <UserMenu />
       </div>
     </header>
+  );
+}
+
+function TabLink({
+  to,
+  end,
+  forceActive,
+  children,
+}: {
+  to: string;
+  end?: boolean;
+  forceActive?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        [
+          "rounded-md px-3 py-1.5 transition-colors",
+          isActive || forceActive
+            ? "bg-muted text-foreground font-medium"
+            : "text-muted-foreground hover:text-foreground",
+        ].join(" ")
+      }
+    >
+      {children}
+    </NavLink>
   );
 }

@@ -7,13 +7,15 @@
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router";
 import { App } from "./App";
+import { SettingsLayout } from "./components/SettingsLayout";
 import { LoginPage } from "./pages/LoginPage";
 import { PromptsListPage } from "./pages/PromptsListPage";
 import { PromptCreatePage } from "./pages/PromptCreatePage";
 import { PromptDetailPage } from "./pages/PromptDetailPage";
 import { ApiKeysPage } from "./pages/ApiKeysPage";
+import { SettingsProfilePage } from "./pages/SettingsProfilePage";
 import { SettingsIntegrationsPage } from "./pages/SettingsIntegrationsPage";
 import { RequireAuth } from "./RequireAuth";
 
@@ -34,11 +36,15 @@ const tree = (
           <Route index element={<PromptsListPage />} />
           <Route path="prompts/new" element={<PromptCreatePage />} />
           <Route path="prompts/:slug" element={<PromptDetailPage />} />
-          <Route path="settings/api-keys" element={<ApiKeysPage />} />
-          <Route
-            path="settings/integrations"
-            element={<SettingsIntegrationsPage />}
-          />
+          <Route path="settings" element={<SettingsLayout />}>
+            <Route
+              index
+              element={<Navigate to="/settings/profile" replace />}
+            />
+            <Route path="profile" element={<SettingsProfilePage />} />
+            <Route path="api-keys" element={<ApiKeysPage />} />
+            <Route path="integrations" element={<SettingsIntegrationsPage />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>
