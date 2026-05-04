@@ -8,6 +8,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Routes, Route } from "react-router";
+import { Toaster } from "sonner";
 import { App } from "./App";
 import { SettingsLayout } from "./components/SettingsLayout";
 import { LandingPage } from "./pages/LandingPage";
@@ -25,6 +26,7 @@ const elem = document.getElementById("root")!;
 const tree = (
   <StrictMode>
     <BrowserRouter>
+      <Toaster position="top-right" richColors closeButton />
       <Routes>
         {/* Public landing — redirects to /prompts if user is already logged in */}
         <Route
