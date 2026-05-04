@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
-import { ExternalLink, Github, Loader2, Trash2, Unplug } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  Github,
+  Loader2,
+  Trash2,
+  Unplug,
+} from "lucide-react";
 import { mutate } from "swr";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,11 +18,38 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { GitHubConnectionView } from "@/domain/github-connection";
 import { useGithubConnection } from "@/frontend/hooks/use-github-connection";
 import {
   disconnectGithub,
   getGithubOAuthUrl,
 } from "@/frontend/lib/api/integrations";
+
+const RECENTLY_FINISHED_WINDOW_MS = 30_000;
+
+const BACKFILL_FAILURE_COPY: Record<string, string> = {
+  token_invalid:
+    "Perdimos permiso para escribir en tu repo. Desconectá y volvé a conectar para reintentar.",
+  insufficient_scope:
+    "Permisos insuficientes. Desconectá y volvé a conectar otorgando el scope `repo`.",
+  repo_missing:
+    "No encontramos el repo en GitHub. ¿Lo borraste? Desconectá y volvé a conectar para recrearlo.",
+  lock_timeout:
+    "El sync tardó demasiado en obtener el lock. Desconectá y volvé a conectar para reintentar.",
+};
+
+function failureCopy(reason: string | null | undefined): string {
+  if (!reason) return "El sync falló. Desconectá y volvé a conectar para reintentar.";
+  return (
+    BACKFILL_FAILURE_COPY[reason] ??
+    `El sync falló (${reason}). Desconectá y volvé a conectar para reintentar.`
+  );
+}
+
+function toDate(d: Date | string | null | undefined): Date | null {
+  if (!d) return null;
+  return typeof d === "string" ? new Date(d) : d;
+}
 
 const ERROR_MESSAGES: Record<string, string> = {
   cancelled: "Cancelaste la autorización en GitHub.",
@@ -153,11 +188,14 @@ export function SettingsIntegrationsPage() {
           {isLoading ? (
             <div className="text-muted-foreground text-sm">Cargando…</div>
           ) : connection ? (
-            <ConnectedState
-              connection={connection}
-              onDisconnect={() => void handleDisconnect()}
-              disconnecting={disconnecting}
-            />
+            <>
+              <ConnectedState
+                connection={connection}
+                onDisconnect={() => void handleDisconnect()}
+                disconnecting={disconnecting}
+              />
+              <BackfillStatusSection connection={connection} />
+            </>
           ) : (
             <NotConnectedState
               onConnect={() => void handleConnect()}
@@ -259,6 +297,97 @@ function ConnectedState({
           <Trash2 className="ml-2 h-3 w-3 opacity-50" />
         </Button>
       </div>
+    </div>
+  );
+}
+
+function BackfillStatusSection({
+  connection,
+}: {
+  connection: GitHubConnectionView;
+}) {
+  const status = connection.backfillStatus;
+  const finishedAt = toDate(connection.backfillFinishedAt);
+  const total = connection.backfillTotal ?? 0;
+  const processed = connection.backfillProcessed ?? 0;
+
+  const ackKey =
+    status === "completed" && finishedAt
+      ? `backfill-ack-${connection.userId}-${finishedAt.toISOString()}`
+      : null;
+  const [acked, setAcked] = useState<boolean>(() => {
+    if (!ackKey || typeof window === "undefined") return false;
+    return window.sessionStorage.getItem(ackKey) === "1";
+  });
+
+  useEffect(() => {
+    if (!ackKey || typeof window === "undefined") return;
+    setAcked(window.sessionStorage.getItem(ackKey) === "1");
+  }, [ackKey]);
+
+  if (status === null || status === undefined) return null;
+
+  if (status === "pending") {
+    return (
+      <div className="flex items-center gap-3 rounded-md border bg-muted/40 p-3 text-sm">
+        <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+        <span>Preparando el sync de tu historial existente a GitHub…</span>
+      </div>
+    );
+  }
+
+  if (status === "running") {
+    const pct = total > 0 ? Math.min(100, Math.round((processed / total) * 100)) : 0;
+    return (
+      <div className="flex flex-col gap-2 rounded-md border bg-muted/40 p-3 text-sm">
+        <div className="flex items-center justify-between gap-2">
+          <span className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Sincronizando tu historial: {processed} de {total} commits
+          </span>
+          <span className="text-muted-foreground text-xs">{pct}%</span>
+        </div>
+        <div className="bg-secondary h-2 w-full overflow-hidden rounded">
+          <div
+            className="bg-primary h-full transition-all"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "completed") {
+    if (acked) return null;
+    if (total === 0) return null; // no banner for "nothing to sync" case
+    const recent =
+      finishedAt &&
+      Date.now() - finishedAt.getTime() < RECENTLY_FINISHED_WINDOW_MS;
+    if (!recent) return null;
+    const handleAck = () => {
+      if (ackKey && typeof window !== "undefined") {
+        window.sessionStorage.setItem(ackKey, "1");
+      }
+      setAcked(true);
+    };
+    return (
+      <div className="flex items-start justify-between gap-2 rounded-md border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-900 dark:text-green-200">
+        <span className="flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4" />
+          Sync completo: {total} commits replicados a GitHub.
+        </span>
+        <button className="text-xs underline" onClick={handleAck} type="button">
+          Listo
+        </button>
+      </div>
+    );
+  }
+
+  // status === 'failed'
+  return (
+    <div className="bg-destructive/10 text-destructive border-destructive/30 flex items-start gap-2 rounded-md border p-3 text-sm">
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+      <span>{failureCopy(connection.backfillFailureReason)}</span>
     </div>
   );
 }
