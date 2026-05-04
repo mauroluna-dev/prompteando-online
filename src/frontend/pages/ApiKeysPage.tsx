@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, Copy, KeyRound, Loader2, Plus, Trash2 } from "lucide-react";
 import { mutate } from "swr";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,6 +20,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  EmptyState,
+  Skeleton,
+} from "@/frontend/components/states";
 import { useApiKeys } from "@/frontend/hooks/use-api-keys";
 import { createApiKey, revokeApiKey } from "@/frontend/lib/api/api-keys";
 
@@ -70,8 +75,9 @@ export function ApiKeysPage() {
     try {
       await revokeApiKey(id);
       await mutate("/api/keys");
-    } catch {
-      // swallow — UI just doesn't update; user can retry
+      toast.success(`Key "${keyName}" revoked.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to revoke key");
     } finally {
       setRevokingId(null);
     }
@@ -81,6 +87,7 @@ export function ApiKeysPage() {
     if (!revealedKey) return;
     await navigator.clipboard.writeText(revealedKey.plaintext);
     setCopied(true);
+    toast.success("Key copied to clipboard");
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -154,11 +161,32 @@ export function ApiKeysPage() {
       )}
 
       {isLoading ? (
-        <div className="text-muted-foreground text-sm">Loading…</div>
+        <ul className="divide-border divide-y rounded-lg border" aria-busy="true">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <li key={i} className="flex items-center justify-between gap-4 p-4">
+              <div className="flex flex-1 items-center gap-3">
+                <Skeleton className="h-5 w-5 rounded" />
+                <div className="flex flex-1 flex-col gap-1.5">
+                  <Skeleton className="h-4 w-1/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+              <Skeleton className="h-8 w-20 rounded-md" />
+            </li>
+          ))}
+        </ul>
       ) : keys.length === 0 ? (
-        <div className="text-muted-foreground text-sm">
-          You haven't created any API keys yet.
-        </div>
+        <EmptyState
+          icon={KeyRound}
+          title="No API keys yet"
+          description="Generate your first key to start consuming prompts via the public API from n8n, curl, or any HTTP client."
+          action={
+            <Button onClick={() => setShowForm(true)}>
+              <Plus className="mr-1 h-4 w-4" />
+              Generate first key
+            </Button>
+          }
+        />
       ) : (
         <ul className="divide-border divide-y rounded-lg border">
           {keys.map((k) => {

@@ -11,7 +11,9 @@ import {
   Unplug,
 } from "lucide-react";
 import { mutate } from "swr";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/frontend/components/states";
 import type { GitHubConnectionView } from "@/domain/github-connection";
 import { useGithubConnection } from "@/frontend/hooks/use-github-connection";
 import {
@@ -74,30 +76,40 @@ export function SettingsIntegrationsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
 
   const errorCode = searchParams.get("error");
   const justConnected = searchParams.get("connected") === "1";
 
+  // OAuth callback returns ?connected=1 or ?error=... in the URL.
+  // Surface as toasts (sonner) and immediately strip from URL so a
+  // refresh doesn't replay the message.
   useEffect(() => {
-    if (justConnected) void mutate("/api/integrations/github");
-  }, [justConnected]);
+    if (justConnected) {
+      void mutate("/api/integrations/github");
+      toast.success("GitHub conectado correctamente.");
+      const next = new URLSearchParams(searchParams);
+      next.delete("connected");
+      setSearchParams(next, { replace: true });
+    }
+  }, [justConnected, searchParams, setSearchParams]);
 
-  const dismissBanner = () => {
+  useEffect(() => {
+    if (!errorCode) return;
+    toast.error(
+      ERROR_MESSAGES[errorCode] ?? `Algo salió mal (código: ${errorCode}).`,
+    );
     const next = new URLSearchParams(searchParams);
     next.delete("error");
-    next.delete("connected");
     setSearchParams(next, { replace: true });
-  };
+  }, [errorCode, searchParams, setSearchParams]);
 
   const handleConnect = async () => {
     setConnecting(true);
-    setActionError(null);
     try {
       const url = await getGithubOAuthUrl();
       window.location.href = url;
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Error inesperado");
+      toast.error(err instanceof Error ? err.message : "Error inesperado");
       setConnecting(false);
     }
   };
@@ -111,12 +123,12 @@ export function SettingsIntegrationsPage() {
       return;
     }
     setDisconnecting(true);
-    setActionError(null);
     try {
       await disconnectGithub();
       await mutate("/api/integrations/github");
+      toast.success("GitHub desconectado.");
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Error inesperado");
+      toast.error(err instanceof Error ? err.message : "Error inesperado");
     } finally {
       setDisconnecting(false);
     }
@@ -133,35 +145,6 @@ export function SettingsIntegrationsPage() {
           decidís.
         </p>
       </header>
-
-      {justConnected ? (
-        <div className="bg-success-bg text-success-fg flex items-start justify-between gap-2 rounded-md border border-emerald-200 p-3 text-sm">
-          <span>GitHub conectado correctamente.</span>
-          <button
-            className="text-xs underline"
-            onClick={dismissBanner}
-            type="button"
-          >
-            Cerrar
-          </button>
-        </div>
-      ) : null}
-
-      {errorCode ? (
-        <div className="bg-destructive/10 text-destructive border-destructive/30 flex items-start justify-between gap-2 rounded-md border p-3 text-sm">
-          <span>
-            {ERROR_MESSAGES[errorCode] ??
-              `Algo salió mal (código: ${errorCode}).`}
-          </span>
-          <button
-            className="text-xs underline"
-            onClick={dismissBanner}
-            type="button"
-          >
-            Cerrar
-          </button>
-        </div>
-      ) : null}
 
       {/* GitHub integration card */}
       <section className="bg-card flex flex-col gap-5 rounded-lg border p-6">
@@ -190,7 +173,14 @@ export function SettingsIntegrationsPage() {
         </div>
 
         {isLoading ? (
-          <div className="text-muted-foreground text-sm">Loading…</div>
+          <div className="flex flex-col gap-3">
+            <div className="grid gap-x-6 gap-y-3 sm:grid-cols-3">
+              <Skeleton className="h-10" />
+              <Skeleton className="h-10" />
+              <Skeleton className="h-10" />
+            </div>
+            <Skeleton className="h-9 w-32 rounded-md" />
+          </div>
         ) : connection ? (
           <>
             <ConnectedState
@@ -206,10 +196,6 @@ export function SettingsIntegrationsPage() {
             connecting={connecting}
           />
         )}
-
-        {actionError ? (
-          <p className="text-destructive text-sm">{actionError}</p>
-        ) : null}
       </section>
 
       {/* Coming soon integrations */}

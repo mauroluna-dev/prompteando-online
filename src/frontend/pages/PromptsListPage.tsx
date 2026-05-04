@@ -9,6 +9,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  EmptyState,
+  Skeleton,
+} from "@/frontend/components/states";
 import { useGithubConnection } from "@/frontend/hooks/use-github-connection";
 import { usePrompts } from "@/frontend/hooks/use-prompts";
 
@@ -92,7 +96,7 @@ export function PromptsListPage() {
         <ListSkeleton />
       ) : filtered.length === 0 ? (
         prompts && prompts.length === 0 ? (
-          <EmptyState />
+          <PromptListEmptyState />
         ) : (
           <NoResults query={query} onClear={() => setQuery("")} />
         )
@@ -158,10 +162,10 @@ function ListSkeleton() {
           key={i}
           className="bg-card flex items-center gap-4 rounded-lg border p-4"
         >
-          <div className="bg-muted h-10 w-10 shrink-0 animate-pulse rounded-md" />
+          <Skeleton className="h-10 w-10 shrink-0 rounded-md" />
           <div className="flex flex-1 flex-col gap-2">
-            <div className="bg-muted h-4 w-1/3 animate-pulse rounded" />
-            <div className="bg-muted h-3 w-1/2 animate-pulse rounded" />
+            <Skeleton className="h-4 w-1/3" />
+            <Skeleton className="h-3 w-1/2" />
           </div>
         </li>
       ))}
@@ -169,24 +173,21 @@ function ListSkeleton() {
   );
 }
 
-function EmptyState() {
+function PromptListEmptyState() {
   return (
-    <div className="bg-card flex flex-col items-center gap-3 rounded-lg border p-12 text-center">
-      <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded-full">
-        <FileText className="h-6 w-6" />
-      </div>
-      <h2 className="font-display text-lg font-semibold">No prompts yet</h2>
-      <p className="text-muted-foreground max-w-sm text-sm">
-        Create your first prompt and start versioning. Each save is immutable
-        and exposes a public API endpoint you can call from anywhere.
-      </p>
-      <Button asChild className="mt-2">
-        <Link to="/prompts/new">
-          <Plus className="mr-1 h-4 w-4" />
-          New Prompt
-        </Link>
-      </Button>
-    </div>
+    <EmptyState
+      icon={FileText}
+      title="No prompts yet"
+      description="Create your first prompt and start versioning. Each save is immutable and exposes a public API endpoint you can call from anywhere."
+      action={
+        <Button asChild>
+          <Link to="/prompts/new">
+            <Plus className="mr-1 h-4 w-4" />
+            New Prompt
+          </Link>
+        </Button>
+      }
+    />
   );
 }
 

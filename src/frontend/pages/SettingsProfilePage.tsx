@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/frontend/components/states";
 import { useCurrentUser } from "@/frontend/hooks/use-current-user";
 import { useGithubConnection } from "@/frontend/hooks/use-github-connection";
 
@@ -33,7 +34,13 @@ export function SettingsProfilePage() {
         </div>
 
         {isLoading || !user ? (
-          <div className="text-muted-foreground text-sm">Loading…</div>
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-16 w-16 rounded-full" />
+            <div className="flex flex-1 flex-col gap-2">
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-3 w-1/4" />
+            </div>
+          </div>
         ) : (
           <>
             <div className="flex items-center gap-4">
