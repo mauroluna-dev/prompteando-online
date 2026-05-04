@@ -1,6 +1,13 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Pγ — UI redesign typography (Cal Sans + Numans + Geist Mono).
+   Self-hosted via @fontsource packages. */
+@import "@fontsource/cal-sans/400.css";
+@import "@fontsource/numans/400.css";
+@import "@fontsource/geist-mono/400.css";
+@import "@fontsource/geist-mono/500.css";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -39,11 +46,31 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Pγ — fonts */
+  --font-display: "Cal Sans", "Geist", system-ui, sans-serif;
+  --font-sans: "Numans", "Inter", system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* Pγ — semantic tokens not covered by shadcn defaults */
+  --color-success-fg: var(--ps-success-fg);
+  --color-success-bg: var(--ps-success-bg);
+  --color-warning-fg: var(--ps-warning-fg);
+  --color-warning-bg: var(--ps-warning-bg);
+  --color-info-fg: var(--ps-info-fg);
+  --color-info-bg: var(--ps-info-bg);
+  --color-diff-add-bg: var(--ps-diff-add-bg);
+  --color-diff-add-fg: var(--ps-diff-add-fg);
+  --color-diff-del-bg: var(--ps-diff-del-bg);
+  --color-diff-del-fg: var(--ps-diff-del-fg);
 }
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  /* Pγ: page bg is #FAFAFA (off-white), cards are #FFF.
+     Was oklch(1 0 0) — bumped to oklch(0.985 0 0) to give cards
+     visual separation without needing shadows everywhere. */
+  --background: oklch(0.985 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -74,6 +101,20 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Pγ — semantic tokens (Tailwind hex preserved as-is for clarity
+     since the surrounding shadcn tokens are oklch — these don't
+     need oklch precision and the design brief specifies hex). */
+  --ps-success-fg: #15803d;
+  --ps-success-bg: #dcfce7;
+  --ps-warning-fg: #a16207;
+  --ps-warning-bg: #fef3c7;
+  --ps-info-fg: #1d4ed8;
+  --ps-info-bg: #dbeafe;
+  --ps-diff-add-bg: #dcfce7;
+  --ps-diff-add-fg: #14532d;
+  --ps-diff-del-bg: #fee2e2;
+  --ps-diff-del-fg: #7f1d1d;
 }
 
 .dark {
