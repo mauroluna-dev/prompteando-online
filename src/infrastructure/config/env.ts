@@ -5,8 +5,15 @@ const schema = z.object({
   REDIS_URL: z.url(),
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 chars"),
   AUTH_URL: z.url(),
-  GITHUB_CLIENT_ID: z.string().min(1),
-  GITHUB_CLIENT_SECRET: z.string().min(1),
+  // Auth.js login OAuth App (callback: /auth/callback/github).
+  GITHUB_AUTH_CLIENT_ID: z.string().min(1),
+  GITHUB_AUTH_CLIENT_SECRET: z.string().min(1),
+  // Separate OAuth App for the Settings → Connect GitHub flow
+  // (callback: /api/integrations/github/oauth-callback). GitHub
+  // OAuth Apps only allow one callback URL each, so we register
+  // two apps to support both flows simultaneously.
+  GITHUB_INTEGRATIONS_CLIENT_ID: z.string().min(1),
+  GITHUB_INTEGRATIONS_CLIENT_SECRET: z.string().min(1),
   GOOGLE_CLIENT_ID: z.string().min(1),
   GOOGLE_CLIENT_SECRET: z.string().min(1),
   ENCRYPTION_KEY: z
