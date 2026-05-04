@@ -27,7 +27,7 @@ export class ConnectGitHubCommand {
     }
 
     const { login } = await this.gateway.getAuthenticatedUser(accessToken);
-    const repoName = `promptstash-${login}`;
+    const repoName = `${CONSTANTS.REPO_NAME_PREFIX}${login}`;
 
     const { fullName, defaultBranch } = await this.gateway.ensureRepo(
       accessToken,

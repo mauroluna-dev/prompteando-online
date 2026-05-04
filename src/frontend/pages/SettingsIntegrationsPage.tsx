@@ -158,7 +158,7 @@ export function SettingsIntegrationsPage() {
               <p className="text-muted-foreground text-sm">
                 Cada save commitea a{" "}
                 <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">
-                  promptstash-&lt;tu-usuario&gt;
+                  prompteando-&lt;tu-usuario&gt;
                 </code>
                 . Tu historial vive en tu cuenta.
               </p>
@@ -233,7 +233,7 @@ function NotConnectedState({
         <strong className="font-medium">Heads up:</strong> al autorizar pedimos
         scope <code className="font-mono">repo</code> (read+write a todos tus
         repos). Solo tocamos{" "}
-        <code className="font-mono">promptstash-&lt;tu-usuario&gt;</code> —
+        <code className="font-mono">prompteando-&lt;tu-usuario&gt;</code> —
         auditás nuestro código en GitHub si querés verificarlo.
       </div>
       <div>

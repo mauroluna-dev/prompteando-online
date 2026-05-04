@@ -33,7 +33,7 @@ function AppHeader() {
             to="/prompts"
             className="font-display text-base font-semibold tracking-tight"
           >
-            promptstash
+            prompteando
           </Link>
           <nav className="flex items-center gap-1 text-sm">
             <TabLink to="/prompts" end>

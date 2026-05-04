@@ -38,7 +38,7 @@ function LandingNav() {
           to="/"
           className="font-display text-base font-semibold tracking-tight"
         >
-          promptstash
+          prompteando
         </Link>
         <nav className="flex items-center gap-1">
           <a
@@ -289,7 +289,7 @@ function YourHistoryYourRepo() {
           <p className="text-muted-foreground text-base leading-relaxed">
             Si conectás GitHub, creamos un repo privado{" "}
             <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">
-              promptstash-&lt;tu-usuario&gt;
+              prompteando-&lt;tu-usuario&gt;
             </code>
             . Cada vez que guardás, se deja un commit con el contenido y el
             frontmatter (versión, mensaje, timestamp). Sos el único que puede
@@ -306,7 +306,7 @@ function YourHistoryYourRepo() {
           <div className="bg-muted/40 flex items-center justify-between border-b px-4 py-3">
             <div className="flex items-center gap-2">
               <Github className="h-4 w-4" />
-              <span className="font-mono text-xs">octocat/promptstash-octocat</span>
+              <span className="font-mono text-xs">octocat/prompteando-octocat</span>
             </div>
             <span className="bg-success-bg text-success-fg rounded-full px-2 py-0.5 font-mono text-[10px]">
               Privado
@@ -426,7 +426,7 @@ function Footer() {
     <footer className="bg-card border-t">
       <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 px-6 py-8 text-sm sm:flex-row">
         <div className="flex items-center gap-3">
-          <span className="font-display font-semibold">promptstash</span>
+          <span className="font-display font-semibold">prompteando.online</span>
           <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
             <History className="h-3 w-3" />
             v1.0

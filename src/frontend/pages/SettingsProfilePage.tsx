@@ -22,7 +22,7 @@ export function SettingsProfilePage() {
         <h1 className="font-display text-3xl font-semibold tracking-tight">
           Perfil
         </h1>
-        <p className="text-muted-foreground text-sm">Tu identidad en promptstash.</p>
+        <p className="text-muted-foreground text-sm">Tu identidad en prompteando.</p>
       </header>
 
       <section className="bg-card flex flex-col gap-5 rounded-lg border p-6">
