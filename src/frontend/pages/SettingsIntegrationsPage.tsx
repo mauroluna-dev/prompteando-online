@@ -5,19 +5,13 @@ import {
   CheckCircle2,
   ExternalLink,
   Github,
+  Hash,
   Loader2,
-  Trash2,
+  Slash,
   Unplug,
 } from "lucide-react";
 import { mutate } from "swr";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import type { GitHubConnectionView } from "@/domain/github-connection";
 import { useGithubConnection } from "@/frontend/hooks/use-github-connection";
 import {
@@ -38,19 +32,6 @@ const BACKFILL_FAILURE_COPY: Record<string, string> = {
     "El sync tardó demasiado en obtener el lock. Desconectá y volvé a conectar para reintentar.",
 };
 
-function failureCopy(reason: string | null | undefined): string {
-  if (!reason) return "El sync falló. Desconectá y volvé a conectar para reintentar.";
-  return (
-    BACKFILL_FAILURE_COPY[reason] ??
-    `El sync falló (${reason}). Desconectá y volvé a conectar para reintentar.`
-  );
-}
-
-function toDate(d: Date | string | null | undefined): Date | null {
-  if (!d) return null;
-  return typeof d === "string" ? new Date(d) : d;
-}
-
 const ERROR_MESSAGES: Record<string, string> = {
   cancelled: "Cancelaste la autorización en GitHub.",
   access_denied: "Cancelaste la autorización en GitHub.",
@@ -65,6 +46,19 @@ const ERROR_MESSAGES: Record<string, string> = {
   "repo-failed":
     "No pudimos crear o acceder al repo. Verificá que tengas permisos en tu cuenta.",
 };
+
+function failureCopy(reason: string | null | undefined): string {
+  if (!reason) return "El sync falló. Desconectá y volvé a conectar para reintentar.";
+  return (
+    BACKFILL_FAILURE_COPY[reason] ??
+    `El sync falló (${reason}). Desconectá y volvé a conectar para reintentar.`
+  );
+}
+
+function toDate(d: Date | string | null | undefined): Date | null {
+  if (!d) return null;
+  return typeof d === "string" ? new Date(d) : d;
+}
 
 function formatDate(d: Date | string) {
   const date = typeof d === "string" ? new Date(d) : d;
@@ -85,11 +79,8 @@ export function SettingsIntegrationsPage() {
   const errorCode = searchParams.get("error");
   const justConnected = searchParams.get("connected") === "1";
 
-  // Refresh after a successful connection so the card flips to connected.
   useEffect(() => {
-    if (justConnected) {
-      void mutate("/api/integrations/github");
-    }
+    if (justConnected) void mutate("/api/integrations/github");
   }, [justConnected]);
 
   const dismissBanner = () => {
@@ -132,9 +123,11 @@ export function SettingsIntegrationsPage() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Integraciones</h1>
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col gap-1">
+        <h1 className="font-display text-3xl font-semibold tracking-tight">
+          Integrations
+        </h1>
         <p className="text-muted-foreground text-sm">
           Conectá servicios externos para que tus prompts vivan donde vos
           decidís.
@@ -142,7 +135,7 @@ export function SettingsIntegrationsPage() {
       </header>
 
       {justConnected ? (
-        <div className="flex items-start justify-between gap-2 rounded-md border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-900 dark:text-green-200">
+        <div className="bg-success-bg text-success-fg flex items-start justify-between gap-2 rounded-md border border-emerald-200 p-3 text-sm">
           <span>GitHub conectado correctamente.</span>
           <button
             className="text-xs underline"
@@ -170,43 +163,73 @@ export function SettingsIntegrationsPage() {
         </div>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Github className="h-5 w-5" />
-            <CardTitle className="text-base">GitHub</CardTitle>
+      {/* GitHub integration card */}
+      <section className="bg-card flex flex-col gap-5 rounded-lg border p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-md">
+              <Github className="h-5 w-5" />
+            </div>
+            <div className="flex flex-col">
+              <h2 className="font-display text-lg font-semibold">GitHub</h2>
+              <p className="text-muted-foreground text-sm">
+                Cada save commitea a{" "}
+                <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">
+                  promptstash-&lt;tu-usuario&gt;
+                </code>
+                . Tu historial vive en tu cuenta.
+              </p>
+            </div>
           </div>
-          <CardDescription>
-            Cada save de un prompt se commitea a tu repo personal privado
-            <code className="bg-muted mx-1 rounded px-1 py-0.5 text-xs">
-              promptstash-&lt;tu-usuario&gt;
-            </code>
-            . Tu historial vive en tu cuenta — no nuestra.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {isLoading ? (
-            <div className="text-muted-foreground text-sm">Cargando…</div>
-          ) : connection ? (
-            <>
-              <ConnectedState
-                connection={connection}
-                onDisconnect={() => void handleDisconnect()}
-                disconnecting={disconnecting}
-              />
-              <BackfillStatusSection connection={connection} />
-            </>
-          ) : (
-            <NotConnectedState
-              onConnect={() => void handleConnect()}
-              connecting={connecting}
-            />
-          )}
-          {actionError ? (
-            <p className="text-destructive text-sm">{actionError}</p>
+          {connection ? (
+            <span className="bg-success-bg text-success-fg inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium">
+              <CheckCircle2 className="h-3 w-3" />
+              Connected
+            </span>
           ) : null}
-        </CardContent>
-      </Card>
+        </div>
+
+        {isLoading ? (
+          <div className="text-muted-foreground text-sm">Loading…</div>
+        ) : connection ? (
+          <>
+            <ConnectedState
+              connection={connection}
+              onDisconnect={() => void handleDisconnect()}
+              disconnecting={disconnecting}
+            />
+            <BackfillStatusSection connection={connection} />
+          </>
+        ) : (
+          <NotConnectedState
+            onConnect={() => void handleConnect()}
+            connecting={connecting}
+          />
+        )}
+
+        {actionError ? (
+          <p className="text-destructive text-sm">{actionError}</p>
+        ) : null}
+      </section>
+
+      {/* Coming soon integrations */}
+      <div>
+        <p className="text-muted-foreground mb-3 text-xs font-medium uppercase tracking-wide">
+          Coming soon
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ComingSoonCard
+            icon={<Hash className="h-5 w-5" />}
+            label="Slack"
+            description="Notifications on version changes."
+          />
+          <ComingSoonCard
+            icon={<Slash className="h-5 w-5" />}
+            label="Linear"
+            description="Link prompts to issues."
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -220,11 +243,12 @@ function NotConnectedState({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="text-muted-foreground rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-yellow-900 dark:text-yellow-200">
+      <div className="bg-warning-bg text-warning-fg rounded-md border border-amber-200 p-3 text-xs">
         <strong className="font-medium">Heads up:</strong> al autorizar pedimos
-        scope <code>repo</code> (read+write a todos tus repos). Solo tocamos
-        <code className="mx-1">promptstash-&lt;tu-usuario&gt;</code> — auditás
-        nuestro código en GitHub si querés verificarlo.
+        scope <code className="font-mono">repo</code> (read+write a todos tus
+        repos). Solo tocamos{" "}
+        <code className="font-mono">promptstash-&lt;tu-usuario&gt;</code> —
+        auditás nuestro código en GitHub si querés verificarlo.
       </div>
       <div>
         <Button onClick={onConnect} disabled={connecting}>
@@ -245,46 +269,35 @@ function ConnectedState({
   onDisconnect,
   disconnecting,
 }: {
-  connection: { githubLogin: string; repoFullName: string; connectedAt: Date | string };
+  connection: GitHubConnectionView;
   onDisconnect: () => void;
   disconnecting: boolean;
 }) {
   const repoUrl = `https://github.com/${connection.repoFullName}`;
   return (
     <div className="flex flex-col gap-4">
-      <dl className="grid gap-3 text-sm sm:grid-cols-2">
-        <div className="flex flex-col gap-0.5">
-          <dt className="text-muted-foreground text-xs uppercase tracking-wide">
-            Cuenta
-          </dt>
-          <dd className="font-medium">{connection.githubLogin}</dd>
-        </div>
-        <div className="flex flex-col gap-0.5">
-          <dt className="text-muted-foreground text-xs uppercase tracking-wide">
-            Repo
-          </dt>
-          <dd>
+      <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
+        <Detail label="Account" value={connection.githubLogin} />
+        <Detail
+          label="Repository"
+          value={
             <a
               href={repoUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 font-medium underline-offset-2 hover:underline"
+              className="hover:text-foreground inline-flex items-center gap-1 underline-offset-2 hover:underline"
             >
               {connection.repoFullName}
               <ExternalLink className="h-3 w-3" />
             </a>
-          </dd>
-        </div>
-        <div className="flex flex-col gap-0.5">
-          <dt className="text-muted-foreground text-xs uppercase tracking-wide">
-            Conectado
-          </dt>
-          <dd>{formatDate(connection.connectedAt)}</dd>
-        </div>
+          }
+        />
+        <Detail label="Connected" value={formatDate(connection.connectedAt)} />
       </dl>
       <div>
         <Button
           variant="outline"
+          size="sm"
           onClick={onDisconnect}
           disabled={disconnecting}
         >
@@ -293,10 +306,26 @@ function ConnectedState({
           ) : (
             <Unplug className="mr-2 h-4 w-4" />
           )}
-          Desconectar
-          <Trash2 className="ml-2 h-3 w-3 opacity-50" />
+          Disconnect
         </Button>
       </div>
+    </div>
+  );
+}
+
+function Detail({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <dt className="text-muted-foreground text-[11px] uppercase tracking-wide">
+        {label}
+      </dt>
+      <dd className="font-medium">{value}</dd>
     </div>
   );
 }
@@ -329,8 +358,8 @@ function BackfillStatusSection({
 
   if (status === "pending") {
     return (
-      <div className="flex items-center gap-3 rounded-md border bg-muted/40 p-3 text-sm">
-        <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+      <div className="bg-info-bg text-info-fg flex items-center gap-3 rounded-md border border-blue-200 p-3 text-sm">
+        <Loader2 className="h-4 w-4 animate-spin" />
         <span>Preparando el sync de tu historial existente a GitHub…</span>
       </div>
     );
@@ -339,17 +368,17 @@ function BackfillStatusSection({
   if (status === "running") {
     const pct = total > 0 ? Math.min(100, Math.round((processed / total) * 100)) : 0;
     return (
-      <div className="flex flex-col gap-2 rounded-md border bg-muted/40 p-3 text-sm">
+      <div className="bg-info-bg text-info-fg flex flex-col gap-2 rounded-md border border-blue-200 p-3 text-sm">
         <div className="flex items-center justify-between gap-2">
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-2 font-medium">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Sincronizando tu historial: {processed} de {total} commits
+            Syncing {processed} of {total} commits
           </span>
-          <span className="text-muted-foreground text-xs">{pct}%</span>
+          <span className="text-xs">{pct}%</span>
         </div>
-        <div className="bg-secondary h-2 w-full overflow-hidden rounded">
+        <div className="bg-blue-100 h-1.5 w-full overflow-hidden rounded">
           <div
-            className="bg-primary h-full transition-all"
+            className="bg-info-fg h-full transition-all"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -359,7 +388,7 @@ function BackfillStatusSection({
 
   if (status === "completed") {
     if (acked) return null;
-    if (total === 0) return null; // no banner for "nothing to sync" case
+    if (total === 0) return null;
     const recent =
       finishedAt &&
       Date.now() - finishedAt.getTime() < RECENTLY_FINISHED_WINDOW_MS;
@@ -371,7 +400,7 @@ function BackfillStatusSection({
       setAcked(true);
     };
     return (
-      <div className="flex items-start justify-between gap-2 rounded-md border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-900 dark:text-green-200">
+      <div className="bg-success-bg text-success-fg flex items-start justify-between gap-2 rounded-md border border-emerald-200 p-3 text-sm">
         <span className="flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4" />
           Sync completo: {total} commits replicados a GitHub.
@@ -388,6 +417,28 @@ function BackfillStatusSection({
     <div className="bg-destructive/10 text-destructive border-destructive/30 flex items-start gap-2 rounded-md border p-3 text-sm">
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
       <span>{failureCopy(connection.backfillFailureReason)}</span>
+    </div>
+  );
+}
+
+function ComingSoonCard({
+  icon,
+  label,
+  description,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+}) {
+  return (
+    <div className="bg-card/50 flex items-center gap-3 rounded-lg border p-4 opacity-70">
+      <div className="bg-muted text-muted-foreground flex h-10 w-10 items-center justify-center rounded-md">
+        {icon}
+      </div>
+      <div className="flex flex-col">
+        <p className="font-medium">{label}</p>
+        <p className="text-muted-foreground text-xs">{description}</p>
+      </div>
     </div>
   );
 }
