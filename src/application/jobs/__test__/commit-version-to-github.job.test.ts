@@ -66,6 +66,8 @@ function makeFakeRepos(opts: {
     findByUserId: mock(async () => opts.conn ?? null),
     save: mock(async () => {}),
     deleteByUserId: mock(async () => true),
+    updateBackfillState: mock(async () => {}),
+    findUnfinishedBackfills: mock(async () => []),
   } satisfies GitHubConnectionRepository;
 
   const promptRepo: PromptRepository = {
@@ -86,6 +88,8 @@ function makeFakeRepos(opts: {
     findById: mock(async () => opts.version ?? null),
     markGithubCommit: mock(async () => {}),
     markGithubSyncFailed: mock(async () => {}),
+    findOldestPendingForUser: mock(async () => null),
+    countPendingForUser: mock(async () => 0),
   };
 
   return { connRepo, promptRepo, versionRepo };
@@ -109,6 +113,7 @@ describe("CommitVersionToGitHubJob", () => {
       ensureRepo: mock(async () => ({ fullName: "", defaultBranch: "main", wasCreated: false })),
       ensureReadme: mock(async () => ({ committed: false })),
       commitVersion: mock(async () => ({ sha: "x" })),
+      commitVersionBackdated: mock(async () => ({ sha: "x" })),
     };
     const lock = makeFakeLock();
 
@@ -141,6 +146,7 @@ describe("CommitVersionToGitHubJob", () => {
       ensureRepo: mock(async () => ({ fullName: "", defaultBranch: "main", wasCreated: false })),
       ensureReadme: mock(async () => ({ committed: false })),
       commitVersion,
+      commitVersionBackdated: mock(async () => ({ sha: "x" })),
     };
     const lock = makeFakeLock();
 
@@ -180,6 +186,7 @@ describe("CommitVersionToGitHubJob", () => {
       getAuthenticatedUser: mock(async () => ({ login: "" })),
       ensureRepo: mock(async () => ({ fullName: "", defaultBranch: "main", wasCreated: false })),
       ensureReadme: mock(async () => ({ committed: false })),
+      commitVersionBackdated: mock(async () => ({ sha: "x" })),
       commitVersion: mock(async () => {
         calls++;
         if (calls < 3) throw new GitHubCommitGatewayError("transient");
@@ -213,6 +220,7 @@ describe("CommitVersionToGitHubJob", () => {
       getAuthenticatedUser: mock(async () => ({ login: "" })),
       ensureRepo: mock(async () => ({ fullName: "", defaultBranch: "main", wasCreated: false })),
       ensureReadme: mock(async () => ({ committed: false })),
+      commitVersionBackdated: mock(async () => ({ sha: "x" })),
       commitVersion: mock(async () => {
         throw new GitHubCommitGatewayError("transient");
       }),
@@ -244,6 +252,7 @@ describe("CommitVersionToGitHubJob", () => {
       getAuthenticatedUser: mock(async () => ({ login: "" })),
       ensureRepo: mock(async () => ({ fullName: "", defaultBranch: "main", wasCreated: false })),
       ensureReadme: mock(async () => ({ committed: false })),
+      commitVersionBackdated: mock(async () => ({ sha: "x" })),
       commitVersion: mock(async () => {
         throw new GitHubCommitGatewayError("token_invalid");
       }),
@@ -275,6 +284,7 @@ describe("CommitVersionToGitHubJob", () => {
       ensureRepo: mock(async () => ({ fullName: "", defaultBranch: "main", wasCreated: false })),
       ensureReadme: mock(async () => ({ committed: false })),
       commitVersion: mock(async () => ({ sha: "x" })),
+      commitVersionBackdated: mock(async () => ({ sha: "x" })),
     };
     const lock = makeFakeLock("always_fail");
     // Fast-forward clock so the deadline is reached after one poll.

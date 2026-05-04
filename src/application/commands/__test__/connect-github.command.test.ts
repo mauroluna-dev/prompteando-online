@@ -30,6 +30,12 @@ class FakeRepo implements GitHubConnectionRepository {
     this.deleteCalls.push(userId);
     return true;
   }
+
+  async updateBackfillState(): Promise<void> {}
+
+  async findUnfinishedBackfills(): Promise<GitHubConnection[]> {
+    return [];
+  }
 }
 
 class FakeGateway implements GitHubGateway {
@@ -72,6 +78,10 @@ class FakeGateway implements GitHubGateway {
 
   async commitVersion(): Promise<{ sha: string }> {
     throw new Error("commitVersion not exercised in these tests");
+  }
+
+  async commitVersionBackdated(): Promise<{ sha: string }> {
+    throw new Error("commitVersionBackdated not exercised in these tests");
   }
 }
 
