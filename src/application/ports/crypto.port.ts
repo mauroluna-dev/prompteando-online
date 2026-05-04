@@ -3,4 +3,6 @@ export interface CryptoPort {
   randomBytes(n: number): Uint8Array;
   hashPassword(plain: string): Promise<string>;
   verifyPassword(plain: string, hash: string): Promise<boolean>;
+  encrypt(plain: string): string;
+  decrypt(ciphertext: string): string;
 }
