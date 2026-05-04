@@ -7,6 +7,7 @@ export type PromptVersionRow = {
   content: string;
   commitMessage: string | null;
   githubCommitSha: string | null;
+  githubSyncError: string | null;
   createdAt: Date;
 };
 
@@ -18,6 +19,7 @@ export class PromptVersion {
     readonly content: string,
     readonly commitMessage: string | null,
     private _githubCommitSha: string | null,
+    private _githubSyncError: string | null,
     readonly createdAt: Date,
   ) {}
 
@@ -36,6 +38,7 @@ export class PromptVersion {
       content,
       commitMessage,
       null,
+      null,
       now,
     );
   }
@@ -48,6 +51,7 @@ export class PromptVersion {
       row.content,
       row.commitMessage,
       row.githubCommitSha,
+      row.githubSyncError,
       row.createdAt,
     );
   }
@@ -56,8 +60,17 @@ export class PromptVersion {
     return this._githubCommitSha;
   }
 
+  get githubSyncError(): string | null {
+    return this._githubSyncError;
+  }
+
   attachGithubCommit(sha: string): void {
     this._githubCommitSha = sha;
+    this._githubSyncError = null;
+  }
+
+  markGithubSyncFailed(error: string): void {
+    this._githubSyncError = error;
   }
 
   toJSON(): PromptVersionDTO {
@@ -68,6 +81,7 @@ export class PromptVersion {
       content: this.content,
       commitMessage: this.commitMessage,
       githubCommitSha: this._githubCommitSha,
+      githubSyncError: this._githubSyncError,
       createdAt: this.createdAt,
     };
   }
@@ -80,5 +94,6 @@ export type PromptVersionDTO = {
   content: string;
   commitMessage: string | null;
   githubCommitSha: string | null;
+  githubSyncError: string | null;
   createdAt: Date;
 };

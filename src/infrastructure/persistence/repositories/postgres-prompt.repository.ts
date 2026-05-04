@@ -32,6 +32,15 @@ export class PostgresPromptRepository implements PromptRepository {
       });
   }
 
+  async findById(promptId: string): Promise<Prompt | null> {
+    const rows = await this.db
+      .select()
+      .from(prompts)
+      .where(eq(prompts.id, promptId))
+      .limit(1);
+    return rows[0] ? Prompt.fromRow(rows[0]) : null;
+  }
+
   async findBySlug(userId: string, slug: SlugType): Promise<Prompt | null> {
     const rows = await this.db
       .select()

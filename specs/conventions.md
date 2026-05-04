@@ -265,6 +265,7 @@ Every file's role is encoded in its name suffix.
 |---|---|---|
 | `.command.ts` | application command | `create-prompt.command.ts` |
 | `.query.ts` | application query | `get-prompt-by-slug.query.ts` |
+| `.job.ts` | application background job | `commit-version-to-github.job.ts` |
 | `.port.ts` | application port (interface) | `prompt-repository.port.ts` |
 | `.entity.ts` | domain entity | `prompt.entity.ts` |
 | `.vo.ts` | domain value object | `slug.vo.ts` |
@@ -278,6 +279,25 @@ Every file's role is encoded in its name suffix.
 Files without role-suffixes are reserved for technical glue
 (`server.ts`, `db.ts`, `redis.ts`, `index.ts`, `constants.ts`,
 `env.ts`).
+
+### Jobs
+
+A **Job** is an application-layer service invoked by composition
+(not by a caller awaiting its result). It's a side-effect orchestrator:
+chains several ports to do a unit of background work — typically
+fire-and-forget from an HTTP handler after a Command completes.
+
+- Naming: `<verb>-<noun>.job.ts`, class `<Verb><Noun>Job`.
+- Single public method: `run(input)`. No return value of business
+  significance (state mutation is the result).
+- Errors are persisted as state, not thrown — the dispatcher
+  doesn't await success.
+- Lives under `src/application/jobs/`.
+
+Jobs are distinct from Commands: a Command models a user intention
+dispatched by a handler that awaits it; a Job models an internal
+side-effect dispatched as fire-and-forget. Use a Job when no caller
+needs the result and failure is recoverable via persisted state.
 
 ---
 
