@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { Prompt, PromptName, Slug } from "@/domain/prompt";
 import { PromptVersion, VersionNumber } from "@/domain/prompt-version";
-import { renderVersionContent } from "../render-version-content";
+import {
+  renderVersionContent,
+  renderVersionContentRaw,
+} from "../render-version-content";
 
 function makePrompt(name: string, slug: string): Prompt {
   return Prompt.create(
@@ -85,5 +88,17 @@ describe("renderVersionContent", () => {
     const version = makeVersion(1, "x", null);
     const out = renderVersionContent(prompt, version);
     expect(out).toContain('prompt_name: "a\\"b\\\\c"');
+  });
+
+  test("renderVersionContentRaw matches renderVersionContent for the same inputs", () => {
+    const prompt = makePrompt("Hello: World", "hello-world");
+    const version = makeVersion(2, "body\n", "msg");
+    const fromEntity = renderVersionContent(prompt, version);
+    const fromRaw = renderVersionContentRaw(
+      "Hello: World",
+      "hello-world",
+      version,
+    );
+    expect(fromRaw).toBe(fromEntity);
   });
 });
