@@ -57,3 +57,11 @@ export class RateLimitExceededError extends Error {
     this.name = "RateLimitExceededError";
   }
 }
+
+export class InvalidMetricsRangeError extends Error {
+  readonly code = "INVALID_METRICS_RANGE" as const;
+  constructor(value: string) {
+    super(`Invalid metrics range "${value}". Expected one of: 7d, 30d, 90d.`);
+    this.name = "InvalidMetricsRangeError";
+  }
+}
