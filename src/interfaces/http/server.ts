@@ -32,6 +32,7 @@ import { OctokitGitHubAdapter } from "@/infrastructure/github/octokit-github.ada
 import { PostgresGitHubConnectionRepository } from "@/infrastructure/persistence/repositories/postgres-github-connection.repository";
 import { BunRedisLock } from "@/infrastructure/cache/bun-redis-lock.adapter";
 import { CommitVersionToGitHubJob } from "@/application/jobs/commit-version-to-github.job";
+import { BackfillGitHubHistoryJob } from "@/application/jobs/backfill-github-history.job";
 import {
   signOAuthState,
   verifyOAuthState,
@@ -112,16 +113,40 @@ const commitVersionToGithub = new CommitVersionToGitHubJob(
   cryptoAdapter,
   githubLock,
 );
+const backfillGithubHistory = new BackfillGitHubHistoryJob(
+  githubConnectionRepo,
+  versionRepo,
+  githubGateway,
+  cryptoAdapter,
+  githubLock,
+);
 
-function dispatchGithubCommit(
+async function dispatchGithubCommitIfReady(
   userId: string,
   promptId: string,
   versionId: string,
-): void {
+): Promise<void> {
+  // Suppress per-version commit dispatch while a backfill is in
+  // flight: the backfill loop will pick up this version on its next
+  // fetch and commit it in chronological order. Avoids the "newer
+  // P11 commit gets overwritten by older backfill commit" race.
+  const conn = await githubConnectionRepo.findByUserId(userId);
+  if (!conn) return;
+  const busy =
+    conn.backfillStatus === "pending" || conn.backfillStatus === "running";
+  if (busy) return;
   void commitVersionToGithub
     .run({ userId, promptId, versionId })
     .catch((err: unknown) => {
       console.error("[github-commit-job]", err);
+    });
+}
+
+function dispatchBackfill(userId: string, force: boolean): void {
+  void backfillGithubHistory
+    .run({ userId, force })
+    .catch((err: unknown) => {
+      console.error("[github-backfill-job]", err);
     });
 }
 
@@ -243,7 +268,7 @@ const app = new Elysia()
         parsed.commitMessage,
       );
       if (!result.isNoOp) {
-        dispatchGithubCommit(
+        await dispatchGithubCommitIfReady(
           userOr401.id,
           result.version.promptId,
           result.version.id,
@@ -308,7 +333,7 @@ const app = new Elysia()
         versionNumber,
       );
       if (!result.isNoOp) {
-        dispatchGithubCommit(
+        await dispatchGithubCommitIfReady(
           userOr401.id,
           result.version.promptId,
           result.version.id,
@@ -421,6 +446,10 @@ const app = new Elysia()
 
     try {
       await connectGithub.execute(userId, query.code);
+      // Auto-trigger backfill of pre-existing prompt history.
+      // Idempotent + state-guarded: a fresh connect resets backfill
+      // fields, so the job runs from scratch.
+      dispatchBackfill(userId, false);
       return back("connected=1");
     } catch (err) {
       if (err instanceof GitHubInsufficientScopeError) {
@@ -490,6 +519,23 @@ const app = new Elysia()
       },
     });
   });
+
+// Boot reconciler: resume backfills interrupted by a server crash.
+// Each unfinished connection re-invokes the job with force=true so
+// it bypasses the "running, no force" early-return guard.
+void (async () => {
+  try {
+    const unfinished = await githubConnectionRepo.findUnfinishedBackfills();
+    for (const conn of unfinished) {
+      console.log(
+        `[backfill-reconciler] resuming user=${conn.userId} status=${conn.backfillStatus ?? "null"}`,
+      );
+      dispatchBackfill(conn.userId, true);
+    }
+  } catch (err) {
+    console.error("[backfill-reconciler] init failed", err);
+  }
+})();
 
 const server = Bun.serve({
   port: 3010,
