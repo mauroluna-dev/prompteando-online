@@ -2,13 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Github, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useCurrentUser } from "@/frontend/hooks/use-current-user";
 import { signInWith } from "@/frontend/lib/auth-actions";
 
@@ -59,42 +52,79 @@ export function LoginPage() {
   const isPending = pending !== null;
 
   return (
-    <div className="container mx-auto flex min-h-screen items-center justify-center p-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="gap-2 text-center">
-          <CardTitle className="text-2xl font-bold">promptstash</CardTitle>
-          <CardDescription>
-            Versionador de prompts. Iniciá sesión para empezar.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2">
-          <Button
-            className="w-full"
-            disabled={isPending}
-            onClick={() => handleClick("github")}
-          >
-            {pending === "github" ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Github className="mr-2 h-4 w-4" />
-            )}
-            Continuar con GitHub
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full"
-            disabled={isPending}
-            onClick={() => handleClick("google")}
-          >
-            {pending === "google" ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <GoogleIcon className="mr-2 h-4 w-4" />
-            )}
-            Continuar con Google
-          </Button>
-        </CardContent>
-      </Card>
+    <div className="flex min-h-screen flex-col">
+      <Nav />
+      <main className="flex flex-1 flex-col items-center justify-center px-6 py-12">
+        <div className="flex w-full max-w-md flex-col items-center gap-8">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <h1 className="font-display text-4xl font-semibold leading-[1.1] tracking-tight">
+              Welcome to promptstash
+            </h1>
+            <p className="text-base leading-relaxed text-muted-foreground">
+              Versioná tus prompts. Nunca pierdas la última que andaba.
+            </p>
+          </div>
+
+          <div className="flex w-full flex-col gap-3 rounded-xl border bg-card p-8 shadow-sm">
+            <Button
+              size="xl"
+              className="w-full"
+              disabled={isPending}
+              onClick={() => handleClick("github")}
+            >
+              {pending === "github" ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              ) : (
+                <Github className="mr-2 h-5 w-5" />
+              )}
+              Continuar con GitHub
+            </Button>
+            <Button
+              size="xl"
+              variant="outline"
+              className="w-full"
+              disabled={isPending}
+              onClick={() => handleClick("google")}
+            >
+              {pending === "google" ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              ) : (
+                <GoogleIcon className="mr-2 h-5 w-5" />
+              )}
+              Continuar con Google
+            </Button>
+            <div className="my-1 h-px bg-border" />
+            <p className="text-center text-xs leading-snug text-muted-foreground">
+              Solo leemos los repos que vos crees con promptstash. Auditá
+              nuestro código en GitHub si querés verificarlo.
+            </p>
+          </div>
+
+          <p className="text-center text-xs text-muted-foreground">
+            ¿Sin cuenta de GitHub o Google? Próximamente más opciones.
+          </p>
+        </div>
+      </main>
     </div>
+  );
+}
+
+function Nav() {
+  return (
+    <header className="flex h-16 w-full items-center justify-between border-b bg-card px-8">
+      <span className="font-display text-lg font-semibold tracking-tight">
+        promptstash
+      </span>
+      <nav className="flex items-center gap-6">
+        <a
+          href="https://github.com/mauroluna-dev/promptstash"
+          target="_blank"
+          rel="noreferrer"
+          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          GitHub
+        </a>
+      </nav>
+    </header>
   );
 }
