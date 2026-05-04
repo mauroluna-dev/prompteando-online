@@ -38,7 +38,7 @@ function LandingNav() {
           to="/"
           className="font-display text-base font-semibold tracking-tight"
         >
-          promptstash
+          prompteando
         </Link>
         <nav className="flex items-center gap-1">
           <a
@@ -51,7 +51,7 @@ function LandingNav() {
           </a>
           <Button asChild size="sm">
             <Link to="/login">
-              Sign in
+              Iniciar sesión
               <ArrowRight className="ml-1 h-3.5 w-3.5" />
             </Link>
           </Button>
@@ -76,9 +76,9 @@ function Hero() {
         </span>
       </h1>
       <p className="text-muted-foreground max-w-2xl text-base leading-relaxed sm:text-lg">
-        Cada Save crea una versión inmutable. Cada prompt expone un endpoint que
-        consumís desde n8n, curl o fetch. Si conectás GitHub, todo se replica
-        a TU repo.
+        Cada vez que guardás se crea una versión inmutable. Cada prompt expone
+        un endpoint que consumís desde n8n, curl o fetch. Si conectás GitHub,
+        todo se replica a TU repo.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button asChild size="xl">
@@ -105,49 +105,49 @@ function HeroScreenshot() {
         <span className="h-3 w-3 rounded-full bg-amber-500/70" />
         <span className="h-3 w-3 rounded-full bg-emerald-500/70" />
         <span className="text-muted-foreground/60 ml-3 font-mono text-xs">
-          onboarding-welcome.md · v3 → v4
+          bienvenida-onboarding.md · v3 → v4
         </span>
       </div>
       <div className="grid gap-px bg-white/5 sm:grid-cols-2">
         <pre className="bg-foreground/95 overflow-x-auto p-5 font-mono text-xs leading-relaxed text-white/80">
           <code>
             {`---
-prompt_name: Onboarding Welcome
-slug: onboarding-welcome
+prompt_name: Bienvenida Onboarding
+slug: bienvenida-onboarding
 version: 3
 ---
 
-You are a friendly onboarding
-assistant for {{product_name}}.
+Sos un asistente de onboarding
+amable para {{producto}}.
 
 `}
             <span className="bg-diff-del-bg/20 text-diff-del-bg block">
-              - Keep responses under 2 sentences.
+              - Mantené las respuestas en menos de 2 oraciones.
             </span>
-            <span>{`Guide the user through setup
-in 3 steps.`}</span>
+            <span>{`Guiá al usuario por el setup
+en 3 pasos.`}</span>
           </code>
         </pre>
         <pre className="bg-foreground/95 overflow-x-auto p-5 font-mono text-xs leading-relaxed text-white/80">
           <code>
             {`---
-prompt_name: Onboarding Welcome
-slug: onboarding-welcome
+prompt_name: Bienvenida Onboarding
+slug: bienvenida-onboarding
 version: 4
 ---
 
-You are a friendly onboarding
-assistant for {{product_name}}.
+Sos un asistente de onboarding
+amable para {{producto}}.
 
 `}
             <span className="bg-diff-add-bg/30 text-diff-add-bg block">
-              + Keep responses ≤ 2 sentences.
+              + Respuestas de máximo 2 oraciones.
             </span>
             <span className="bg-diff-add-bg/30 text-diff-add-bg block">
-              + Avoid jargon. Use emoji 👋.
+              + Evitá tecnicismos. Usá emoji 👋.
             </span>
-            <span>{`Guide the user through setup
-in 3 steps.`}</span>
+            <span>{`Guiá al usuario por el setup
+en 3 pasos.`}</span>
           </code>
         </pre>
       </div>
@@ -161,19 +161,19 @@ function HowItWorks() {
       n: "1",
       icon: Code2,
       title: "Escribí tu prompt",
-      copy: "Pegalo desde Cursor, ChatGPT, Claude. Cada save versiona automático.",
+      copy: "Pegalo desde Cursor, ChatGPT o Claude. Cada vez que guardás, versiona solo.",
     },
     {
       n: "2",
       icon: Plug,
       title: "Generá tu API key",
-      copy: "Una key por workflow. La controlás vos, la revocás cuando quieras.",
+      copy: "Una key por workflow. La controlás vos y la revocás cuando quieras.",
     },
     {
       n: "3",
       icon: Rocket,
-      title: "Consumilo desde donde sea",
-      copy: "n8n, Zapier, curl, fetch. Bearer token + slug = el último prompt aprobado.",
+      title: "Consumilo desde donde quieras",
+      copy: "n8n, Zapier, curl, fetch. Bearer token + slug = la última versión aprobada.",
     },
   ];
   return (
@@ -182,7 +182,7 @@ function HowItWorks() {
       className="mx-auto w-full max-w-6xl px-6 py-20 text-center"
     >
       <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-        How it works
+        Cómo funciona
       </h2>
       <p className="text-muted-foreground mx-auto mt-3 max-w-xl text-sm">
         De escribir el prompt a consumirlo en producción en menos de 5 minutos.
@@ -220,32 +220,32 @@ function ZeroFriction() {
     {
       icon: Lock,
       title: "Versiones inmutables",
-      copy: "Una vez guardada, una versión nunca cambia. Restore es una versión nueva, no un overwrite.",
+      copy: "Una vez guardada, una versión no cambia más. Restaurar crea una versión nueva, nunca pisa una vieja.",
     },
     {
       icon: Zap,
-      title: "API first",
-      copy: "El endpoint público es el contrato. Sin SDKs custom, sin webhooks, sin lock-in.",
+      title: "API primero",
+      copy: "El endpoint público es el contrato. Sin SDKs propios, sin webhooks, sin vendor lock-in.",
     },
     {
       icon: GitBranch,
-      title: "GitHub mirror",
-      copy: "Cada save replica un commit a TU repo. Si cerramos mañana, te quedás con todo.",
+      title: "Espejo en GitHub",
+      copy: "Cada vez que guardás, se replica un commit en TU repo. Si cerramos mañana, te quedás con todo.",
     },
     {
       icon: Download,
-      title: "Export a un click",
-      copy: "Sin GitHub también podés bajarte tu historial completo en ZIP / JSON.",
+      title: "Export en un click",
+      copy: "Sin GitHub también podés bajarte tu historial completo en ZIP o JSON.",
     },
   ];
   return (
     <section className="bg-muted/30 border-y">
       <div className="mx-auto w-full max-w-6xl px-6 py-20 text-center">
         <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-          Built for zero friction
+          Pensado para cero fricción
         </h2>
         <p className="text-muted-foreground mx-auto mt-3 max-w-xl text-sm">
-          Lo justo y necesario. Sin features de las que no necesitás todavía.
+          Lo justo y necesario. Sin funciones que todavía no necesitás.
         </p>
         <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((f) => {
@@ -289,16 +289,16 @@ function YourHistoryYourRepo() {
           <p className="text-muted-foreground text-base leading-relaxed">
             Si conectás GitHub, creamos un repo privado{" "}
             <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">
-              promptstash-&lt;tu-usuario&gt;
+              prompteando-&lt;tu-usuario&gt;
             </code>
-            . Cada save deja un commit con el contenido + frontmatter (versión,
-            mensaje, timestamp). Vos sos el único que puede leerlo. Si cerramos
-            mañana, te quedás con todo el historial.
+            . Cada vez que guardás, se deja un commit con el contenido y el
+            frontmatter (versión, mensaje, timestamp). Sos el único que puede
+            leerlo. Si cerramos mañana, te quedás con todo el historial.
           </p>
           <div className="flex flex-col gap-2 text-sm">
             <ChecklistItem>Commits cronológicos con autor real</ChecklistItem>
-            <ChecklistItem>Backfill al conectar tarde</ChecklistItem>
-            <ChecklistItem>Disconnect en un click</ChecklistItem>
+            <ChecklistItem>Backfill cuando conectás tarde</ChecklistItem>
+            <ChecklistItem>Desconectás en un click</ChecklistItem>
           </div>
         </div>
 
@@ -306,32 +306,32 @@ function YourHistoryYourRepo() {
           <div className="bg-muted/40 flex items-center justify-between border-b px-4 py-3">
             <div className="flex items-center gap-2">
               <Github className="h-4 w-4" />
-              <span className="font-mono text-xs">octocat/promptstash-octocat</span>
+              <span className="font-mono text-xs">octocat/prompteando-octocat</span>
             </div>
             <span className="bg-success-bg text-success-fg rounded-full px-2 py-0.5 font-mono text-[10px]">
-              Private
+              Privado
             </span>
           </div>
           <ul className="divide-y text-sm">
             {[
               {
-                msg: "Onboarding Welcome v4: Add restart step",
-                t: "2 hours ago",
+                msg: "Bienvenida Onboarding v4: agrego paso de reinicio",
+                t: "hace 2 horas",
                 sha: "8a3f12a",
               },
               {
-                msg: "Onboarding Welcome v3: Restore from v1",
-                t: "1 day ago",
+                msg: "Bienvenida Onboarding v3: restaurada desde v1",
+                t: "hace 1 día",
                 sha: "ce4ab90",
               },
               {
-                msg: "Product Description v7: Tighten paragraphs",
-                t: "1 day ago",
+                msg: "Descripción de producto v7: párrafos más concisos",
+                t: "hace 1 día",
                 sha: "c041afc",
               },
               {
-                msg: "Product Description v6: Initial release",
-                t: "3 days ago",
+                msg: "Descripción de producto v6: versión inicial",
+                t: "hace 3 días",
                 sha: "abade71",
               },
             ].map((c) => (
@@ -379,7 +379,7 @@ function TechStack() {
   return (
     <section className="mx-auto w-full max-w-6xl px-6 py-12 text-center">
       <p className="text-muted-foreground mb-5 font-mono text-xs uppercase tracking-wide">
-        Built on
+        Construido con
       </p>
       <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
         {stack.map((tech) => (
@@ -403,8 +403,8 @@ function FinalCTA() {
           Empezá a versionar tus prompts hoy.
         </h2>
         <p className="text-background/70 max-w-xl text-sm leading-relaxed">
-          Free, sin trial, sin paywall. Sign up con GitHub o Google y en menos
-          de 5 minutos tenés tu primer prompt corriendo en producción.
+          Gratis, sin prueba limitada, sin paywall. Registrate con GitHub o
+          Google y en menos de 5 minutos tenés tu primer prompt en producción.
         </p>
         <Button
           asChild
@@ -426,7 +426,7 @@ function Footer() {
     <footer className="bg-card border-t">
       <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 px-6 py-8 text-sm sm:flex-row">
         <div className="flex items-center gap-3">
-          <span className="font-display font-semibold">promptstash</span>
+          <span className="font-display font-semibold">prompteando.online</span>
           <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
             <History className="h-3 w-3" />
             v1.0
@@ -442,7 +442,7 @@ function Footer() {
             GitHub
           </a>
           <Link to="/login" className="hover:text-foreground transition-colors">
-            Sign in
+            Iniciar sesión
           </Link>
         </div>
       </div>

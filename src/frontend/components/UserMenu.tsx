@@ -29,7 +29,7 @@ export function UserMenu() {
           variant="ghost"
           size="icon"
           className="rounded-full"
-          aria-label="Open user menu"
+          aria-label="Abrir menú de usuario"
         >
           <Avatar className="h-8 w-8">
             {user.image ? <AvatarImage src={user.image} alt="" /> : null}
@@ -49,7 +49,7 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => void signOut()}>
           <LogOut className="mr-2 h-4 w-4" />
-          Sign out
+          Cerrar sesión
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

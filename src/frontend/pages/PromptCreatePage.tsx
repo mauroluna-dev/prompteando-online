@@ -19,8 +19,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { createPrompt } from "@/frontend/lib/api/prompts";
 
 const formSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(100),
-  description: z.string().max(500).optional(),
+  name: z
+    .string()
+    .trim()
+    .min(1, "El nombre es obligatorio")
+    .max(100, "Máximo 100 caracteres"),
+  description: z.string().max(500, "Máximo 500 caracteres").optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -48,7 +52,9 @@ export function PromptCreatePage() {
       await mutate("/api/prompts");
       navigate(`/prompts/${prompt.slug}`, { replace: true });
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to create prompt");
+      setSubmitError(
+        err instanceof Error ? err.message : "No se pudo crear el prompt",
+      );
     }
   };
 
@@ -57,25 +63,25 @@ export function PromptCreatePage() {
       <Button asChild variant="ghost" className="mb-4">
         <Link to="/prompts">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+          Volver
         </Link>
       </Button>
 
       <Card>
         <CardHeader>
-          <CardTitle>New prompt</CardTitle>
+          <CardTitle>Nuevo prompt</CardTitle>
           <CardDescription>
-            A slug will be auto-generated from the name.
+            El slug se genera automáticamente a partir del nombre.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">Nombre</Label>
               <Input
                 id="name"
                 {...register("name")}
-                placeholder="Marketing email v1"
+                placeholder="Email de marketing v1"
                 autoFocus
               />
               {errors.name ? (
@@ -84,11 +90,11 @@ export function PromptCreatePage() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="description">Description (optional)</Label>
+              <Label htmlFor="description">Descripción (opcional)</Label>
               <Textarea
                 id="description"
                 {...register("description")}
-                placeholder="Short emails for product launches"
+                placeholder="Emails cortos para lanzamientos de producto"
                 rows={3}
               />
               {errors.description ? (
@@ -102,13 +108,13 @@ export function PromptCreatePage() {
 
             <div className="flex justify-end gap-2">
               <Button asChild variant="ghost" type="button">
-                <Link to="/prompts">Cancel</Link>
+                <Link to="/prompts">Cancelar</Link>
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
-                Create
+                Crear
               </Button>
             </div>
           </form>

@@ -64,7 +64,7 @@ function toDate(d: Date | string | null | undefined): Date | null {
 
 function formatDate(d: Date | string) {
   const date = typeof d === "string" ? new Date(d) : d;
-  return date.toLocaleDateString(undefined, {
+  return date.toLocaleDateString("es-AR", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -138,7 +138,7 @@ export function SettingsIntegrationsPage() {
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
         <h1 className="font-display text-3xl font-semibold tracking-tight">
-          Integrations
+          Integraciones
         </h1>
         <p className="text-muted-foreground text-sm">
           Conectá servicios externos para que tus prompts vivan donde vos
@@ -158,7 +158,7 @@ export function SettingsIntegrationsPage() {
               <p className="text-muted-foreground text-sm">
                 Cada save commitea a{" "}
                 <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">
-                  promptstash-&lt;tu-usuario&gt;
+                  prompteando-&lt;tu-usuario&gt;
                 </code>
                 . Tu historial vive en tu cuenta.
               </p>
@@ -167,7 +167,7 @@ export function SettingsIntegrationsPage() {
           {connection ? (
             <span className="bg-success-bg text-success-fg inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium">
               <CheckCircle2 className="h-3 w-3" />
-              Connected
+              Conectado
             </span>
           ) : null}
         </div>
@@ -201,18 +201,18 @@ export function SettingsIntegrationsPage() {
       {/* Coming soon integrations */}
       <div>
         <p className="text-muted-foreground mb-3 text-xs font-medium uppercase tracking-wide">
-          Coming soon
+          Próximamente
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           <ComingSoonCard
             icon={<Hash className="h-5 w-5" />}
             label="Slack"
-            description="Notifications on version changes."
+            description="Notificaciones cuando cambia una versión."
           />
           <ComingSoonCard
             icon={<Slash className="h-5 w-5" />}
             label="Linear"
-            description="Link prompts to issues."
+            description="Conectá prompts con issues."
           />
         </div>
       </div>
@@ -233,7 +233,7 @@ function NotConnectedState({
         <strong className="font-medium">Heads up:</strong> al autorizar pedimos
         scope <code className="font-mono">repo</code> (read+write a todos tus
         repos). Solo tocamos{" "}
-        <code className="font-mono">promptstash-&lt;tu-usuario&gt;</code> —
+        <code className="font-mono">prompteando-&lt;tu-usuario&gt;</code> —
         auditás nuestro código en GitHub si querés verificarlo.
       </div>
       <div>
@@ -263,9 +263,9 @@ function ConnectedState({
   return (
     <div className="flex flex-col gap-4">
       <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
-        <Detail label="Account" value={connection.githubLogin} />
+        <Detail label="Cuenta" value={connection.githubLogin} />
         <Detail
-          label="Repository"
+          label="Repositorio"
           value={
             <a
               href={repoUrl}
@@ -278,7 +278,7 @@ function ConnectedState({
             </a>
           }
         />
-        <Detail label="Connected" value={formatDate(connection.connectedAt)} />
+        <Detail label="Conectado" value={formatDate(connection.connectedAt)} />
       </dl>
       <div>
         <Button
@@ -292,7 +292,7 @@ function ConnectedState({
           ) : (
             <Unplug className="mr-2 h-4 w-4" />
           )}
-          Disconnect
+          Desconectar
         </Button>
       </div>
     </div>
@@ -358,7 +358,7 @@ function BackfillStatusSection({
         <div className="flex items-center justify-between gap-2">
           <span className="flex items-center gap-2 font-medium">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Syncing {processed} of {total} commits
+            Sincronizando {processed} de {total} commits
           </span>
           <span className="text-xs">{pct}%</span>
         </div>

@@ -64,13 +64,13 @@ export function ApiKeyDetailPage() {
     return (
       <EmptyState
         icon={KeyRound}
-        title="Key not found"
-        description="It may have been revoked, deleted, or never existed for this account."
+        title="Key no encontrada"
+        description="Puede que la hayas revocado, eliminado o que nunca haya existido en esta cuenta."
         action={
           <Button asChild>
             <Link to="/settings/api-keys">
               <ArrowLeft className="mr-1 h-4 w-4" />
-              Back to API keys
+              Volver a API keys
             </Link>
           </Button>
         }
@@ -83,7 +83,7 @@ export function ApiKeyDetailPage() {
       <Button asChild variant="ghost" size="sm" className="self-start">
         <Link to="/settings/api-keys">
           <ArrowLeft className="mr-1 h-4 w-4" />
-          Back to API keys
+          Volver a API keys
         </Link>
       </Button>
 
@@ -103,7 +103,9 @@ export function ApiKeyDetailPage() {
         <DashboardSkeleton />
       ) : error ? (
         <p className="text-destructive text-sm">
-          {error instanceof Error ? error.message : "Failed to load metrics"}
+          {error instanceof Error
+            ? error.message
+            : "No se pudieron cargar las métricas"}
         </p>
       ) : data ? (
         <>
@@ -145,13 +147,13 @@ function LatencyOverTime({
     <section className="bg-card flex flex-col gap-3 rounded-lg border p-4">
       <header className="flex items-center justify-between">
         <h3 className="font-display text-sm font-semibold">
-          Latency over time
+          Latencia en el tiempo
         </h3>
         <span className="text-muted-foreground text-xs">{rangeLabel}</span>
       </header>
       {data.length === 0 ? (
         <div className="bg-muted/40 text-muted-foreground flex h-[200px] items-center justify-center rounded text-sm">
-          No latency data in this range.
+          Sin datos de latencia en este rango.
         </div>
       ) : (
         <div className="w-full">
@@ -172,7 +174,7 @@ function LatencyOverTime({
                 axisLine={false}
                 tick={{ fontSize: 10 }}
                 tickFormatter={(d: string) =>
-                  new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, {
+                  new Date(`${d}T00:00:00Z`).toLocaleDateString("es-AR", {
                     month: "short",
                     day: "2-digit",
                     timeZone: "UTC",
@@ -232,21 +234,21 @@ function StatusBreakdown({
     <section className="bg-card flex flex-col gap-3 rounded-lg border p-4">
       <header className="flex items-center justify-between">
         <h3 className="font-display text-sm font-semibold">
-          Errors by status code
+          Errores por status code
         </h3>
         <span className="text-muted-foreground text-xs">{rangeLabel}</span>
       </header>
       {data.length === 0 ? (
         <p className="text-muted-foreground text-sm">
-          Status-code breakdown is not tracked yet (V1 only stores aggregate
-          error counts). Coming in a follow-up phase.
+          Por ahora no rastreamos el desglose por status code (V1 solo guarda
+          un total de errores). Llega en una próxima fase.
         </p>
       ) : (
         <table className="w-full text-sm">
           <thead className="text-muted-foreground text-left text-xs uppercase tracking-wide">
             <tr>
               <th className="py-2 font-medium">Status</th>
-              <th className="py-2 text-right font-medium">Count</th>
+              <th className="py-2 text-right font-medium">Cantidad</th>
             </tr>
           </thead>
           <tbody>
@@ -254,7 +256,7 @@ function StatusBreakdown({
               <tr key={row.statusCode} className="border-t">
                 <td className="py-2 font-mono">{row.statusCode}</td>
                 <td className="py-2 text-right tabular-nums">
-                  {row.count.toLocaleString()}
+                  {row.count.toLocaleString("es-AR")}
                 </td>
               </tr>
             ))}

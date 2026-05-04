@@ -11,7 +11,7 @@ export function RangeToggle({
   value,
   onChange,
   className,
-  label = "Range",
+  label = "Rango",
 }: {
   value: MetricsRangeValue;
   onChange: (next: MetricsRangeValue) => void;

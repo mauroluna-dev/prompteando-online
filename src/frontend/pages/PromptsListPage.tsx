@@ -20,12 +20,12 @@ function formatRelative(d: Date | string) {
   const date = typeof d === "string" ? new Date(d) : d;
   const diffMs = Date.now() - date.getTime();
   const diffH = Math.floor(diffMs / (1000 * 60 * 60));
-  if (diffH < 1) return "just now";
-  if (diffH < 24) return `${diffH}h ago`;
+  if (diffH < 1) return "recién";
+  if (diffH < 24) return `hace ${diffH}h`;
   const diffD = Math.floor(diffH / 24);
-  if (diffD === 1) return "yesterday";
-  if (diffD < 30) return `${diffD}d ago`;
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  if (diffD === 1) return "ayer";
+  if (diffD < 30) return `hace ${diffD}d`;
+  return date.toLocaleDateString("es-AR", { month: "short", day: "numeric" });
 }
 
 // Pγ: each prompt gets a colored icon tile derived from its slug for
@@ -66,10 +66,10 @@ export function PromptsListPage() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1">
           <h1 className="font-display text-3xl font-semibold tracking-tight">
-            Your Prompts
+            Tus prompts
           </h1>
           <p className="text-sm text-muted-foreground">
-            {prompts ? promptCountSummary(prompts.length, hasGithub) : "Loading…"}
+            {prompts ? promptCountSummary(prompts.length, hasGithub) : "Cargando…"}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -79,14 +79,14 @@ export function PromptsListPage() {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search prompts…"
+              placeholder="Buscar prompts…"
               className="h-9 w-60 pl-9"
             />
           </div>
           <Button asChild>
             <Link to="/prompts/new">
               <Plus className="mr-1 h-4 w-4" />
-              New Prompt
+              Nuevo prompt
             </Link>
           </Button>
         </div>
@@ -118,7 +118,7 @@ export function PromptsListPage() {
                   <div className="text-muted-foreground flex items-center gap-3 text-xs">
                     <code className="font-mono">{p.slug}</code>
                     <span aria-hidden>·</span>
-                    <span>Updated {formatRelative(p.updatedAt)}</span>
+                    <span>Actualizado {formatRelative(p.updatedAt)}</span>
                   </div>
                 </div>
                 <SyncBadge hasGithub={hasGithub} />
@@ -135,21 +135,21 @@ export function PromptsListPage() {
 function promptCountSummary(total: number, hasGithub: boolean): string {
   const base = `${total} prompt${total === 1 ? "" : "s"}`;
   if (!hasGithub) return base;
-  return `${base} · syncing to GitHub`;
+  return `${base} · sincronizando con GitHub`;
 }
 
 function SyncBadge({ hasGithub }: { hasGithub: boolean }) {
   if (!hasGithub) {
     return (
       <span className="text-muted-foreground inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs">
-        no sync
+        sin sync
       </span>
     );
   }
   return (
     <span className="bg-success-bg text-success-fg inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium">
       <Github className="h-3 w-3" />
-      synced
+      sincronizado
     </span>
   );
 }
@@ -177,13 +177,13 @@ function PromptListEmptyState() {
   return (
     <EmptyState
       icon={FileText}
-      title="No prompts yet"
-      description="Create your first prompt and start versioning. Each save is immutable and exposes a public API endpoint you can call from anywhere."
+      title="Todavía no hay prompts"
+      description="Creá tu primer prompt y empezá a versionar. Cada guardado es inmutable y expone un endpoint público que podés llamar desde cualquier lado."
       action={
         <Button asChild>
           <Link to="/prompts/new">
             <Plus className="mr-1 h-4 w-4" />
-            New Prompt
+            Nuevo prompt
           </Link>
         </Button>
       }
@@ -201,10 +201,11 @@ function NoResults({
   return (
     <div className="bg-card flex flex-col items-center gap-2 rounded-lg border p-8 text-center">
       <p className="text-sm">
-        No prompts match <span className="font-medium">"{query}"</span>.
+        Ningún prompt coincide con{" "}
+        <span className="font-medium">"{query}"</span>.
       </p>
       <Button variant="ghost" size="sm" onClick={onClear}>
-        Clear search
+        Limpiar búsqueda
       </Button>
     </div>
   );

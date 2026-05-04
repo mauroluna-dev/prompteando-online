@@ -1,8 +1,9 @@
 export const CONSTANTS = {
   REQUIRED_SCOPES: ["repo"],
   OAUTH_STATE_TTL_SECONDS: 600,
-  REPO_DESCRIPTION: "Versioned prompts managed by promptstash",
+  REPO_DESCRIPTION: "Prompts versionados con prompteando",
   DEFAULT_BRANCH: "main",
+  REPO_NAME_PREFIX: "prompteando-",
   BACKFILL_PROGRESS_POLL_MS: 2_000,
   BACKFILL_AUTHOR_EMAIL_DOMAIN: "users.noreply.github.com",
   BACKFILL_FATAL_ERRORS: [
@@ -10,15 +11,15 @@ export const CONSTANTS = {
     "insufficient_scope",
     "repo_missing",
   ] as const,
-  README_TEMPLATE: `# promptstash
+  README_TEMPLATE: `# prompteando
 
-Versioned prompts managed by [promptstash](https://promptstash.app).
+Prompts versionados con [prompteando.online](https://prompteando.online).
 
-This repo mirrors the prompts you create in your promptstash dashboard.
-Each save commits a new version of the affected prompt under
-\`prompts/<slug>.md\`.
+Este repo es un espejo de los prompts que creás en tu dashboard de
+prompteando. Cada vez que guardás, se commitea una nueva versión del
+prompt afectado en \`prompts/<slug>.md\`.
 
-Disconnect at any time from your promptstash settings — your data lives
-here either way.
+Podés desconectarlo cuando quieras desde la configuración de
+prompteando — tus datos se quedan acá igual.
 `,
 } as const;

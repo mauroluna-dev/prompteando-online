@@ -33,7 +33,7 @@ function AppHeader() {
             to="/prompts"
             className="font-display text-base font-semibold tracking-tight"
           >
-            promptstash
+            prompteando
           </Link>
           <nav className="flex items-center gap-1 text-sm">
             <TabLink to="/prompts" end>
@@ -41,7 +41,7 @@ function AppHeader() {
             </TabLink>
             <TabLink to="/settings/api-keys">API Keys</TabLink>
             <TabLink to="/settings/profile" forceActive={settingsActive}>
-              Settings
+              Configuración
             </TabLink>
           </nav>
         </div>
@@ -50,7 +50,7 @@ function AppHeader() {
             variant="ghost"
             size="icon"
             className="rounded-full text-muted-foreground"
-            aria-label="Notifications"
+            aria-label="Notificaciones"
           >
             <Bell className="h-4 w-4" />
           </Button>

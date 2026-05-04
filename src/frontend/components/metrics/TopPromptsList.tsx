@@ -15,7 +15,7 @@ export function TopPromptsList({
   if (items.length === 0) {
     return (
       <p className={cn("text-muted-foreground text-sm", className)}>
-        No prompts consumed yet in this range.
+        Todavía no se consumió ningún prompt en este rango.
       </p>
     );
   }

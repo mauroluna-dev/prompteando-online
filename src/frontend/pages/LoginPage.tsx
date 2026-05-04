@@ -58,7 +58,7 @@ export function LoginPage() {
         <div className="flex w-full max-w-md flex-col items-center gap-8">
           <div className="flex flex-col items-center gap-3 text-center">
             <h1 className="font-display text-4xl font-semibold leading-[1.1] tracking-tight">
-              Welcome to promptstash
+              Bienvenido a prompteando
             </h1>
             <p className="text-base leading-relaxed text-muted-foreground">
               Versioná tus prompts. Nunca pierdas la última que andaba.
@@ -95,7 +95,7 @@ export function LoginPage() {
             </Button>
             <div className="my-1 h-px bg-border" />
             <p className="text-center text-xs leading-snug text-muted-foreground">
-              Solo leemos los repos que vos crees con promptstash. Auditá
+              Solo leemos los repos que vos crees con prompteando. Auditá
               nuestro código en GitHub si querés verificarlo.
             </p>
           </div>
@@ -113,11 +113,11 @@ function Nav() {
   return (
     <header className="flex h-16 w-full items-center justify-between border-b bg-card px-8">
       <span className="font-display text-lg font-semibold tracking-tight">
-        promptstash
+        prompteando
       </span>
       <nav className="flex items-center gap-6">
         <a
-          href="https://github.com/mauroluna-dev/promptstash"
+          href="https://github.com/mauroluna-dev/prompteando-online"
           target="_blank"
           rel="noreferrer"
           className="text-sm text-muted-foreground transition-colors hover:text-foreground"

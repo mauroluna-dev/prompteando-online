@@ -47,7 +47,7 @@ const API_KEY_QUOTA = 10;
 
 function formatDate(d: Date | string) {
   const date = typeof d === "string" ? new Date(d) : d;
-  return date.toLocaleDateString(undefined, {
+  return date.toLocaleDateString("es-AR", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -55,9 +55,9 @@ function formatDate(d: Date | string) {
 }
 
 function lastUsedLabel(k: ApiKeyView): string {
-  if (k.revokedAt) return `Revoked ${formatDate(k.revokedAt)}`;
-  if (k.lastUsedAt) return `Last used ${formatDate(k.lastUsedAt)}`;
-  return `Created ${formatDate(k.createdAt)} · never used`;
+  if (k.revokedAt) return `Revocada el ${formatDate(k.revokedAt)}`;
+  if (k.lastUsedAt) return `Usada por última vez el ${formatDate(k.lastUsedAt)}`;
+  return `Creada el ${formatDate(k.createdAt)} · sin uso`;
 }
 
 export function ApiKeysPage() {
@@ -86,22 +86,30 @@ export function ApiKeysPage() {
       setShowForm(false);
       await mutate("/api/keys");
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : "Failed to create");
+      setCreateError(
+        err instanceof Error ? err.message : "No se pudo crear la key",
+      );
     } finally {
       setCreating(false);
     }
   };
 
   const handleRevoke = async (id: string, keyName: string) => {
-    if (!confirm(`Revoke "${keyName}"? Existing integrations using this key will stop working.`))
+    if (
+      !confirm(
+        `¿Revocar "${keyName}"? Las integraciones que usen esta key van a dejar de funcionar.`,
+      )
+    )
       return;
     setRevokingId(id);
     try {
       await revokeApiKey(id);
       await mutate("/api/keys");
-      toast.success(`Key "${keyName}" revoked.`);
+      toast.success(`Key "${keyName}" revocada.`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to revoke key");
+      toast.error(
+        err instanceof Error ? err.message : "No se pudo revocar la key",
+      );
     } finally {
       setRevokingId(null);
     }
@@ -111,7 +119,7 @@ export function ApiKeysPage() {
     if (!revealedKey) return;
     await navigator.clipboard.writeText(revealedKey.plaintext);
     setCopied(true);
-    toast.success("Key copied to clipboard");
+    toast.success("Key copiada al portapapeles");
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -122,10 +130,10 @@ export function ApiKeysPage() {
           API Keys
         </h1>
         <p className="text-muted-foreground text-sm">
-          Use these keys to read prompts from n8n, curl, fetch, or any other
-          consumer.{" "}
+          Usá estas keys para leer prompts desde n8n, curl, fetch o cualquier
+          otro consumidor.{" "}
           <span className="font-medium">
-            {activeCount} / {API_KEY_QUOTA} active
+            {activeCount} / {API_KEY_QUOTA} activas
           </span>
           .
         </p>
@@ -139,10 +147,14 @@ export function ApiKeysPage() {
             <Button
               onClick={() => setShowForm(true)}
               disabled={atQuota}
-              title={atQuota ? `Limit of ${API_KEY_QUOTA} active keys reached. Revoke one first.` : undefined}
+              title={
+                atQuota
+                  ? `Llegaste al límite de ${API_KEY_QUOTA} keys activas. Revocá una primero.`
+                  : undefined
+              }
             >
               <Plus className="mr-2 h-4 w-4" />
-              Generate new key
+              Generar key
             </Button>
           )}
         </div>
@@ -151,18 +163,18 @@ export function ApiKeysPage() {
       {showForm ? (
         <div className="bg-card flex flex-col gap-3 rounded-lg border p-5">
           <div className="flex flex-col gap-1">
-            <h2 className="font-display text-base font-semibold">New API key</h2>
+            <h2 className="font-display text-base font-semibold">Nueva API key</h2>
             <p className="text-muted-foreground text-sm">
-              Give it a memorable name so you can identify it later.
+              Ponele un nombre que te ayude a identificarla después.
             </p>
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="key-name">Name</Label>
+            <Label htmlFor="key-name">Nombre</Label>
             <Input
               id="key-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="n8n production"
+              placeholder="n8n producción"
               autoFocus
               maxLength={50}
             />
@@ -180,11 +192,11 @@ export function ApiKeysPage() {
               }}
               disabled={creating}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button onClick={() => void handleCreate()} disabled={creating || !name.trim()}>
               {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Create
+              Crear
             </Button>
           </div>
         </div>
@@ -196,12 +208,12 @@ export function ApiKeysPage() {
       ) : keys.length === 0 ? (
         <EmptyState
           icon={KeyRound}
-          title="No API keys yet"
-          description="Generate your first key to start consuming prompts via the public API from n8n, curl, or any HTTP client."
+          title="Todavía no hay API keys"
+          description="Generá tu primera key para empezar a consumir prompts vía la API pública desde n8n, curl o cualquier cliente HTTP."
           action={
             <Button onClick={() => setShowForm(true)}>
               <Plus className="mr-1 h-4 w-4" />
-              Generate first key
+              Generar primera key
             </Button>
           }
         />
@@ -233,15 +245,16 @@ export function ApiKeysPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>API key created</DialogTitle>
+            <DialogTitle>API key creada</DialogTitle>
             <DialogDescription>
-              Copy this key now. <span className="font-medium">It will not be shown again.</span>
+              Copiala ahora.{" "}
+              <span className="font-medium">No se va a mostrar de nuevo.</span>
             </DialogDescription>
           </DialogHeader>
           {revealedKey ? (
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1">
-                <Label className="text-xs">Name</Label>
+                <Label className="text-xs">Nombre</Label>
                 <code className="font-mono text-sm">{revealedKey.name}</code>
               </div>
               <div className="flex flex-col gap-1">
@@ -252,12 +265,12 @@ export function ApiKeysPage() {
                     {copied ? (
                       <>
                         <Check className="mr-1 h-3 w-3" />
-                        Copied
+                        Copiada
                       </>
                     ) : (
                       <>
                         <Copy className="mr-1 h-3 w-3" />
-                        Copy
+                        Copiar
                       </>
                     )}
                   </Button>
@@ -272,7 +285,7 @@ export function ApiKeysPage() {
                 setCopied(false);
               }}
             >
-              Done
+              Listo
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -319,7 +332,7 @@ function ApiKeyRow({
                 <span className="truncate text-sm font-medium">{k.name}</span>
                 {isRevoked ? (
                   <span className="border-border text-muted-foreground rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide">
-                    Revoked
+                    Revocada
                   </span>
                 ) : null}
               </div>
@@ -352,7 +365,7 @@ function ApiKeyRow({
             ) : (
               <Trash2 className="mr-2 h-4 w-4" />
             )}
-            Revoke
+            Revocar
           </Button>
         ) : null}
       </div>
@@ -363,7 +376,7 @@ function ApiKeyRow({
             <div className="mt-4 flex justify-end">
               <Button asChild variant="ghost" size="sm">
                 <Link to={`/settings/api-keys/${k.id}`}>
-                  View full details
+                  Ver detalle completo
                   <ExternalLink className="ml-1 h-3 w-3" />
                 </Link>
               </Button>
@@ -388,7 +401,9 @@ function KeyMetrics({
   if (error)
     return (
       <p className="text-destructive text-sm">
-        {error instanceof Error ? error.message : "Failed to load metrics"}
+        {error instanceof Error
+          ? error.message
+          : "No se pudieron cargar las métricas"}
       </p>
     );
   if (!data) return null;

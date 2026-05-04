@@ -31,7 +31,7 @@ type Mode = "edit" | "diff";
 
 function formatDate(d: Date | string) {
   const date = typeof d === "string" ? new Date(d) : d;
-  return date.toLocaleDateString(undefined, {
+  return date.toLocaleDateString("es-AR", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -106,14 +106,14 @@ export function PromptDetailPage() {
   if (!prompt) {
     return (
       <div className="mx-auto flex w-full max-w-md flex-col items-center gap-3 px-6 py-16 text-center">
-        <h1 className="font-display text-xl font-semibold">Prompt not found</h1>
+        <h1 className="font-display text-xl font-semibold">Prompt no encontrado</h1>
         <p className="text-muted-foreground text-sm">
-          It may have been deleted or never existed.
+          Puede que lo hayas borrado o que nunca haya existido.
         </p>
         <Button asChild>
           <Link to="/prompts">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to list
+            Volver a la lista
           </Link>
         </Button>
       </div>
@@ -133,15 +133,15 @@ export function PromptDetailPage() {
         commitMessage: commitMessage.trim() || undefined,
       });
       if (result.isNoOp) {
-        toast.info("No changes to save.");
+        toast.info("No hay cambios para guardar.");
       } else {
         setCommitMessage("");
         await mutate(`/api/prompts/${slug}/versions`);
         await mutate(`/api/prompts/${slug}`);
-        toast.success(`Saved as v${result.version.versionNumber}.`);
+        toast.success(`Guardado como v${result.version.versionNumber}.`);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save");
+      toast.error(err instanceof Error ? err.message : "No se pudo guardar");
     } finally {
       setSaving(false);
     }
@@ -156,32 +156,33 @@ export function PromptDetailPage() {
       await mutate(`/api/prompts/${slug}/versions`);
       await mutate(`/api/prompts/${slug}`);
       toast.success(
-        `Restored v${viewingNumber} as v${result.version.versionNumber}.`,
+        `v${viewingNumber} restaurada como v${result.version.versionNumber}.`,
       );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to restore");
+      toast.error(err instanceof Error ? err.message : "No se pudo restaurar");
     } finally {
       setRestoring(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Delete "${prompt.name}"? This cannot be undone.`)) return;
+    if (!confirm(`¿Borrar "${prompt.name}"? Esta acción no se puede deshacer.`))
+      return;
     setDeleting(true);
     try {
       await deletePrompt(prompt.slug);
       await mutate("/api/prompts");
-      toast.success(`"${prompt.name}" deleted.`);
+      toast.success(`"${prompt.name}" eliminado.`);
       navigate("/prompts", { replace: true });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete");
+      toast.error(err instanceof Error ? err.message : "No se pudo eliminar");
       setDeleting(false);
     }
   };
 
   const handleCopySlug = async () => {
     await navigator.clipboard.writeText(prompt.slug);
-    toast.success("Slug copied.");
+    toast.success("Slug copiado.");
   };
 
   const editorDirty = !isEmpty && content !== (currentVersion?.content ?? "");
@@ -192,7 +193,7 @@ export function PromptDetailPage() {
       <Button asChild variant="ghost" size="sm" className="self-start">
         <Link to="/prompts">
           <ArrowLeft className="mr-1 h-4 w-4" />
-          Back to prompts
+          Volver a prompts
         </Link>
       </Button>
 
@@ -210,10 +211,10 @@ export function PromptDetailPage() {
               className="hover:text-foreground inline-flex items-center gap-1 transition-colors"
             >
               <Copy className="h-3 w-3" />
-              Copy
+              Copiar
             </button>
             <span aria-hidden>·</span>
-            <span>Created {formatDate(prompt.createdAt)}</span>
+            <span>Creado el {formatDate(prompt.createdAt)}</span>
           </div>
           {prompt.description ? (
             <p className="mt-1 text-sm">{prompt.description}</p>
@@ -231,7 +232,7 @@ export function PromptDetailPage() {
               labelA={diffA !== null ? `v${diffA}` : "—"}
               labelB={
                 diffB !== null
-                  ? `v${diffB}${diffB === currentVersion?.versionNumber ? " (current)" : ""}`
+                  ? `v${diffB}${diffB === currentVersion?.versionNumber ? " (actual)" : ""}`
                   : "—"
               }
             />
@@ -284,14 +285,14 @@ export function PromptDetailPage() {
         </aside>
       </div>
 
-      {/* Danger zone */}
+      {/* Zona de peligro */}
       <section className="border-destructive/30 bg-destructive/5 mt-4 flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
         <div className="flex flex-col gap-0.5">
           <p className="font-display text-destructive text-sm font-semibold">
-            Delete this prompt
+            Eliminar este prompt
           </p>
           <p className="text-muted-foreground text-xs">
-            Removes the prompt and all its versions. Cannot be undone.
+            Borra el prompt y todas sus versiones. No se puede deshacer.
           </p>
         </div>
         <Button
@@ -306,7 +307,7 @@ export function PromptDetailPage() {
           ) : (
             <Trash2 className="mr-2 h-4 w-4" />
           )}
-          Delete
+          Eliminar
         </Button>
       </section>
     </div>
@@ -336,13 +337,13 @@ function ModeToggle({
         aria-pressed={mode === "edit"}
       >
         <Pencil className="h-3.5 w-3.5" />
-        Edit
+        Editar
       </button>
       <button
         type="button"
         onClick={() => onChange("diff")}
         disabled={!canDiff}
-        title={canDiff ? undefined : "Need at least 2 versions to diff"}
+        title={canDiff ? undefined : "Necesitás al menos 2 versiones para comparar"}
         className={cn(
           "inline-flex items-center gap-1.5 rounded px-3 py-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50",
           mode === "diff"
@@ -382,22 +383,22 @@ function EditPane({
       <MarkdownEditor
         value={content}
         onChange={onContentChange}
-        placeholder="Write your prompt here…"
+        placeholder="Escribí tu prompt acá…"
         className="min-h-[480px]"
       />
       <div className="bg-card flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-end">
         <div className="flex flex-1 flex-col gap-1.5">
           <Label htmlFor="commit-message" className="text-xs">
-            Commit message{" "}
+            Mensaje del commit{" "}
             <span className="text-muted-foreground font-normal">
-              (optional)
+              (opcional)
             </span>
           </Label>
           <Input
             id="commit-message"
             value={commitMessage}
             onChange={(e) => onCommitMessageChange(e.target.value)}
-            placeholder={isEmpty ? "Initial version" : "What changed?"}
+            placeholder={isEmpty ? "Versión inicial" : "¿Qué cambió?"}
             maxLength={200}
             className="h-9"
           />
@@ -408,7 +409,7 @@ function EditPane({
           ) : (
             <Save className="mr-2 h-4 w-4" />
           )}
-          Save{isEmpty ? " first version" : ""}
+          {isEmpty ? "Guardar primera versión" : "Guardar"}
         </Button>
       </div>
     </div>
@@ -436,9 +437,9 @@ function ViewingPane({
     <div className="flex flex-col gap-3">
       <div className="bg-info-bg text-info-fg flex items-center justify-between gap-2 rounded-md border border-blue-200 px-3 py-2 text-sm">
         <div className="flex flex-col">
-          <span className="font-medium">Viewing v{versionNumber}</span>
+          <span className="font-medium">Viendo v{versionNumber}</span>
           <span className="text-info-fg/80 text-xs">
-            {commitMessage ?? "No commit message."} · {formatDate(createdAt)}
+            {commitMessage ?? "Sin mensaje de commit."} · {formatDate(createdAt)}
           </span>
         </div>
         <Button
@@ -447,7 +448,7 @@ function ViewingPane({
           onClick={onBack}
           className="border-info-fg/30 text-info-fg hover:bg-info-fg/10 shrink-0"
         >
-          Back to current
+          Volver a la actual
         </Button>
       </div>
       <MarkdownEditor
@@ -465,7 +466,7 @@ function ViewingPane({
           ) : (
             <RotateCcw className="mr-2 h-4 w-4" />
           )}
-          Restore this version
+          Restaurar esta versión
         </Button>
       </div>
     </div>
@@ -487,7 +488,7 @@ function DiffPane({
   if (diffData.contentA === null || diffData.contentB === null) {
     return (
       <div className="bg-muted/40 flex h-[480px] items-center justify-center rounded-md border text-sm text-muted-foreground">
-        Pick two versions from the sidebar to compare.
+        Elegí dos versiones del sidebar para comparar.
       </div>
     );
   }

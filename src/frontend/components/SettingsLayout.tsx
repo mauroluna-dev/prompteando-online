@@ -7,10 +7,10 @@ const SECTIONS: {
   icon: typeof User;
   badge?: string;
 }[] = [
-  { label: "Profile", to: "/settings/profile", icon: User },
+  { label: "Perfil", to: "/settings/profile", icon: User },
   { label: "API Keys", to: "/settings/api-keys", icon: KeyRound },
-  { label: "Integrations", to: "/settings/integrations", icon: Plug },
-  { label: "Billing", to: "/settings/billing", icon: CreditCard, badge: "soon" },
+  { label: "Integraciones", to: "/settings/integrations", icon: Plug },
+  { label: "Facturación", to: "/settings/billing", icon: CreditCard, badge: "pronto" },
 ];
 
 export function SettingsLayout() {
@@ -18,7 +18,7 @@ export function SettingsLayout() {
     <div className="mx-auto flex w-full max-w-6xl gap-8 px-6 py-8">
       <aside className="hidden w-56 shrink-0 sm:block">
         <p className="text-muted-foreground mb-3 px-3 text-xs font-medium uppercase tracking-wide">
-          Settings
+          Configuración
         </p>
         <nav className="flex flex-col gap-0.5">
           {SECTIONS.map((s) => {

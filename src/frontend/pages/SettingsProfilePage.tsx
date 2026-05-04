@@ -20,14 +20,14 @@ export function SettingsProfilePage() {
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
         <h1 className="font-display text-3xl font-semibold tracking-tight">
-          Profile
+          Perfil
         </h1>
-        <p className="text-muted-foreground text-sm">Tu identidad en promptstash.</p>
+        <p className="text-muted-foreground text-sm">Tu identidad en prompteando.</p>
       </header>
 
       <section className="bg-card flex flex-col gap-5 rounded-lg border p-6">
         <div className="flex flex-col gap-1">
-          <h2 className="font-display text-lg font-semibold">Account</h2>
+          <h2 className="font-display text-lg font-semibold">Cuenta</h2>
           <p className="text-muted-foreground text-sm">
             Tu información de cuenta.
           </p>
@@ -53,8 +53,8 @@ export function SettingsProfilePage() {
               <div className="flex flex-col">
                 <p className="font-medium">{user.name ?? user.email}</p>
                 <p className="text-muted-foreground text-xs">
-                  Joined {/* createdAt is not exposed via /api/me yet — placeholder */}
-                  recently
+                  {/* createdAt is not exposed via /api/me yet — placeholder */}
+                  Te uniste hace poco
                 </p>
               </div>
             </div>
@@ -62,8 +62,8 @@ export function SettingsProfilePage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Email" value={user.email} />
               <Field
-                label="GitHub login"
-                value={connection?.githubLogin ?? "Not connected"}
+                label="Usuario de GitHub"
+                value={connection?.githubLogin ?? "Sin conectar"}
               />
             </div>
           </>
@@ -75,17 +75,17 @@ export function SettingsProfilePage() {
           <AlertTriangle className="text-destructive mt-0.5 h-5 w-5 shrink-0" />
           <div className="flex flex-col gap-1">
             <h2 className="font-display text-destructive text-lg font-semibold">
-              Delete account
+              Eliminar cuenta
             </h2>
             <p className="text-muted-foreground text-sm">
-              Permanently delete your account, prompts, and all versions. This
-              action cannot be undone.
+              Borra tu cuenta, tus prompts y todas las versiones de manera
+              permanente. Esta acción no se puede deshacer.
             </p>
           </div>
         </div>
         <Button variant="destructive" disabled className="shrink-0">
           <Trash2 className="mr-2 h-4 w-4" />
-          Delete my account
+          Eliminar mi cuenta
         </Button>
       </section>
     </div>
