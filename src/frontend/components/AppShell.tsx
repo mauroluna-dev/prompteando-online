@@ -22,34 +22,40 @@ function AppHeader() {
     pathname.startsWith("/settings/") && !pathname.startsWith("/settings/api-keys");
 
   return (
-    <header className="bg-card sticky top-0 z-10 flex h-14 w-full items-center justify-between border-b px-6">
-      <div className="flex items-center gap-8">
-        <Link
-          to="/prompts"
-          className="font-display text-base font-semibold tracking-tight"
-        >
-          promptstash
-        </Link>
-        <nav className="flex items-center gap-1 text-sm">
-          <TabLink to="/prompts" end>
-            Prompts
-          </TabLink>
-          <TabLink to="/settings/api-keys">API Keys</TabLink>
-          <TabLink to="/settings/profile" forceActive={settingsActive}>
-            Settings
-          </TabLink>
-        </nav>
-      </div>
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full text-muted-foreground"
-          aria-label="Notifications"
-        >
-          <Bell className="h-4 w-4" />
-        </Button>
-        <UserMenu />
+    <header className="bg-card sticky top-0 z-10 w-full border-b">
+      {/* Inner container matches the page content max-width
+          (max-w-6xl) so the brand + tabs line up vertically with the
+          body. Outer header keeps w-full so the background + border
+          still span the viewport. */}
+      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-8 px-6">
+        <div className="flex items-center gap-8">
+          <Link
+            to="/prompts"
+            className="font-display text-base font-semibold tracking-tight"
+          >
+            promptstash
+          </Link>
+          <nav className="flex items-center gap-1 text-sm">
+            <TabLink to="/prompts" end>
+              Prompts
+            </TabLink>
+            <TabLink to="/settings/api-keys">API Keys</TabLink>
+            <TabLink to="/settings/profile" forceActive={settingsActive}>
+              Settings
+            </TabLink>
+          </nav>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full text-muted-foreground"
+            aria-label="Notifications"
+          >
+            <Bell className="h-4 w-4" />
+          </Button>
+          <UserMenu />
+        </div>
       </div>
     </header>
   );
