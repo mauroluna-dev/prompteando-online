@@ -14,7 +14,9 @@
     "prepare": "husky",
     "db:generate": "bunx drizzle-kit generate",
     "db:migrate": "bun scripts/migrate.ts",
-    "db:psql": "docker compose exec postgres psql -U promptstash -d promptstash"
+    "db:psql": "docker compose exec postgres psql -U promptstash -d promptstash",
+    "cron:consolidate-metrics": "bun scripts/cron-consolidate-metrics.ts",
+    "cron:prune-old-metrics": "bun scripts/cron-prune-old-metrics.ts"
   },
   "dependencies": {
     "@auth/core": "^0.34.3",

@@ -2,12 +2,13 @@
 
 ## Why this phase
 
-Hoy el usuario sabe que su key existe y cuándo fue `last_used_at`,
+Hoy un usuario sabe que su key existe y cuándo fue `last_used_at`,
 pero no:
+
 - Cuántas veces se usó hoy / esta semana / este mes.
-- Qué prompts está consumiendo más (¿es la key de Production
-  pegándole a `onboarding-welcome` 4K veces, o a `dev-test`?).
-- Si está cerca del rate limit o tirando errors.
+- Qué prompts está consumiendo más (¿la key de Production le pega
+  4K veces a `onboarding-welcome`, o a `dev-test`?).
+- Si está cerca del rate limit o tirando errores.
 - Cuánta latencia mide la API end-to-end.
 
 Sin estas señales, el usuario:
@@ -15,181 +16,227 @@ Sin estas señales, el usuario:
 - No sabe si vale la pena cachear más agresivamente.
 - No tiene feedback de que el endpoint público está funcionando.
 
-P18 cierra ese gap con métricas agregadas (no event-level),
-storage barato (Redis counters + Postgres daily snapshot), y
-un dashboard inline en `/settings/api-keys`.
+P18 cierra ese gap con métricas agregadas (no event-level), storage
+barato (Redis counters + Postgres daily snapshot), y un dashboard
+inline en `/settings/api-keys` + una deep-dive page por key.
 
-Esto **sale del out-of-scope V1** original ("Observabilidad /
-logging de invocaciones") porque es métrica de PRODUCTO, no de
-infra. Se documenta el cambio en `mission.md`.
+**Sale del out-of-scope V1** original ("Observabilidad / logging de
+invocaciones") porque es métrica de PRODUCTO, no de infra. Mission
+ya documenta el cambio (PR #21).
 
-## Decisiones tomadas (sesión 2026-05-04)
+## Decisiones tomadas (sesión 2026-05-04, post-P17)
 
-1. **Granularidad agregada**: aggregate counters en Redis +
-   snapshot diario en Postgres. NO event log per-request.
-   Razón: barato, suficiente para los casos de uso del usuario,
-   no rompe a volumen alto.
+1. **Storage: aggregate counters Redis + snapshot diario Postgres.**
+   Sin event log per-request (out of scope). Razón: barato, suficiente
+   para los 4 casos de uso, no rompe a volumen real.
 
-2. **Storage en Redis** (en vivo):
-   - `metrics:apikey:<id>:counts:<YYYY-MM-DD>` → INCR por
-     request, INCRBY 1 por error, separado por `:errors`.
-   - `metrics:apikey:<id>:lat:<YYYY-MM-DD>` → LPUSH latencyMs,
-     LTRIM 0-9999 (cap 10K samples por día por key).
-   - `metrics:apikey:<id>:by-slug:<YYYY-MM-DD>` → Redis HASH
-     con `slug → count`.
-   - TTL 8 días en cada key (para sobrevivir al cron del día
-     siguiente con margen).
+2. **Dashboard: inline expandable + deep-dive page.**
+   `/settings/api-keys`: cada key row se expande mostrando 4 KPIs +
+   bar chart 30d + top 5 prompts. Adicional: `/settings/api-keys/:id`
+   con extras (errores por status code, chart p50/p95 over time).
 
-3. **Storage en Postgres** (histórico):
-   - Tabla `api_key_metrics_daily`:
-     - `api_key_id text` (FK a `api_keys.id`)
-     - `day date`
-     - `total_requests integer`
-     - `total_errors integer`
-     - `p50_ms integer`
-     - `p95_ms integer`
-     - `top_prompts jsonb` (`[{slug, count}, ...]` top 10)
-     - PK compuesta: `(api_key_id, day)`.
-   - Retención: 90 días. Cron mensual borra >90d.
+3. **Slicing: 2 PRs.**
+   - **Slice 1**: data layer (schema, domain, ports, infra Redis +
+     Postgres, command + query, jobs, middleware, HTTP endpoint, cron
+     scripts, tests). Verificable end-to-end con curl + redis-cli +
+     psql sin tocar la UI.
+   - **Slice 2**: UI dashboard (recharts, MetricCard / MiniBarChart /
+     TopPromptsList / UsageDashboard, ApiKeysPage rebuild + deep-dive
+     page).
 
-4. **Cron de consolidación**: diario a las 00:05 UTC.
-   - Itera todas las keys conocidas (`SELECT id FROM api_keys`).
-   - Para cada (key, day=ayer):
-     - GET counts/errors/lat/by-slug del Redis.
-     - Calcula p50, p95 de las muestras.
-     - Top 10 slugs ordenados por count.
-     - INSERT/UPDATE en `api_key_metrics_daily`.
-     - Borra los 4 keys de Redis (no espera al TTL).
+4. **Recording NO bloquea el endpoint público.** El middleware mide
+   `latencyMs = endTime - startTime`, captura `statusCode` de la
+   response, dispara `void recordApiKeyHit.execute(...).catch(log)`
+   FIRE-AND-FORGET. Razón: las métricas no deben impactar p95 del
+   endpoint que están midiendo.
 
-5. **Endpoint nuevo**:
-   `GET /api/keys/:id/metrics?range=7d|30d|90d`
-   Devuelve:
-   ```ts
-   {
-     daily: [{day: "2026-05-01", requests: 1234, errors: 5, p50: 45, p95: 120}, ...],
-     totals: { requests: 12543, errors: 50, errorRate: 0.004 },
-     latency: { p50: 50, p95: 150 },  // del último día
-     topPrompts: [{slug: "onboarding-welcome", count: 4832, share: 0.38}, ...]
-   }
-   ```
+5. **Cron de consolidación: diario a las 00:05 UTC.** Para cada key
+   conocida: lee Redis del día anterior, calcula p50/p95 y top 10
+   prompts, UPSERT en `api_key_metrics_daily`. Solo borra Redis si
+   el UPSERT confirmó OK (idempotente).
 
-6. **Frontend**: dashboard inline en `/settings/api-keys`. Cada
-   key row es expandable y muestra:
-   - 4 KPI cards (Total / Errors / p95 / Top prompt).
-   - Bar chart de requests/day (recharts).
-   - Lista top 5 prompts con barra horizontal % + count.
-   - Range picker (7d / 30d / 90d).
-   - Link a `/settings/api-keys/:id` para deep-dive.
+6. **Cron infra: scripts Bun standalone.** `scripts/cron-*.ts` que
+   reusan el composition root. Wireup en `docker-compose.prod.yml`
+   queda para fase de deploy (P15 ya documenta el patrón con
+   ofelia / systemd timer). En dev se corren a mano:
+   `bun scripts/cron-consolidate-metrics.ts --day=YYYY-MM-DD`.
 
-7. **Recording NO bloquea la response del endpoint público**:
-   el middleware mide `latencyMs = endTime - startTime` y dispara
-   `void recordApiKeyHit.execute(...).catch(log)` después de
-   enviar la response. Razón: las métricas no deben impactar
-   p95 del endpoint que están midiendo.
+7. **Errors definidos como `statusCode >= 400`.** Rate limits (429)
+   cuentan como error para el conteo. Distinción status-by-status
+   solo en la deep-dive page.
 
-8. **Consolidación es idempotente**: si el cron corre 2 veces
-   el mismo día, el UPSERT en `api_key_metrics_daily` no
-   duplica. Si Redis ya fue limpiado, los counts del segundo
-   run son 0 → el UPSERT pisa con 0 — peligroso.
-   **Mitigación**: el cron NO borra Redis hasta que el INSERT
-   confirma OK. Si el INSERT falla, los datos quedan. Adicional:
-   timestamp `consolidated_at` en `api_key_metrics_daily` y el
-   cron skipea filas ya consolidadas para el mismo día.
+8. **Time zone: UTC strict** para todas las claves de día y filas
+   en Postgres. UI muestra en local TZ del browser pero el storage
+   es UTC (`new Date().toISOString().slice(0, 10)`).
 
-9. **Errors definidos como** `statusCode >= 400`. Rate limits
-   (429) cuentan como error.
+9. **Sin backfill histórico.** Las métricas arrancan desde el
+   deploy de P18. Documentar en la deep-dive page como
+   "Métricas disponibles desde \<deploy date\>".
+
+10. **Default range: 30d.** Range picker `7d | 30d | 90d` (toggle
+    group). Cap retention 90d.
 
 ## In scope
 
-### Domain
+### Slice 1 — Data layer
 
-- `src/domain/api-key/`:
-  - VO `MetricsRange` (con `static parse("7d"|"30d"|"90d")`).
-  - Entity `ApiKeyMetricsDaily` con `static fromRow`,
-    `static aggregate(samples: number[])` para calcular p50/p95.
-  - Type `MetricsSummary` exportado para el HTTP DTO.
+#### Domain (`src/domain/api-key/`)
 
-- `constants.ts` extendido:
+- **`metrics-range.vo.ts`**:
   ```ts
-  METRICS_REDIS_TTL_SECONDS: 8 * 24 * 60 * 60,
+  export class MetricsRange {
+    private constructor(
+      readonly value: "7d" | "30d" | "90d",
+      readonly days: number,
+    ) {}
+    static parse(input: string): MetricsRange {
+      if (input === "7d")  return new MetricsRange("7d", 7);
+      if (input === "30d") return new MetricsRange("30d", 30);
+      if (input === "90d") return new MetricsRange("90d", 90);
+      throw new InvalidMetricsRangeError(input);
+    }
+  }
+  ```
+
+- **`api-key-metrics-daily.entity.ts`**:
+  - Constructor privado + `static fromRow` + `static aggregate`.
+  - `static aggregate(samples: number[]): { p50: number; p95: number }`
+    via sort ascendente (suficiente para cap 10K samples).
+  - `toJSON()` para serializar el DTO.
+
+- **`metrics-summary.ts`** (DTO type, no entity):
+  ```ts
+  export type MetricsSummary = {
+    daily: { day: string; requests: number; errors: number; p50: number; p95: number }[];
+    totals: { requests: number; errors: number; errorRate: number };
+    latency: { p50: number; p95: number };
+    topPrompts: { slug: string; count: number; share: number }[];
+    statusBreakdown?: { statusCode: number; count: number }[];  // deep-dive only
+  };
+  ```
+
+- **Constants extendidos en `src/domain/api-key/constants.ts`**:
+  ```ts
+  METRICS_REDIS_TTL_SECONDS: 8 * 24 * 60 * 60,  // 8 days
   METRICS_LATENCY_SAMPLE_CAP: 10_000,
+  METRICS_BY_SLUG_CAP: 1_000,
   METRICS_TOP_PROMPTS_LIMIT: 10,
   METRICS_DAILY_RETENTION_DAYS: 90,
   ```
 
-### Application
+- **Errors nuevos** en `api-key.errors.ts`:
+  - `InvalidMetricsRangeError(value)`.
+
+#### Application
 
 - **Ports**:
-  - `MetricsCounter` (`src/application/ports/metrics-counter.port.ts`):
+  - `metrics-counter.port.ts`:
     ```ts
     export interface MetricsCounter {
-      recordHit(input: { apiKeyId: string; slug: string; statusCode: number; latencyMs: number; day: string }): Promise<void>;
-      readDay(apiKeyId: string, day: string): Promise<{ counts: number; errors: number; latencies: number[]; bySlug: Record<string, number> } | null>;
+      recordHit(input: {
+        apiKeyId: string;
+        slug: string;
+        statusCode: number;
+        latencyMs: number;
+        day: string;  // "YYYY-MM-DD" UTC
+      }): Promise<void>;
+
+      readDay(apiKeyId: string, day: string): Promise<{
+        counts: number;
+        errors: number;
+        latencies: number[];
+        bySlug: Record<string, number>;
+      } | null>;
+
       clearDay(apiKeyId: string, day: string): Promise<void>;
     }
     ```
-  - `ApiKeyMetricsRepository`:
+  - `api-key-metrics-repository.port.ts`:
     ```ts
     export interface ApiKeyMetricsRepository {
       upsert(daily: ApiKeyMetricsDaily): Promise<void>;
       findRange(apiKeyId: string, fromDay: string, toDay: string): Promise<ApiKeyMetricsDaily[]>;
-      findKeysWithUnconsolidatedDays(): Promise<{ apiKeyId: string; day: string }[]>;
       deleteOlderThan(retentionDays: number): Promise<number>;
     }
     ```
+  - **Extender `ApiKeyRepository`** con
+    `findByIdAndUserId(id: string, userId: string): Promise<ApiKey | null>`
+    para el ownership check del query (si no existe ya).
 
 - **Commands**:
-  - `RecordApiKeyHitCommand` (input: apiKeyId, slug, statusCode,
-    latencyMs). Llama `MetricsCounter.recordHit`. Día = today
-    UTC. Best-effort, no throw.
+  - `record-api-key-hit.command.ts` — 4 args posicionales.
+    Computa `day = today UTC`, llama `metrics.recordHit({...})`.
+    NO throws; cualquier error se loguea pero no se propaga
+    (best-effort, no bloquea response del endpoint público).
 
 - **Queries**:
-  - `GetApiKeyMetricsQuery`:
+  - `get-api-key-metrics.query.ts`:
     ```ts
-    async execute(input: { userId: string; apiKeyId: string; range: MetricsRange }): Promise<MetricsSummary>
+    async execute(input: {
+      userId: string;
+      apiKeyId: string;
+      range: MetricsRange;
+      includeStatusBreakdown?: boolean;  // deep-dive
+    }): Promise<MetricsSummary>
     ```
-    Verifica que la key le pertenezca al user (throw
-    `ApiKeyNotFoundError` si no). Lee daily snapshots de
-    Postgres + (opcional) day-current de Redis para el día en
-    curso. Devuelve `daily, totals, latency, topPrompts`.
+    Verifica ownership con `apiKeyRepo.findByIdAndUserId`. Throw
+    `ApiKeyNotFoundError` si no encontrado o no del user. Lee daily
+    snapshots de Postgres + (opcional) day-current de Redis para el
+    día en curso (suma a totals). Devuelve `daily` ordenado ASC,
+    `totals`, `latency` (del último día), `topPrompts` (agregados
+    sobre el rango).
 
 - **Jobs**:
-  - `ConsolidateApiKeyMetricsJob`:
+  - `consolidate-api-key-metrics.job.ts`:
     ```ts
-    async run(input: { day?: string }): Promise<{ consolidated: number; errors: number }>
+    async run(input: { day?: string }): Promise<{
+      consolidated: number;
+      errors: number;
+    }>
     ```
-    Default day = ayer. Para cada api_key:
-    1. `metrics.readDay(keyId, day)`. Si null → skip.
-    2. Calcular p50, p95 de `latencies`.
-    3. Top 10 de `bySlug`.
-    4. `repo.upsert(daily)`.
-    5. `metrics.clearDay(keyId, day)`.
-    6. Catchear errores per-key y continuar (logueando).
+    Default `day = ayer UTC`. Para cada api_key:
+    1. `data = metrics.readDay(keyId, day)`. Si null → skip.
+    2. Calcular p50/p95 de `data.latencies`.
+    3. Top 10 de `data.bySlug` ordenado por count.
+    4. `repo.upsert(daily)`. Si throw → log + count error, continuar.
+    5. Si upsert OK → `metrics.clearDay(keyId, day)`.
+    Error per-key NO aborta el run completo.
 
-- **Cron retention**:
-  - `PruneOldMetricsJob`: `repo.deleteOlderThan(90)`. Llamado
-    semanalmente.
-
-### Infrastructure
-
-- **`BunRedisMetricsCounter`** (`src/infrastructure/cache/`):
-  - Pipeline de comandos para `recordHit`:
+  - `prune-old-metrics.job.ts`:
+    ```ts
+    async run(): Promise<{ deleted: number }>
     ```
-    INCR  metrics:apikey:<id>:counts:<day>
-    EXPIRE metrics:apikey:<id>:counts:<day> <ttl>
+    `repo.deleteOlderThan(METRICS_DAILY_RETENTION_DAYS)`.
+
+#### Infrastructure
+
+- **`bun-redis-metrics-counter.adapter.ts`** en
+  `src/infrastructure/cache/`:
+  - Pipeline de comandos en `recordHit`:
+    ```
+    INCR    metrics:apikey:<id>:counts:<day>
+    EXPIRE  metrics:apikey:<id>:counts:<day> <ttl>
     HINCRBY metrics:apikey:<id>:by-slug:<day> <slug> 1
-    EXPIRE metrics:apikey:<id>:by-slug:<day> <ttl>
-    LPUSH metrics:apikey:<id>:lat:<day> <latencyMs>
-    LTRIM metrics:apikey:<id>:lat:<day> 0 9999
-    EXPIRE metrics:apikey:<id>:lat:<day> <ttl>
-    if statusCode >= 400: INCR metrics:apikey:<id>:errors:<day> + EXPIRE
+    EXPIRE  metrics:apikey:<id>:by-slug:<day> <ttl>
+    LPUSH   metrics:apikey:<id>:lat:<day> <ms>
+    LTRIM   metrics:apikey:<id>:lat:<day> 0 9999
+    EXPIRE  metrics:apikey:<id>:lat:<day> <ttl>
+    if statusCode >= 400:
+      INCR   metrics:apikey:<id>:errors:<day>
+      EXPIRE metrics:apikey:<id>:errors:<day> <ttl>
     ```
   - `readDay`: `MGET counts errors`, `LRANGE lat 0 -1`,
     `HGETALL by-slug`. Devuelve null si counts === null.
+  - `clearDay`: DEL las 4 keys.
 
-- **`PostgresApiKeyMetricsRepository`**.
+- **`postgres-api-key-metrics.repository.ts`** en
+  `src/infrastructure/persistence/repositories/`:
+  - `upsert`: `INSERT … ON CONFLICT (api_key_id, day) DO UPDATE`.
+  - `findRange`: `SELECT … WHERE api_key_id = $1 AND day BETWEEN $2 AND $3 ORDER BY day ASC`.
+  - `deleteOlderThan`: `DELETE WHERE day < CURRENT_DATE - INTERVAL '<days> days'`.
+    Returning count.
 
-- **Schema migration** (`0008_*.sql`):
+- **Schema migration `0008_*`**:
   ```sql
   CREATE TABLE api_key_metrics_daily (
     api_key_id text NOT NULL REFERENCES api_keys(id) ON DELETE CASCADE,
@@ -202,98 +249,153 @@ infra. Se documenta el cambio en `mission.md`.
     consolidated_at timestamp NOT NULL DEFAULT NOW(),
     PRIMARY KEY (api_key_id, day)
   );
-  CREATE INDEX api_key_metrics_daily_day_idx ON api_key_metrics_daily (day);
+  CREATE INDEX api_key_metrics_daily_day_idx
+    ON api_key_metrics_daily (day);
   ```
 
-### HTTP
+#### HTTP
 
-- **Middleware**: extender el handler de `/v1/prompts/:slug`
-  para:
+- **Middleware en `/v1/prompts/:slug`** (handler existente):
   ```ts
   const start = performance.now();
-  // ... existing handler logic ...
-  const response = ...;
+  const response = await /* existing handler */;
   const latencyMs = Math.round(performance.now() - start);
-  void recordApiKeyHit.execute({
-    apiKeyId: keyOr401.id,
-    slug: params.slug,
-    statusCode: response.status,
+  void recordApiKeyHit.execute(
+    keyOr401.id,
+    params.slug,
+    response.status,
     latencyMs,
-  }).catch(err => console.error("[metrics-record]", err));
+  ).catch(err => console.error("[metrics-record]", err));
   return response;
   ```
 
 - **Endpoint nuevo**:
-  - `GET /api/keys/:id/metrics?range=30d` → 200 con
-    `MetricsSummary`. 401 si no auth, 404 si la key no existe
-    o no pertenece al user.
+  ```
+  GET /api/keys/:id/metrics?range=7d|30d|90d&include=status-breakdown
+  ```
+  - Auth: requiere sesión (requireUser).
+  - Validación: `range` parsed via `MetricsRange.parse` o default 30d.
+  - 200 con `MetricsSummary`. 404 si la key no existe o no es del user.
+    400 si `range` inválido.
 
-### Frontend
+#### Cron scripts
 
-- **Hook nuevo**: `useApiKeyMetrics(keyId, range)`:
+- `scripts/cron-consolidate-metrics.ts`:
+  Importa el composition root (parcial), instancia el job, le pasa
+  el `--day` o ayer por default. Logs estructurados.
+
+- `scripts/cron-prune-old-metrics.ts`:
+  Idem para el prune.
+
+### Slice 2 — UI dashboard
+
+#### Frontend deps
+
+- `bun add recharts` (~40KB).
+
+#### Componentes nuevos
+
+- **`<MetricCard label value sub />`**
+  (`src/frontend/components/metrics/MetricCard.tsx`):
+  Pill con label arriba (uppercase muted) + value grande
+  (font-display) + sub opcional.
+
+- **`<MiniBarChart data height />`**
+  (`src/frontend/components/metrics/MiniBarChart.tsx`):
+  recharts BarChart sin axis, 30 barras max, tooltip on hover,
+  bars usan `--color-chart-1`.
+
+- **`<TopPromptsList items />`**
+  (`src/frontend/components/metrics/TopPromptsList.tsx`):
+  Rows con barra horizontal % + count, ordenadas desc.
+
+- **`<UsageDashboard summary />`**
+  (`src/frontend/components/metrics/UsageDashboard.tsx`):
+  Orquesta los 3 anteriores. Layout per design brief.
+
+- **`<RangeToggle value onChange />`**
+  (`src/frontend/components/metrics/RangeToggle.tsx`):
+  Toggle group 7d/30d/90d. Default 30d.
+
+#### Hooks
+
+- `useApiKeyMetrics(keyId, range)`:
   ```ts
-  return useSWR<MetricsSummary>(`/api/keys/${keyId}/metrics?range=${range}`, fetcher);
+  return useSWR<MetricsSummary>(
+    `/api/keys/${keyId}/metrics?range=${range.value}`,
+    fetcher,
+  );
   ```
 
-- **Componente `<UsageDashboard>`**:
-  - Recibe `MetricsSummary`.
-  - Renderiza:
-    - 4 `<MetricCard>` (Total / Errors / p95 / Top prompt).
-    - `<MiniBarChart>` (recharts BarChart, 30 barras).
-    - `<TopPromptsList>` (5 rows con barra horizontal %).
+#### Páginas
 
-- **Range picker**:
-  - `<ToggleGroup>` con 7d / 30d / 90d. Default 30d.
+- **`ApiKeysPage` rebuild** (cierra el deferred de Pγ — la página
+  legacy P8/P9 ahora se rediseña Pγ + integra metrics):
+  - Header + range picker global.
+  - Cada key row es `<Collapsible>`. Header del collapsible:
+    nombre, prefix, last used, status pill.
+  - Expandido: lazy fetch de métricas → render `<UsageDashboard>`.
+  - Footer: link "View full details →" a `/settings/api-keys/:id`.
 
-- **Página existente extendida**: `/settings/api-keys`:
-  - Cada `<ApiKeyRow>` ahora es `<Collapsible>` con summary
-    arriba (nombre, prefix, last used) + content que monta el
-    `<UsageDashboard>` lazy (solo fetch al expandir).
+- **`/settings/api-keys/:id` (nueva ruta)**:
+  - Full-page del UsageDashboard + tabla de errores por status code
+    + chart de p50/p95 over time.
+  - Range picker dedicado.
 
-- **Página nueva**: `/settings/api-keys/:id`:
-  - Full-page del dashboard + tabla de últimos errores (status
-    code → count) + chart de p50/p95 over time.
-  - Range picker 7d/30d/90d.
+#### Routing
 
-### Cron infrastructure
+- Agregar `/settings/api-keys/:id` bajo `<SettingsLayout>` en
+  `frontend.tsx`. La página comparte el sidebar Settings.
 
-- Servicio nuevo en `docker-compose.prod.yml` o systemd timer:
-  - `consolidate-api-key-metrics` corriendo a las 00:05 UTC.
-  - `prune-old-metrics` corriendo semanalmente.
-  - Ambos como scripts `bun scripts/cron-*.ts` reusando la app.
+### Specs cross-reference
+
+- `conventions.md` §11 (design tokens + typography) ya enforced — UI
+  componentes usan `bg-chart-1` / `font-display` / etc.
+- `tech-stack.md` Frontend → "Charting (P18)" ya documenta recharts.
+- `mission.md` ya documenta el cambio de scope (métricas in V1, event
+  log out V1).
 
 ## Out of scope (deferred)
 
-- **Event-level log** (`api_key_request_log` con 1 row per
-  request). Diferido por costo y porque el agregado cubre los
-  casos de uso V1.
-- **Alertas / notificaciones** cuando una key tira muchos
-  errores o pega rate limits (P19+).
+- **Event-level log** (`api_key_request_log` con 1 row per request).
+- **Alertas / notificaciones** (key tirando muchos errores, near rate
+  limit). P19+.
 - **Geographic / IP analytics** (qué países llaman, etc).
-- **Cost tracking por modelo** (vendría con templates V2 si la
-  app llega a saber qué modelo terminó usando el output).
-- **Realtime streaming** del dashboard (WebSocket). Polling SWR
-  con `refreshInterval: 60_000` en lugar.
-- **Export CSV** de métricas. Sale como nice-to-have post-P18.
+- **Cost tracking por modelo** (V2 con templates).
+- **Realtime streaming** del dashboard (WebSocket). Polling SWR con
+  `refreshInterval` opcional.
+- **Export CSV** de métricas. Nice-to-have post-P18.
 - **Comparison entre keys** (key A vs key B side-by-side). No.
+- **Backfill histórico** (las keys pre-P18 no tienen datos previos).
+- **Cron infra deploy** (docker-compose.prod.yml service / systemd
+  timer). Documentado en P15; los scripts cron de P18 son
+  invocables a mano hasta que P15 los wirea.
 
 ## Risks / open items
 
-- **Key con muchísimos slugs distintos**: HASH `by-slug` puede
-  crecer (ej. dev-test pegándole a 1000 slugs distintos por
-  día). Mitigación: cap a 1000 entries en el HASH; consolidación
-  toma top N.
-- **Latencia del INCR/LPUSH**: ~1ms cada uno; con 4-5 comandos
-  por hit son ~5ms agregados al request. Mitigación: pipeline +
-  fire-and-forget en el handler (no esperar antes de responder).
+- **Key con muchísimos slugs distintos**: HASH `by-slug` puede crecer
+  (key de dev pegándole a 1000 slugs/día). Mitigación: cap a
+  `METRICS_BY_SLUG_CAP = 1000` entries por día per key (drop nuevos
+  slugs si overflow), top N en consolidate.
+- **Latencia del INCR/LPUSH**: ~1ms cada uno; con 4-5 comandos en
+  pipeline son ~5ms agregados. Mitigación: pipeline + fire-and-forget
+  en el handler (no esperar antes de responder).
 - **Consolidation falló por algún día**: el cron del día siguiente
-  intenta el día anterior. Necesitamos detectar y backfillear.
-  Mitigación: query `findKeysWithUnconsolidatedDays` que escanee
-  Redis en busca de día > 1d viejo.
-- **Time zone**: usar UTC para todas las claves de día
-  (`day = new Date().toISOString().slice(0, 10)`). UI muestra
-  en local TZ pero el storage es UTC.
-- **Migration de keys nuevas**: para keys creadas DESPUÉS del
-  deploy de P18, todo funciona. Para keys preexistentes con
-  uso histórico — no hay backfill (no tenemos los datos).
-  Documentar como "métricas disponibles desde el deploy de P18".
+  intenta solo "ayer". Si fallamos un día completo, ese día se
+  pierde de Redis (TTL 8d nos da margen). Mitigación: los logs del
+  cron deben monitorearse; manualmente se puede correr
+  `--day=YYYY-MM-DD` para backfillear cualquier día con datos en
+  Redis.
+- **Time zone**: storage UTC strict. UI muestra en TZ local — días
+  pueden "desfasar" visualmente para users no-UTC, pero la línea de
+  tiempo es coherente. Aceptable en V1.
+- **Migration de keys nuevas**: para keys creadas DESPUÉS del deploy
+  de P18, todo funciona. Para keys preexistentes con uso histórico
+  — no hay backfill (no tenemos los datos). Documentar en deep-dive
+  page como "Métricas disponibles desde \<deploy date\>".
+- **Redis crash mid-day**: si Redis se cae y se reinicia (sin
+  persistencia), los counters del día se pierden. AOF/RDB en prod
+  mitiga. Aceptable en V1.
+- **API Keys page rebuild interaction con P12 (backfill UI)**: la
+  ApiKeysPage no toca integrations, así que cero conflicto con el
+  BackfillStatusSection.

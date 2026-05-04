@@ -25,6 +25,10 @@ import { RevokeApiKeyCommand } from "@/application/commands/revoke-api-key.comma
 import { ListApiKeysForUserQuery } from "@/application/queries/list-api-keys-for-user.query";
 import { AuthenticateApiKeyQuery } from "@/application/queries/authenticate-api-key.query";
 import { GetLatestPublishedVersionQuery } from "@/application/queries/get-latest-published-version.query";
+import { RecordApiKeyHitCommand } from "@/application/commands/record-api-key-hit.command";
+import { GetApiKeyMetricsQuery } from "@/application/queries/get-api-key-metrics.query";
+import { BunRedisMetricsCounter } from "@/infrastructure/cache/bun-redis-metrics-counter.adapter";
+import { PostgresApiKeyMetricsRepository } from "@/infrastructure/persistence/repositories/postgres-api-key-metrics.repository";
 import { ConnectGitHubCommand } from "@/application/commands/connect-github.command";
 import { DisconnectGitHubCommand } from "@/application/commands/disconnect-github.command";
 import { GetGitHubConnectionQuery } from "@/application/queries/get-github-connection.query";
@@ -48,6 +52,8 @@ import {
   ApiKeyNotFoundError,
   ApiKeyQuotaExceededError,
   InvalidApiKeyNameError,
+  InvalidMetricsRangeError,
+  MetricsRange,
 } from "@/domain/api-key";
 import {
   InvalidPromptNameError,
@@ -91,6 +97,15 @@ const getLatestPublishedVersion = new GetLatestPublishedVersionQuery(
   promptRepo,
   versionRepo,
   cache,
+);
+// P18 — API key usage metrics
+const apiKeyMetricsRepo = new PostgresApiKeyMetricsRepository(db);
+const metricsCounter = new BunRedisMetricsCounter();
+const recordApiKeyHit = new RecordApiKeyHitCommand(metricsCounter);
+const getApiKeyMetrics = new GetApiKeyMetricsQuery(
+  apiKeyRepo,
+  apiKeyMetricsRepo,
+  metricsCounter,
 );
 const githubConnectionRepo = new PostgresGitHubConnectionRepository(db);
 // Integrations OAuth App (separate from Auth.js login app) — see env.ts
@@ -406,6 +421,29 @@ const app = new Elysia()
       throw err;
     }
   })
+  .get("/api/keys/:id/metrics", async ({ request, params, query }) => {
+    const userOr401 = await requireUser(request, getCurrentUser);
+    if (userOr401 instanceof Response) return userOr401;
+
+    try {
+      const range = MetricsRange.parse(
+        typeof query.range === "string" ? query.range : "30d",
+      );
+      const include =
+        typeof query.include === "string" ? query.include.split(",") : [];
+      const summary = await getApiKeyMetrics.execute({
+        userId: userOr401.id,
+        apiKeyId: params.id,
+        range,
+        includeStatusBreakdown: include.includes("status-breakdown"),
+      });
+      return Response.json(summary);
+    } catch (err) {
+      if (err instanceof InvalidMetricsRangeError) return jsonError(400, err.message);
+      if (err instanceof ApiKeyNotFoundError) return jsonError(404, err.message);
+      throw err;
+    }
+  })
   // ───────────────── GitHub integration (P10) ─────────────────
   .get("/api/integrations/github/oauth-start", async ({ request }) => {
     const userOr401 = await requireUser(request, getCurrentUser);
@@ -484,42 +522,65 @@ const app = new Elysia()
   // ───────────────── Public consumption API ─────────────────
   .options("/v1/prompts/:slug", () => new Response(null, { status: 204, headers: corsHeaders }))
   .get("/v1/prompts/:slug", async ({ request, params }) => {
+    const start = performance.now();
     const keyOr401 = await requireApiKey(request, authenticateApiKey, corsHeaders);
+    // 401 path has no resolved key — nothing to attribute the metric to.
     if (keyOr401 instanceof Response) return keyOr401;
 
-    const rl = await rateLimiter.consume(`apikey:${keyOr401.id}`, 100, 60);
+    // Captures start + apiKeyId; records every response branch (200,
+    // 404, 429) fire-and-forget. Best-effort: the public endpoint
+    // never blocks on metrics writes.
+    const apiKeyId = keyOr401.id;
+    const slug = params.slug;
+    const recordAndReturn = (response: Response): Response => {
+      const latencyMs = Math.round(performance.now() - start);
+      void recordApiKeyHit
+        .execute(apiKeyId, slug, response.status, latencyMs)
+        .catch((err: unknown) => {
+          console.error("[metrics-record]", err);
+        });
+      return response;
+    };
+
+    const rl = await rateLimiter.consume(`apikey:${apiKeyId}`, 100, 60);
     if (!rl.allowed) {
-      return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
-        status: 429,
-        headers: {
-          ...corsHeaders,
-          "content-type": "application/json",
-          "retry-after": String(rl.retryAfter),
-        },
-      });
+      return recordAndReturn(
+        new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            "content-type": "application/json",
+            "retry-after": String(rl.retryAfter),
+          },
+        }),
+      );
     }
 
     const dto = await getLatestPublishedVersion.execute(
       keyOr401.userId,
-      params.slug,
+      slug,
     );
     if (!dto) {
-      return new Response(JSON.stringify({ error: "Prompt not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "content-type": "application/json" },
-      });
+      return recordAndReturn(
+        new Response(JSON.stringify({ error: "Prompt not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "content-type": "application/json" },
+        }),
+      );
     }
 
-    return new Response(JSON.stringify(dto), {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        "content-type": "application/json",
-        "x-ratelimit-limit": "100",
-        "x-ratelimit-remaining": String(rl.remaining),
-        "x-ratelimit-reset": String(rl.resetAt),
-      },
-    });
+    return recordAndReturn(
+      new Response(JSON.stringify(dto), {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "content-type": "application/json",
+          "x-ratelimit-limit": "100",
+          "x-ratelimit-remaining": String(rl.remaining),
+          "x-ratelimit-reset": String(rl.resetAt),
+        },
+      }),
+    );
   });
 
 // Boot reconciler: resume backfills interrupted by a server crash.

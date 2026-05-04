@@ -67,4 +67,12 @@ export class PostgresApiKeyRepository implements ApiKeyRepository {
       .where(and(eq(apiKeys.userId, userId), isNull(apiKeys.revokedAt)));
     return rows[0]?.value ?? 0;
   }
+
+  async findAllActiveIds(): Promise<string[]> {
+    const rows = await this.db
+      .select({ id: apiKeys.id })
+      .from(apiKeys)
+      .where(isNull(apiKeys.revokedAt));
+    return rows.map((r) => r.id);
+  }
 }
