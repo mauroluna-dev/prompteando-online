@@ -30,6 +30,8 @@ import { DisconnectGitHubCommand } from "@/application/commands/disconnect-githu
 import { GetGitHubConnectionQuery } from "@/application/queries/get-github-connection.query";
 import { OctokitGitHubAdapter } from "@/infrastructure/github/octokit-github.adapter";
 import { PostgresGitHubConnectionRepository } from "@/infrastructure/persistence/repositories/postgres-github-connection.repository";
+import { BunRedisLock } from "@/infrastructure/cache/bun-redis-lock.adapter";
+import { CommitVersionToGitHubJob } from "@/application/jobs/commit-version-to-github.job";
 import {
   signOAuthState,
   verifyOAuthState,
@@ -101,6 +103,27 @@ const connectGithub = new ConnectGitHubCommand(
 );
 const disconnectGithub = new DisconnectGitHubCommand(githubConnectionRepo);
 const getGithubConnection = new GetGitHubConnectionQuery(githubConnectionRepo);
+const githubLock = new BunRedisLock();
+const commitVersionToGithub = new CommitVersionToGitHubJob(
+  githubConnectionRepo,
+  promptRepo,
+  versionRepo,
+  githubGateway,
+  cryptoAdapter,
+  githubLock,
+);
+
+function dispatchGithubCommit(
+  userId: string,
+  promptId: string,
+  versionId: string,
+): void {
+  void commitVersionToGithub
+    .run({ userId, promptId, versionId })
+    .catch((err: unknown) => {
+      console.error("[github-commit-job]", err);
+    });
+}
 
 const corsHeaders: Record<string, string> = {
   "access-control-allow-origin": "*",
@@ -219,6 +242,13 @@ const app = new Elysia()
         parsed.content,
         parsed.commitMessage,
       );
+      if (!result.isNoOp) {
+        dispatchGithubCommit(
+          userOr401.id,
+          result.version.promptId,
+          result.version.id,
+        );
+      }
       return new Response(JSON.stringify(result.version), {
         status: result.isNoOp ? 200 : 201,
         headers: {
@@ -277,6 +307,13 @@ const app = new Elysia()
         params.slug,
         versionNumber,
       );
+      if (!result.isNoOp) {
+        dispatchGithubCommit(
+          userOr401.id,
+          result.version.promptId,
+          result.version.id,
+        );
+      }
       return new Response(JSON.stringify(result.version), {
         status: result.isNoOp ? 200 : 201,
         headers: {
