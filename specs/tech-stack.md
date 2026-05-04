@@ -29,9 +29,10 @@ src/
 │   ├── version/
 │   ├── user/
 │   └── api-key/
-├── application/            # Use cases. Commands y Queries separados.
+├── application/            # Use cases. Commands, Queries y Jobs separados.
 │   ├── commands/           # CreatePromptCommand, SaveNewVersionCommand, RotateApiKeyCommand, ConnectGitHubCommand.
 │   ├── queries/            # GetPromptBySlugQuery, ListPromptsQuery, GetLatestVersionQuery.
+│   ├── jobs/               # CommitVersionToGitHubJob (background side-effects, fire-and-forget).
 │   └── ports/              # Interfaces (PromptRepository, GitHubGateway, etc).
 ├── infrastructure/         # Adapters concretos. Único lugar que importa libs externas.
 │   ├── persistence/        # Drizzle repositories.
@@ -53,10 +54,13 @@ Reglas duras:
 - `interfaces/http/` es composition root: instancia adapters y los
   inyecta en commands/queries antes de dispatchar.
 
-CQS (ver `conventions.md` §6 para reglas exactas):
+CQS + Jobs (ver `conventions.md` §6 y §9 para reglas exactas):
 - **Una clase por use case**. Naming canónico:
   - Commands: `<Verb><Noun>Command` en `*.command.ts`.
   - Queries: `<Verb><Noun>Query` en `*.query.ts`.
+  - Jobs (background, fire-and-forget): `<Verb><Noun>Job` en
+    `*.job.ts`. Single `run(input)` method. Persisten su error
+    como estado en vez de throw — no hay caller esperando.
 - **API pública uniforme**: cada clase expone un único método público
   `execute(...)`. El constructor recibe los ports (deps).
 - **Param shape**:
