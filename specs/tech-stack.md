@@ -144,6 +144,25 @@ Schemas core (V1):
 - El `access_token` de GitHub vive en `accounts` (encrypted at rest).
   Solo `infrastructure/github/` lo desencripta para llamar a Octokit.
 
+### GitHub OAuth — dos OAuth Apps requeridas
+GitHub OAuth Apps permiten **una sola** Authorization callback URL
+por app. Tenemos dos flujos OAuth con callbacks distintos, así que
+el setup de producción requiere registrar **dos OAuth Apps separadas**
+en GitHub, cada una con sus propios client_id + secret:
+
+| OAuth App | Callback URL | Envs | Consumer |
+|---|---|---|---|
+| App #1 — Login | `<AUTH_URL>/auth/callback/github` | `GITHUB_AUTH_CLIENT_ID/SECRET` | `auth-config.ts` (Auth.js GitHub provider) |
+| App #2 — Integrations | `<AUTH_URL>/api/integrations/github/oauth-callback` | `GITHUB_INTEGRATIONS_CLIENT_ID/SECRET` | `OctokitGitHubAdapter` + `/api/integrations/github/oauth-start` |
+
+Ambos pares de envs son **required at boot** (Zod schema en `env.ts`).
+Sin las 4, el server falla fast. Documentado en `.env.example`.
+
+Migración a GitHub Apps (que sí soportan múltiples callbacks) queda
+out-of-scope V1 — refactor mucho mayor (installation tokens, JWT
+signing con private key, no compatible con Auth.js GitHub provider
+de oficio).
+
 ## API Keys (consumo público)
 - Generadas en dashboard. Formato: `ps_live_<32 chars>`.
 - Plaintext mostrado UNA sola vez. En BD solo `key_hash`
@@ -182,6 +201,59 @@ Application/domain code nunca importa `crypto`, `node:crypto` ni
   via `useSWRMutation`.
 - **react-hook-form** + **zod** — forms y validación.
 - Bundling vía Bun HTML imports (sin Vite, per CLAUDE.md).
+
+### Design system (Pγ)
+Reglas duras en `conventions.md` §11. Resumen del stack:
+
+- **Tailwind v4 `@theme`** en `styles/globals.css` define los
+  CSS vars que mapean a clases utility (`bg-primary`,
+  `text-success-fg`, `font-display`, etc.).
+- **Tokens semánticos promptstash**: `--ps-success-{fg,bg}`,
+  `--ps-warning-{fg,bg}`, `--ps-info-{fg,bg}`,
+  `--ps-diff-add-{fg,bg}`, `--ps-diff-del-{fg,bg}`. Expuestos
+  como `bg-success-bg`, `text-diff-add-fg`, etc. via el
+  `@theme inline` block.
+- **Tokens shadcn** preservados (`--background`, `--foreground`,
+  `--primary`, `--card`, `--border`, etc.) — Pγ ajustó solo
+  `--background` a `oklch(0.985 0 0)` (#FAFAFA) para que las
+  cards (`#FFF`) tengan separación visual sin shadow heavy.
+
+**Tipografías** self-hosted via `@fontsource/*`:
+- `@fontsource/cal-sans` — `font-display`, headings.
+- `@fontsource/numans` — `font-sans`, body.
+- `@fontsource/geist-mono` — `font-mono`, code.
+
+Approx CSS bundle delta: +290 KB por las 3 fonts. Acceptable
+porque cachean cross-page.
+
+### Frontend layout patterns
+- **Public pages** (Landing, Login) renderean su propio chrome
+  (header sin tabs, footer si aplica). No usan `<AppShell>`.
+- **`<AppShell>`** (`src/frontend/components/AppShell.tsx`) envuelve
+  todas las rutas autenticadas con sticky header (brand + tabs +
+  bell + user menu) + `<Outlet>`. Tabs: `Prompts | API Keys |
+  Settings`. Active state usa `bg-muted` pill.
+- **`<SettingsLayout>`** (`src/frontend/components/SettingsLayout.tsx`)
+  agrega un sidebar de sub-navegación dentro de `/settings/*`
+  (Profile / API Keys / Integrations / Billing soon). Renderea
+  via `<Outlet>` también.
+- **`<RequireAuth>`** redirect a `/login` si no hay sesión.
+  **`<RedirectIfAuthed>`** mirror invertido — bumpa a `/prompts`
+  si SÍ hay sesión (usado en `/` para que el landing no se vea
+  a usuarios logueados).
+
+### Routing map
+| Path | Auth | Component |
+|---|---|---|
+| `/` | public (auto-redirect to `/prompts` if logged in) | `<LandingPage>` |
+| `/login` | public | `<LoginPage>` |
+| `/prompts` | required | `<PromptsListPage>` |
+| `/prompts/new` | required | `<PromptCreatePage>` |
+| `/prompts/:slug` | required | `<PromptDetailPage>` |
+| `/settings` | required | redirect → `/settings/profile` |
+| `/settings/profile` | required | `<SettingsProfilePage>` (en `<SettingsLayout>`) |
+| `/settings/api-keys` | required | `<ApiKeysPage>` (en `<SettingsLayout>`) |
+| `/settings/integrations` | required | `<SettingsIntegrationsPage>` (en `<SettingsLayout>`) |
 
 ### Editor markdown + diff (P17)
 - **CodeMirror 6** (`@codemirror/state`, `@codemirror/view`,
