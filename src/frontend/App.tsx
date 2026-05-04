@@ -1,16 +1,9 @@
-import { Outlet } from "react-router";
-import { Header } from "./components/Header";
+import { AppShell } from "./components/AppShell";
 import "./index.css";
 
+// Pγ: AppShell owns the layout (sticky header + Outlet).
 export function App() {
-  return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="container mx-auto flex-1 p-8">
-        <Outlet />
-      </main>
-    </div>
-  );
+  return <AppShell />;
 }
 
 export default App;
