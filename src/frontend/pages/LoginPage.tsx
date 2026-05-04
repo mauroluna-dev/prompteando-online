@@ -58,7 +58,7 @@ export function LoginPage() {
         <div className="flex w-full max-w-md flex-col items-center gap-8">
           <div className="flex flex-col items-center gap-3 text-center">
             <h1 className="font-display text-4xl font-semibold leading-[1.1] tracking-tight">
-              Welcome to promptstash
+              Bienvenido a promptstash
             </h1>
             <p className="text-base leading-relaxed text-muted-foreground">
               Versioná tus prompts. Nunca pierdas la última que andaba.

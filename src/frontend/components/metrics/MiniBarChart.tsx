@@ -76,9 +76,9 @@ function computeTickIndices(n: number): Set<number> {
 }
 
 function formatTick(day: string): string {
-  // "YYYY-MM-DD" → "MMM DD" (e.g. "May 04").
+  // "YYYY-MM-DD" → "DD MMM" (e.g. "04 may").
   const d = new Date(`${day}T00:00:00Z`);
-  return d.toLocaleDateString(undefined, {
+  return d.toLocaleDateString("es-AR", {
     month: "short",
     day: "2-digit",
     timeZone: "UTC",
@@ -87,7 +87,7 @@ function formatTick(day: string): string {
 
 function formatTooltipDate(day: string): string {
   const d = new Date(`${day}T00:00:00Z`);
-  return d.toLocaleDateString(undefined, {
+  return d.toLocaleDateString("es-AR", {
     month: "short",
     day: "numeric",
     year: "numeric",

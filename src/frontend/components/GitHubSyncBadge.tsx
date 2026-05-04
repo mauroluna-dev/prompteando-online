@@ -11,12 +11,12 @@ const ERROR_COPY: Record<string, string> = {
   token_invalid: "Token inválido. Reconectá GitHub.",
   insufficient_scope: "Permisos insuficientes en GitHub.",
   repo_missing: "No encuentro el repo en GitHub.",
-  rate_limited: "GitHub rate limit. Probá de nuevo en unos minutos.",
-  lock_timeout: "Sync demorado. Hacé un nuevo save para reintentar.",
+  rate_limited: "Rate limit de GitHub. Probá de nuevo en unos minutos.",
+  lock_timeout: "Sync demorado. Guardá de nuevo para reintentar.",
 };
 
 function describeError(code: string): string {
-  return ERROR_COPY[code] ?? "Error sincronizando con GitHub.";
+  return ERROR_COPY[code] ?? "Error al sincronizar con GitHub.";
 }
 
 export function GitHubSyncBadge({
@@ -39,15 +39,15 @@ export function GitHubSyncBadge({
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        title="Synced to GitHub — view commit"
+        title="Sincronizado con GitHub — ver commit"
         className="hover:text-foreground inline-flex items-center"
-        aria-label="View commit on GitHub"
+        aria-label="Ver commit en GitHub"
         onClick={(e) => e.stopPropagation()}
       >
         {icon}
       </a>
     ) : (
-      <span title="Synced to GitHub" className="inline-flex items-center">
+      <span title="Sincronizado con GitHub" className="inline-flex items-center">
         {icon}
       </span>
     );
@@ -70,9 +70,9 @@ export function GitHubSyncBadge({
 
   return (
     <span
-      title="Syncing to GitHub…"
+      title="Sincronizando con GitHub…"
       className="inline-flex items-center"
-      aria-label="Syncing to GitHub"
+      aria-label="Sincronizando con GitHub"
     >
       <Loader2
         className="text-muted-foreground h-3.5 w-3.5 animate-spin"

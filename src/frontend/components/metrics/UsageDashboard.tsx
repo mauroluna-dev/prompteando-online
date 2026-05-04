@@ -28,25 +28,25 @@ export function UsageDashboard({
     <div className={cn("flex flex-col gap-5", className)}>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          label={`Total requests (${rangeLabel})`}
-          value={summary.totals.requests.toLocaleString()}
+          label={`Requests totales (${rangeLabel})`}
+          value={summary.totals.requests.toLocaleString("es-AR")}
         />
         <MetricCard
-          label="Error rate"
+          label="Tasa de error"
           value={`${errorRatePct}%`}
           sub={
             summary.totals.errors > 0
-              ? `${summary.totals.errors.toLocaleString()} errors`
-              : "no errors"
+              ? `${summary.totals.errors.toLocaleString("es-AR")} errores`
+              : "sin errores"
           }
         />
         <MetricCard
-          label="p95 latency"
+          label="Latencia p95"
           value={`${summary.latency.p95}ms`}
           sub={`p50 ${summary.latency.p50}ms`}
         />
         <MetricCard
-          label="Top prompt"
+          label="Prompt más usado"
           value={
             topPrompt ? (
               <code className="font-mono text-base">{topPrompt.slug}</code>
@@ -56,8 +56,8 @@ export function UsageDashboard({
           }
           sub={
             topPrompt
-              ? `${topPrompt.count.toLocaleString()} requests`
-              : "no traffic"
+              ? `${topPrompt.count.toLocaleString("es-AR")} requests`
+              : "sin tráfico"
           }
         />
       </div>
@@ -65,7 +65,7 @@ export function UsageDashboard({
       <section className="bg-card flex flex-col gap-3 rounded-lg border p-4">
         <header className="flex items-center justify-between">
           <h3 className="font-display text-sm font-semibold">
-            Requests per day
+            Requests por día
           </h3>
           <span className="text-muted-foreground text-xs">{rangeLabel}</span>
         </header>
@@ -75,14 +75,14 @@ export function UsageDashboard({
           <MiniBarChart
             data={summary.daily}
             height={140}
-            ariaLabel={`Requests per day, ${rangeLabel}`}
+            ariaLabel={`Requests por día, ${rangeLabel}`}
           />
         )}
       </section>
 
       <section className="bg-card flex flex-col gap-3 rounded-lg border p-4">
         <header className="flex items-center justify-between">
-          <h3 className="font-display text-sm font-semibold">Top prompts</h3>
+          <h3 className="font-display text-sm font-semibold">Prompts más usados</h3>
           <span className="text-muted-foreground text-xs">{rangeLabel}</span>
         </header>
         <TopPromptsList items={summary.topPrompts} />
@@ -94,7 +94,7 @@ export function UsageDashboard({
 function EmptyChart() {
   return (
     <div className="bg-muted/40 text-muted-foreground flex h-[120px] items-center justify-center rounded text-sm">
-      No requests yet in this range.
+      Sin requests todavía en este rango.
     </div>
   );
 }

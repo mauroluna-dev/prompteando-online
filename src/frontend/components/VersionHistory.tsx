@@ -5,14 +5,14 @@ function timeAgo(d: Date | string): string {
   const ts = typeof d === "string" ? new Date(d).getTime() : d.getTime();
   const diff = Date.now() - ts;
   const minutes = Math.floor(diff / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) return "recién";
+  if (minutes < 60) return `hace ${minutes}m`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return `hace ${hours}h`;
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
+  if (days < 30) return `hace ${days}d`;
   const months = Math.floor(days / 30);
-  return `${months}mo ago`;
+  return `hace ${months} mes${months === 1 ? "" : "es"}`;
 }
 
 type Props = {
@@ -46,7 +46,7 @@ export function VersionHistory({
   if (versions.length === 0) {
     return (
       <div className="text-muted-foreground text-xs">
-        No versions yet.
+        Todavía no hay versiones.
       </div>
     );
   }
@@ -57,7 +57,7 @@ export function VersionHistory({
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-sm font-semibold tracking-tight">
-          History
+          Historial
         </h2>
         {!isDiffMode && selectedNumber !== null ? (
           <button
@@ -65,7 +65,7 @@ export function VersionHistory({
             className="text-muted-foreground hover:text-foreground text-xs underline"
             onClick={() => onSelect(null)}
           >
-            Back to current
+            Volver a la actual
           </button>
         ) : null}
       </div>
@@ -89,7 +89,7 @@ export function VersionHistory({
                   v{v.versionNumber}
                   {isCurrent ? (
                     <span className="text-muted-foreground ml-1 text-[10px] font-normal uppercase">
-                      current
+                      actual
                     </span>
                   ) : null}
                   <GitHubSyncBadge
