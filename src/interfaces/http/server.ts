@@ -93,9 +93,11 @@ const getLatestPublishedVersion = new GetLatestPublishedVersionQuery(
   cache,
 );
 const githubConnectionRepo = new PostgresGitHubConnectionRepository(db);
+// Integrations OAuth App (separate from Auth.js login app) — see env.ts
+// comment for why two apps are needed.
 const githubGateway = new OctokitGitHubAdapter({
-  clientId: env.GITHUB_CLIENT_ID,
-  clientSecret: env.GITHUB_CLIENT_SECRET,
+  clientId: env.GITHUB_INTEGRATIONS_CLIENT_ID,
+  clientSecret: env.GITHUB_INTEGRATIONS_CLIENT_SECRET,
 });
 const connectGithub = new ConnectGitHubCommand(
   githubConnectionRepo,
@@ -410,7 +412,7 @@ const app = new Elysia()
     if (userOr401 instanceof Response) return userOr401;
 
     const params = new URLSearchParams({
-      client_id: env.GITHUB_CLIENT_ID,
+      client_id: env.GITHUB_INTEGRATIONS_CLIENT_ID,
       redirect_uri: `${env.AUTH_URL}/api/integrations/github/oauth-callback`,
       scope: "repo",
       state: signOAuthState(userOr401.id),
