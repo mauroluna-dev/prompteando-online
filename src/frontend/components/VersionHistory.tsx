@@ -1,4 +1,5 @@
 import type { PromptVersionDTO as PromptVersion } from "@/domain/prompt-version";
+import { GitHubSyncBadge } from "./GitHubSyncBadge";
 
 function timeAgo(d: Date | string): string {
   const ts = typeof d === "string" ? new Date(d).getTime() : d.getTime();
@@ -19,6 +20,7 @@ type Props = {
   currentNumber: number | null;
   selectedNumber: number | null;
   onSelect: (n: number | null) => void;
+  githubConnection: { hasConnection: boolean; repoFullName: string | null };
 };
 
 export function VersionHistory({
@@ -26,6 +28,7 @@ export function VersionHistory({
   currentNumber,
   selectedNumber,
   onSelect,
+  githubConnection,
 }: Props) {
   if (versions.length === 0) {
     return (
@@ -66,13 +69,19 @@ export function VersionHistory({
                 ].join(" ")}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">
+                  <span className="flex items-center gap-1.5 text-sm font-medium">
                     v{v.versionNumber}
                     {isCurrent ? (
-                      <span className="text-muted-foreground ml-2 text-[10px] font-normal uppercase">
+                      <span className="text-muted-foreground ml-1 text-[10px] font-normal uppercase">
                         current
                       </span>
                     ) : null}
+                    <GitHubSyncBadge
+                      githubCommitSha={v.githubCommitSha}
+                      githubSyncError={v.githubSyncError}
+                      hasConnection={githubConnection.hasConnection}
+                      repoFullName={githubConnection.repoFullName}
+                    />
                   </span>
                   <span className="text-muted-foreground text-[11px]">
                     {timeAgo(v.createdAt)}

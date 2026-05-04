@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useGithubConnection } from "@/frontend/hooks/use-github-connection";
 import { usePrompt } from "@/frontend/hooks/use-prompts";
 import { useVersions } from "@/frontend/hooks/use-versions";
 import { deletePrompt } from "@/frontend/lib/api/prompts";
@@ -31,7 +32,12 @@ function formatDate(d: Date | string) {
 export function PromptDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: prompt, isLoading: promptLoading } = usePrompt(slug);
-  const { data: versions = [], isLoading: versionsLoading } = useVersions(slug);
+  const { data: githubConnection } = useGithubConnection();
+  const hasConnection = Boolean(githubConnection);
+  const { data: versions = [], isLoading: versionsLoading } = useVersions(
+    slug,
+    { trackGithubSync: hasConnection },
+  );
   const navigate = useNavigate();
 
   const [viewingNumber, setViewingNumber] = useState<number | null>(null);
@@ -270,6 +276,10 @@ export function PromptDetailPage() {
             currentNumber={currentVersion?.versionNumber ?? null}
             selectedNumber={viewingNumber}
             onSelect={setViewingNumber}
+            githubConnection={{
+              hasConnection,
+              repoFullName: githubConnection?.repoFullName ?? null,
+            }}
           />
         </aside>
       </div>
