@@ -10,9 +10,27 @@ export function renderVersionContent(
   prompt: Prompt,
   version: PromptVersion,
 ): string {
+  return renderVersionContentRaw(
+    prompt.name.value,
+    prompt.slug.value,
+    version,
+  );
+}
+
+/**
+ * Same output as `renderVersionContent`, but accepts the prompt
+ * name and slug as raw strings. Used by the backfill job when only
+ * a join row is available (no need to reconstitute a full `Prompt`
+ * entity).
+ */
+export function renderVersionContentRaw(
+  promptName: string,
+  promptSlug: string,
+  version: PromptVersion,
+): string {
   const lines = [
-    `prompt_name: ${yamlScalar(prompt.name.value)}`,
-    `slug: ${yamlScalar(prompt.slug.value)}`,
+    `prompt_name: ${yamlScalar(promptName)}`,
+    `slug: ${yamlScalar(promptSlug)}`,
     `version: ${version.versionNumber.value}`,
   ];
   if (version.commitMessage) {

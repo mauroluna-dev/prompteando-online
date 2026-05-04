@@ -2,6 +2,7 @@ import { Octokit } from "@octokit/rest";
 import {
   GitHubCommitGatewayError,
   type GitHubAuthenticatedUser,
+  type GitHubCommitVersionBackdatedInput,
   type GitHubCommitVersionInput,
   type GitHubCommitVersionResult,
   type GitHubEnsureReadmeResult,
@@ -17,6 +18,18 @@ import {
 import { mapCommitError, statusOf, messageOf } from "./map-commit-error";
 
 const TOKEN_EXCHANGE_URL = "https://github.com/login/oauth/access_token";
+
+// GitHub REST API version. Pinning this avoids the @octokit/request
+// "endpoint is deprecated" warning that fires when no version header
+// is sent — see https://docs.github.com/en/rest/about-the-rest-api/api-versions
+const GITHUB_API_VERSION = "2022-11-28";
+
+function buildOctokit(accessToken: string): Octokit {
+  return new Octokit({
+    auth: accessToken,
+    request: { headers: { "x-github-api-version": GITHUB_API_VERSION } },
+  });
+}
 
 type AccessTokenResponse =
   | { access_token: string; scope: string; token_type: string }
@@ -59,7 +72,7 @@ export class OctokitGitHubAdapter implements GitHubGateway {
   async getAuthenticatedUser(
     accessToken: string,
   ): Promise<GitHubAuthenticatedUser> {
-    const octokit = new Octokit({ auth: accessToken });
+    const octokit = buildOctokit(accessToken);
     const { data } = await octokit.users.getAuthenticated();
     return { login: data.login };
   }
@@ -68,7 +81,7 @@ export class OctokitGitHubAdapter implements GitHubGateway {
     accessToken: string,
     repoName: string,
   ): Promise<GitHubEnsureRepoResult> {
-    const octokit = new Octokit({ auth: accessToken });
+    const octokit = buildOctokit(accessToken);
     const { data: me } = await octokit.users.getAuthenticated();
     const owner = me.login;
 
@@ -111,7 +124,7 @@ export class OctokitGitHubAdapter implements GitHubGateway {
     repoFullName: string,
     defaultBranch: string,
   ): Promise<GitHubEnsureReadmeResult> {
-    const octokit = new Octokit({ auth: accessToken });
+    const octokit = buildOctokit(accessToken);
     const [owner, repo] = repoFullName.split("/") as [string, string];
 
     try {
@@ -142,7 +155,7 @@ export class OctokitGitHubAdapter implements GitHubGateway {
     input: GitHubCommitVersionInput,
   ): Promise<GitHubCommitVersionResult> {
     const [owner, repo] = input.repoFullName.split("/") as [string, string];
-    const octokit = new Octokit({ auth: input.accessToken });
+    const octokit = buildOctokit(input.accessToken);
 
     let existingSha: string | undefined;
     try {
@@ -177,6 +190,80 @@ export class OctokitGitHubAdapter implements GitHubGateway {
         throw new GitHubCommitGatewayError("unknown", "missing commit sha");
       }
       return { sha };
+    } catch (err) {
+      if (err instanceof GitHubCommitGatewayError) throw err;
+      throw mapCommitError(err);
+    }
+  }
+
+  async commitVersionBackdated(
+    input: GitHubCommitVersionBackdatedInput,
+  ): Promise<GitHubCommitVersionResult> {
+    const [owner, repo] = input.repoFullName.split("/") as [string, string];
+    const octokit = buildOctokit(input.accessToken);
+    const isoDate = input.committedAt.toISOString();
+
+    try {
+      const { data: blob } = await octokit.git.createBlob({
+        owner,
+        repo,
+        content: Buffer.from(input.content, "utf8").toString("base64"),
+        encoding: "base64",
+      });
+
+      const { data: ref } = await octokit.git.getRef({
+        owner,
+        repo,
+        ref: `heads/${input.branch}`,
+      });
+      const parentSha = ref.object.sha;
+
+      const { data: parentCommit } = await octokit.git.getCommit({
+        owner,
+        repo,
+        commit_sha: parentSha,
+      });
+
+      const { data: tree } = await octokit.git.createTree({
+        owner,
+        repo,
+        base_tree: parentCommit.tree.sha,
+        tree: [
+          {
+            path: input.path,
+            mode: "100644",
+            type: "blob",
+            sha: blob.sha,
+          },
+        ],
+      });
+
+      const { data: commit } = await octokit.git.createCommit({
+        owner,
+        repo,
+        message: input.commitMessage,
+        tree: tree.sha,
+        parents: [parentSha],
+        author: {
+          name: input.authorName,
+          email: input.authorEmail,
+          date: isoDate,
+        },
+        committer: {
+          name: input.authorName,
+          email: input.authorEmail,
+          date: isoDate,
+        },
+      });
+
+      await octokit.git.updateRef({
+        owner,
+        repo,
+        ref: `heads/${input.branch}`,
+        sha: commit.sha,
+      });
+
+      return { sha: commit.sha };
     } catch (err) {
       if (err instanceof GitHubCommitGatewayError) throw err;
       throw mapCommitError(err);

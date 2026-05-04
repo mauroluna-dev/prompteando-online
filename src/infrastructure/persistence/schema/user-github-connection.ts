@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 
 export const userGithubConnection = pgTable("user_github_connection", {
@@ -14,4 +14,10 @@ export const userGithubConnection = pgTable("user_github_connection", {
   connectedAt: timestamp("connected_at", { mode: "date" })
     .notNull()
     .defaultNow(),
+  backfillStatus: text("backfill_status"),
+  backfillTotal: integer("backfill_total"),
+  backfillProcessed: integer("backfill_processed"),
+  backfillStartedAt: timestamp("backfill_started_at", { mode: "date" }),
+  backfillFinishedAt: timestamp("backfill_finished_at", { mode: "date" }),
+  backfillFailureReason: text("backfill_failure_reason"),
 });

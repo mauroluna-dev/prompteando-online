@@ -31,6 +31,18 @@ export type GitHubCommitVersionResult = {
   sha: string;
 };
 
+export type GitHubCommitVersionBackdatedInput = {
+  accessToken: string;
+  repoFullName: string;
+  branch: string;
+  path: string;
+  content: string;
+  commitMessage: string;
+  committedAt: Date;
+  authorName: string;
+  authorEmail: string;
+};
+
 export type GitHubCommitErrorCode =
   | "token_invalid"
   | "insufficient_scope"
@@ -74,5 +86,16 @@ export interface GitHubGateway {
    */
   commitVersion(
     input: GitHubCommitVersionInput,
+  ): Promise<GitHubCommitVersionResult>;
+
+  /**
+   * Backdated commit using the Git Data API. The commit's
+   * `author.date` and `committer.date` are both set to
+   * `committedAt`. Used by the backfill job to replay history with
+   * faithful timestamps. Maps HTTP errors to the same
+   * `GitHubCommitGatewayError` codes as `commitVersion`.
+   */
+  commitVersionBackdated(
+    input: GitHubCommitVersionBackdatedInput,
   ): Promise<GitHubCommitVersionResult>;
 }

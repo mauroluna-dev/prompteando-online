@@ -31,4 +31,22 @@ export interface VersionRepository {
    * `github_commit_sha` (a previous successful sync remains valid).
    */
   markGithubSyncFailed(versionId: string, error: string): Promise<void>;
+
+  /**
+   * Returns the oldest version that has not been committed to GitHub
+   * for the user, plus the parent prompt's name + slug. "Pending"
+   * means `github_commit_sha IS NULL AND github_sync_error IS NULL`
+   * — versions that already failed are excluded to avoid loops.
+   */
+  findOldestPendingForUser(userId: string): Promise<{
+    version: PromptVersion;
+    promptName: string;
+    promptSlug: string;
+  } | null>;
+
+  /**
+   * Count of versions matching the same "pending" predicate as
+   * `findOldestPendingForUser`. Used to set the backfill total.
+   */
+  countPendingForUser(userId: string): Promise<number>;
 }
