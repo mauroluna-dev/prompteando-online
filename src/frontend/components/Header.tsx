@@ -30,6 +30,16 @@ export function Header() {
           >
             API Keys
           </NavLink>
+          <NavLink
+            to="/settings/integrations"
+            className={({ isActive }) =>
+              isActive
+                ? "text-foreground font-medium"
+                : "text-muted-foreground hover:text-foreground transition-colors"
+            }
+          >
+            Integrations
+          </NavLink>
         </nav>
       </div>
       <UserMenu />

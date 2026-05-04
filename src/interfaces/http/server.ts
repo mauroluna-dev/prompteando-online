@@ -25,6 +25,21 @@ import { RevokeApiKeyCommand } from "@/application/commands/revoke-api-key.comma
 import { ListApiKeysForUserQuery } from "@/application/queries/list-api-keys-for-user.query";
 import { AuthenticateApiKeyQuery } from "@/application/queries/authenticate-api-key.query";
 import { GetLatestPublishedVersionQuery } from "@/application/queries/get-latest-published-version.query";
+import { ConnectGitHubCommand } from "@/application/commands/connect-github.command";
+import { DisconnectGitHubCommand } from "@/application/commands/disconnect-github.command";
+import { GetGitHubConnectionQuery } from "@/application/queries/get-github-connection.query";
+import { OctokitGitHubAdapter } from "@/infrastructure/github/octokit-github.adapter";
+import { PostgresGitHubConnectionRepository } from "@/infrastructure/persistence/repositories/postgres-github-connection.repository";
+import {
+  signOAuthState,
+  verifyOAuthState,
+} from "@/infrastructure/auth/oauth-state";
+import {
+  GitHubInsufficientScopeError,
+  GitHubOAuthFailedError,
+  GitHubRepoCreationFailedError,
+  InvalidOAuthStateError,
+} from "@/domain/github-connection";
 import {
   ApiKeyAlreadyRevokedError,
   ApiKeyNotFoundError,
@@ -74,6 +89,18 @@ const getLatestPublishedVersion = new GetLatestPublishedVersionQuery(
   versionRepo,
   cache,
 );
+const githubConnectionRepo = new PostgresGitHubConnectionRepository(db);
+const githubGateway = new OctokitGitHubAdapter({
+  clientId: env.GITHUB_CLIENT_ID,
+  clientSecret: env.GITHUB_CLIENT_SECRET,
+});
+const connectGithub = new ConnectGitHubCommand(
+  githubConnectionRepo,
+  githubGateway,
+  cryptoAdapter,
+);
+const disconnectGithub = new DisconnectGitHubCommand(githubConnectionRepo);
+const getGithubConnection = new GetGitHubConnectionQuery(githubConnectionRepo);
 
 const corsHeaders: Record<string, string> = {
   "access-control-allow-origin": "*",
@@ -315,6 +342,77 @@ const app = new Elysia()
       throw err;
     }
   })
+  // ───────────────── GitHub integration (P10) ─────────────────
+  .get("/api/integrations/github/oauth-start", async ({ request }) => {
+    const userOr401 = await requireUser(request, getCurrentUser);
+    if (userOr401 instanceof Response) return userOr401;
+
+    const params = new URLSearchParams({
+      client_id: env.GITHUB_CLIENT_ID,
+      redirect_uri: `${env.AUTH_URL}/api/integrations/github/oauth-callback`,
+      scope: "repo",
+      state: signOAuthState(userOr401.id),
+      allow_signup: "false",
+    });
+    return Response.json({
+      url: `https://github.com/login/oauth/authorize?${params.toString()}`,
+    });
+  })
+  .get("/api/integrations/github/oauth-callback", async ({ query }) => {
+    const back = (msg: string) =>
+      Response.redirect(
+        `${env.AUTH_URL}/settings/integrations?${msg}`,
+        302,
+      );
+
+    if (typeof query.error === "string") {
+      return back(`error=${encodeURIComponent(query.error)}`);
+    }
+    if (typeof query.code !== "string" || typeof query.state !== "string") {
+      return back("error=invalid-callback");
+    }
+
+    let userId: string;
+    try {
+      userId = verifyOAuthState(query.state);
+    } catch (err) {
+      if (err instanceof InvalidOAuthStateError) {
+        return back("error=invalid-state");
+      }
+      throw err;
+    }
+
+    try {
+      await connectGithub.execute(userId, query.code);
+      return back("connected=1");
+    } catch (err) {
+      if (err instanceof GitHubInsufficientScopeError) {
+        return back("error=insufficient-scope");
+      }
+      if (err instanceof GitHubOAuthFailedError) {
+        return back("error=oauth-failed");
+      }
+      if (err instanceof GitHubRepoCreationFailedError) {
+        return back("error=repo-failed");
+      }
+      throw err;
+    }
+  })
+  .get("/api/integrations/github", async ({ request }) => {
+    const userOr401 = await requireUser(request, getCurrentUser);
+    if (userOr401 instanceof Response) return userOr401;
+
+    const connection = await getGithubConnection.execute(userOr401.id);
+    if (!connection) return new Response(null, { status: 404 });
+    return Response.json(connection.toView());
+  })
+  .delete("/api/integrations/github", async ({ request }) => {
+    const userOr401 = await requireUser(request, getCurrentUser);
+    if (userOr401 instanceof Response) return userOr401;
+
+    await disconnectGithub.execute(userOr401.id);
+    return new Response(null, { status: 204 });
+  })
   // ───────────────── Public consumption API ─────────────────
   .options("/v1/prompts/:slug", () => new Response(null, { status: 204, headers: corsHeaders }))
   .get("/v1/prompts/:slug", async ({ request, params }) => {
@@ -366,6 +464,7 @@ const server = Bun.serve({
     "/api/prompts/*": (req) => app.handle(req),
     "/api/keys": (req) => app.handle(req),
     "/api/keys/*": (req) => app.handle(req),
+    "/api/integrations/*": (req) => app.handle(req),
     "/v1/prompts/*": (req) => app.handle(req),
     "/*": index,
   },

@@ -9,7 +9,9 @@ const schema = z.object({
   GITHUB_CLIENT_SECRET: z.string().min(1),
   GOOGLE_CLIENT_ID: z.string().min(1),
   GOOGLE_CLIENT_SECRET: z.string().min(1),
-  ENCRYPTION_KEY: z.string().optional(),
+  ENCRYPTION_KEY: z
+    .string()
+    .min(40, "ENCRYPTION_KEY must be base64 of 32 bytes (~44 chars)"),
   SENTRY_DSN: z.string().optional(),
   NODE_ENV: z
     .enum(["development", "production", "test"])
