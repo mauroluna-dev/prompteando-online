@@ -1,16 +1,20 @@
 import { Octokit } from "@octokit/rest";
-import type {
-  GitHubAuthenticatedUser,
-  GitHubEnsureReadmeResult,
-  GitHubEnsureRepoResult,
-  GitHubGateway,
-  GitHubTokenExchange,
+import {
+  GitHubCommitGatewayError,
+  type GitHubAuthenticatedUser,
+  type GitHubCommitVersionInput,
+  type GitHubCommitVersionResult,
+  type GitHubEnsureReadmeResult,
+  type GitHubEnsureRepoResult,
+  type GitHubGateway,
+  type GitHubTokenExchange,
 } from "@/application/ports/github-gateway.port";
 import {
   CONSTANTS,
   GitHubOAuthFailedError,
   GitHubRepoCreationFailedError,
 } from "@/domain/github-connection";
+import { mapCommitError, statusOf, messageOf } from "./map-commit-error";
 
 const TOKEN_EXCHANGE_URL = "https://github.com/login/oauth/access_token";
 
@@ -133,18 +137,53 @@ export class OctokitGitHubAdapter implements GitHubGateway {
 
     return { committed: true, sha: data.commit.sha };
   }
+
+  async commitVersion(
+    input: GitHubCommitVersionInput,
+  ): Promise<GitHubCommitVersionResult> {
+    const [owner, repo] = input.repoFullName.split("/") as [string, string];
+    const octokit = new Octokit({ auth: input.accessToken });
+
+    let existingSha: string | undefined;
+    try {
+      const { data } = await octokit.repos.getContent({
+        owner,
+        repo,
+        path: input.path,
+        ref: input.branch,
+      });
+      if (!Array.isArray(data) && "sha" in data) {
+        existingSha = data.sha;
+      }
+    } catch (err) {
+      if (statusOf(err) !== 404) {
+        throw mapCommitError(err);
+      }
+      // 404 → file doesn't exist yet; first commit at this path.
+    }
+
+    try {
+      const { data } = await octokit.repos.createOrUpdateFileContents({
+        owner,
+        repo,
+        path: input.path,
+        message: input.commitMessage,
+        content: Buffer.from(input.content, "utf8").toString("base64"),
+        branch: input.branch,
+        sha: existingSha,
+      });
+      const sha = data.commit.sha;
+      if (!sha) {
+        throw new GitHubCommitGatewayError("unknown", "missing commit sha");
+      }
+      return { sha };
+    } catch (err) {
+      if (err instanceof GitHubCommitGatewayError) throw err;
+      throw mapCommitError(err);
+    }
+  }
 }
 
 function isStatus(err: unknown, status: number): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "status" in err &&
-    (err as { status: unknown }).status === status
-  );
-}
-
-function messageOf(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  return String(err);
+  return statusOf(err) === status;
 }
