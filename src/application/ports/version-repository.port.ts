@@ -17,4 +17,18 @@ export interface VersionRepository {
   findAllForPrompt(promptId: string): Promise<PromptVersion[]>;
 
   countForPrompt(promptId: string): Promise<number>;
+
+  findById(versionId: string): Promise<PromptVersion | null>;
+
+  /**
+   * Persist a successful GitHub commit: store the sha and clear any
+   * prior sync error.
+   */
+  markGithubCommit(versionId: string, sha: string): Promise<void>;
+
+  /**
+   * Persist a GitHub sync failure as a string code. Does not touch
+   * `github_commit_sha` (a previous successful sync remains valid).
+   */
+  markGithubSyncFailed(versionId: string, error: string): Promise<void>;
 }

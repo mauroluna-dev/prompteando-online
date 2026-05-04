@@ -2,6 +2,7 @@ import type { Prompt, Slug } from "@/domain/prompt";
 
 export interface PromptRepository {
   save(prompt: Prompt): Promise<void>;
+  findById(promptId: string): Promise<Prompt | null>;
   findBySlug(userId: string, slug: Slug): Promise<Prompt | null>;
   findAllByUserId(userId: string): Promise<Prompt[]>;
   delete(userId: string, slug: Slug): Promise<boolean>;

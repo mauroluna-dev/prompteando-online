@@ -22,6 +22,7 @@ export class PostgresVersionRepository implements VersionRepository {
         content: version.content,
         commitMessage: version.commitMessage,
         githubCommitSha: version.githubCommitSha,
+        githubSyncError: version.githubSyncError,
         createdAt: version.createdAt,
       });
       await tx
@@ -29,6 +30,32 @@ export class PostgresVersionRepository implements VersionRepository {
         .set({ currentVersionId: version.id, updatedAt: new Date() })
         .where(eq(prompts.id, version.promptId));
     });
+  }
+
+  async findById(versionId: string): Promise<PromptVersion | null> {
+    const rows = await this.db
+      .select()
+      .from(promptVersions)
+      .where(eq(promptVersions.id, versionId))
+      .limit(1);
+    return rows[0] ? PromptVersion.fromRow(rows[0]) : null;
+  }
+
+  async markGithubCommit(versionId: string, sha: string): Promise<void> {
+    await this.db
+      .update(promptVersions)
+      .set({ githubCommitSha: sha, githubSyncError: null })
+      .where(eq(promptVersions.id, versionId));
+  }
+
+  async markGithubSyncFailed(
+    versionId: string,
+    error: string,
+  ): Promise<void> {
+    await this.db
+      .update(promptVersions)
+      .set({ githubSyncError: error })
+      .where(eq(promptVersions.id, versionId));
   }
 
   async findByPromptIdAndNumber(
