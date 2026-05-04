@@ -10,6 +10,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Routes, Route } from "react-router";
 import { App } from "./App";
 import { SettingsLayout } from "./components/SettingsLayout";
+import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PromptsListPage } from "./pages/PromptsListPage";
 import { PromptCreatePage } from "./pages/PromptCreatePage";
@@ -18,25 +19,36 @@ import { ApiKeysPage } from "./pages/ApiKeysPage";
 import { SettingsProfilePage } from "./pages/SettingsProfilePage";
 import { SettingsIntegrationsPage } from "./pages/SettingsIntegrationsPage";
 import { RequireAuth } from "./RequireAuth";
+import { RedirectIfAuthed } from "./RedirectIfAuthed";
 
 const elem = document.getElementById("root")!;
 const tree = (
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        {/* Public landing — redirects to /prompts if user is already logged in */}
         <Route
           path="/"
+          element={
+            <RedirectIfAuthed to="/prompts">
+              <LandingPage />
+            </RedirectIfAuthed>
+          }
+        />
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Authenticated app */}
+        <Route
           element={
             <RequireAuth>
               <App />
             </RequireAuth>
           }
         >
-          <Route index element={<PromptsListPage />} />
-          <Route path="prompts/new" element={<PromptCreatePage />} />
-          <Route path="prompts/:slug" element={<PromptDetailPage />} />
-          <Route path="settings" element={<SettingsLayout />}>
+          <Route path="/prompts" element={<PromptsListPage />} />
+          <Route path="/prompts/new" element={<PromptCreatePage />} />
+          <Route path="/prompts/:slug" element={<PromptDetailPage />} />
+          <Route path="/settings" element={<SettingsLayout />}>
             <Route
               index
               element={<Navigate to="/settings/profile" replace />}

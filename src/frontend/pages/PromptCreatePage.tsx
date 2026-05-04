@@ -55,7 +55,7 @@ export function PromptCreatePage() {
   return (
     <div className="mx-auto w-full max-w-2xl">
       <Button asChild variant="ghost" className="mb-4">
-        <Link to="/">
+        <Link to="/prompts">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Link>
@@ -102,7 +102,7 @@ export function PromptCreatePage() {
 
             <div className="flex justify-end gap-2">
               <Button asChild variant="ghost" type="button">
-                <Link to="/">Cancel</Link>
+                <Link to="/prompts">Cancel</Link>
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (

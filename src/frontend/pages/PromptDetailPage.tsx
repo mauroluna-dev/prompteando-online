@@ -88,7 +88,7 @@ export function PromptDetailPage() {
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full">
-              <Link to="/">Back to list</Link>
+              <Link to="/prompts">Back to list</Link>
             </Button>
           </CardContent>
         </Card>
@@ -145,7 +145,7 @@ export function PromptDetailPage() {
     try {
       await deletePrompt(prompt.slug);
       await mutate("/api/prompts");
-      navigate("/", { replace: true });
+      navigate("/prompts", { replace: true });
     } catch {
       setDeleting(false);
     }
@@ -157,7 +157,7 @@ export function PromptDetailPage() {
   return (
     <div className="flex flex-col gap-6">
       <Button asChild variant="ghost" className="self-start">
-        <Link to="/">
+        <Link to="/prompts">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Link>

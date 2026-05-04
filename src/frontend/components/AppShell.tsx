@@ -25,13 +25,13 @@ function AppHeader() {
     <header className="bg-card sticky top-0 z-10 flex h-14 w-full items-center justify-between border-b px-6">
       <div className="flex items-center gap-8">
         <Link
-          to="/"
+          to="/prompts"
           className="font-display text-base font-semibold tracking-tight"
         >
           promptstash
         </Link>
         <nav className="flex items-center gap-1 text-sm">
-          <TabLink to="/" end>
+          <TabLink to="/prompts" end>
             Prompts
           </TabLink>
           <TabLink to="/settings/api-keys">API Keys</TabLink>
