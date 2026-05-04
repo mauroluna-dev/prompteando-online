@@ -15,4 +15,11 @@ export interface ApiKeyRepository {
    */
   setRevokedAt(userId: string, id: string, when: Date): Promise<boolean>;
   countActiveByUserId(userId: string): Promise<number>;
+  /**
+   * P18 — All active key IDs across all users. Used by the
+   * metrics consolidate cron to iterate keys that may have hits
+   * to consolidate. Returns just IDs (no full entity) to keep the
+   * scan cheap on large key tables.
+   */
+  findAllActiveIds(): Promise<string[]>;
 }
