@@ -314,8 +314,176 @@ curl con Bearer ok).
 
 ---
 
+## Pγ — UI redesign sprint
+**Goal**: pasar del wireframe utilitario actual a un design system
+profesional cohesivo. Sin features nuevas — re-skin completo.
+Decidido en sesión 2026-05-04: rediseño desde cero usando Pencil
+con un style fuerte (referencia visual a definir; baseline
+candidato: dev-tool aesthetic tipo Linear / Resend / Cursor).
+**Deliverables**:
+- `pencil-redesign.pen` (NEW) con frames cohesivos para: Landing,
+  Login, Prompt List, Prompt Editor (con diff view de P17),
+  API Keys (con dashboard de P18), Settings/Integrations
+  (incluye backfill UI de P12).
+- Design tokens en `src/frontend/styles/tokens.css`: paleta,
+  tipografía, spacing, radius, shadows. Wired al Tailwind v4 config
+  via `@theme`.
+- Refactor de los componentes existentes (Card, Button, Input,
+  Badge) para alinearse a los tokens.
+- Componentes shared nuevos según necesite el redesign:
+  `EmptyState`, `Skeleton`, `Stat`, `MiniSparkline`.
+- README en `src/frontend/components/` documentando cuándo usar qué.
+
+**Verification**: cada pantalla del .pen tiene contraparte React
+implementada con el design system nuevo. Sin regresiones
+funcionales (todos los flujos E2E siguen pasando). Smoke visual
+manual sobre las 6 pantallas principales.
+**Depends on**: P16 (no bloquea pero da más superficie a redesign).
+**Paralelizable con**: P17, P18 (se pueden integrar progresivamente
+si la lib de diseño y los tokens ya están listos).
+
+---
+
+## P17 — Markdown editor + version diff
+**Goal**: reemplazar el `<textarea>` plano por un editor markdown
+con syntax highlighting + comparación side-by-side entre dos
+versiones cualesquiera.
+**Decisiones (sesión 2026-05-04)**:
+- **Editor**: CodeMirror 6 (`@codemirror/state`, `@codemirror/view`,
+  `@codemirror/lang-markdown`, `@codemirror/theme-one-dark` o tema
+  custom). Headless, ~70KB gzipped, soporta diff via `MergeView`.
+- **Diff**: side-by-side con version picker (A | B) en el sidebar
+  de historial. Cambios resaltados con `@codemirror/merge`. Default
+  apertura: vN-1 vs vN actual.
+
+**Deliverables**:
+- **Frontend**:
+  - Componente `<MarkdownEditor />` envolviendo CodeMirror 6 con
+    el theme alineado al design system (Pγ).
+  - Componente `<VersionDiff />` con `MergeView` configurado
+    side-by-side, soporta selección dinámica de versiones A/B.
+  - En `PromptEditorPage`: toggle "Edit / Diff vs…", picker de
+    versión a comparar, scroll sincronizado.
+  - Hook `useVersionDiff(slug, vA, vB)` que reusa `useVersions` y
+    devuelve los contenidos sincronizados.
+- **Backend**: ningún cambio. El diff se computa client-side a
+  partir de los contenidos ya disponibles en `GET /api/prompts/:slug/versions`.
+
+**Verification**: editar un prompt en el editor nuevo persiste
+sin regresión vs textarea. Abrir `Diff vs v2` muestra un
+side-by-side con highlights. Cambiar el picker re-renderea el
+diff sin re-fetch (los versions ya están en SWR cache).
+**Depends on**: P9 (P10-P16 no son requisito duro).
+**Paralelizable con**: P18.
+
+---
+
+## P18 — API Key usage metrics
+**Goal**: que el usuario vea cuánto se está usando cada API key,
+desde qué prompts, con qué latencia y errores. Sale del
+"out-of-scope V1" de observabilidad porque es de producto, no
+de infra.
+**Decisiones (sesión 2026-05-04)**:
+- **Granularidad**: aggregate counters en Redis + snapshot diario
+  en Postgres. Cada request a `/v1/prompts/:slug` hace
+  `INCR ratelimit:apikey:<id>:counts:<YYYY-MM-DD>`,
+  `LPUSH ratelimit:apikey:<id>:lat:<YYYY-MM-DD> <ms>` (capped a
+  10K samples para p50/p95). Cron diario a 00:05 UTC consolida
+  en `api_key_metrics_daily` (`api_key_id, day, total_requests,
+  total_errors, p50_ms, p95_ms, top_prompts: jsonb`).
+- **Retención**: 90 días en `api_key_metrics_daily`. Después
+  borrado por cron mensual.
+
+**Deliverables**:
+- **Domain** (`src/domain/api-key/`): VO `MetricsSnapshot`,
+  entity `ApiKeyMetricsDaily`.
+- **Application**:
+  - `RecordApiKeyHitCommand` (input: keyId, slug, statusCode,
+    latencyMs) — escribe a Redis. Llamado desde el middleware de
+    `/v1/prompts/:slug`.
+  - `ConsolidateApiKeyMetricsJob` (job diario): scaneía las keys
+    de Redis, calcula p50/p95, escribe la fila diaria, borra los
+    contadores del día.
+  - `GetApiKeyMetricsQuery` (input: keyId, range: 7d|30d|90d):
+    devuelve serie diaria + agregados.
+- **Ports**: `MetricsCounter` (port nuevo, Redis-backed),
+  `ApiKeyMetricsRepository`.
+- **Infrastructure**:
+  - `BunRedisMetricsCounter`.
+  - `PostgresApiKeyMetricsRepository`.
+  - Schema: `api_key_metrics_daily`. Migration nueva.
+- **HTTP**:
+  - Middleware extendido en `/v1/prompts/:slug` que captura
+    `latencyMs = end - start` y status, llama
+    `recordApiKeyHit.execute()` fire-and-forget.
+  - `GET /api/keys/:id/metrics?range=30d` → 200 con
+    `{daily: [...], total, errorRate, p50, p95, topPrompts}`.
+- **Frontend**:
+  - En `/settings/api-keys`, expandir cada key a un detail panel
+    con: chart de requests/día (últimos 30d, sparkline + bar
+    chart), p50/p95 actuales, error rate, top 5 prompts
+    consumidos. Lib: `recharts` (mismo runtime que React 19, ~40KB).
+  - Vista `/settings/api-keys/:id` para deep-dive con range
+    picker (7d / 30d / 90d).
+- **Cron**: agregado al `docker-compose.prod.yml` como servicio
+  o systemd timer (alineado al cleanup de sesiones de P15).
+
+**Verification**: hacer 50 requests a `/v1/prompts/foo` con 3 keys
+distintas → ver counters subir en Redis en vivo, ver el dashboard
+mostrar la actividad. Esperar al consolidate job (o forzarlo) →
+fila aparece en `api_key_metrics_daily`.
+**Depends on**: P9 (necesita la API pública existente).
+**Paralelizable con**: P17.
+
+---
+
+## V2 — Templates con substitución de variables (deferred)
+**Goal (V2 only, no V1)**: prompts con `{{variable}}` que se
+sustituyen al consumirlos por la API. Permite reutilizar un mismo
+template con datos distintos sin duplicar contenido ni hacer
+substitución del lado cliente.
+**Decisión (sesión 2026-05-04)**: queda OUT del roadmap V1 por
+volumen de drawbacks pendientes de discusión:
+- Breaking change con prompts que contengan `{{` literal
+  (mitigación: opt-in `is_template` per-prompt).
+- Escape semantics (Mustache HTML-escapa por default; para
+  prompts crudos hay que forzar raw).
+- Versionado: rename de `{{var}}` entre versiones rompe callers
+  existentes; necesita pinning por `?version=N` en el render.
+- Schema management (declarado vs inferido auto-parseando `{{}}`).
+- Prompt injection desde vars (responsabilidad del consumer,
+  pero documentar warning).
+- Endpoints (`POST /v1/prompts/:slug/render` separado vs extender
+  el `GET` actual con `?var.x=Y`).
+
+**Pre-decisión tentativa**:
+- Sintaxis: Mustache logic-less con `{{var}}` raw (sin escape).
+- Engine: `mustache` (npm) o el parser propio (regex `/\{\{(\w+)\}\}/g`
+  + replace, ~30 líneas) si no se necesitan loops.
+- Activación: opt-in via `is_template: bool` en `prompts`.
+- Detección de vars: inferida parseando el content al guardar
+  versión, persistida en `prompt_versions.template_vars: jsonb`.
+- Endpoint: `POST /v1/prompts/:slug/render` con body
+  `{vars: {...}, version?: N}` → `{content: <rendered>, version,
+  vars_used, missing_vars}`. El `GET` raw existente sigue funcionando.
+
+A retomar después de cerrar V1 (P0–P18 + Pγ).
+
+---
+
 ## Resumen de cadena de dependencias
 ```
 P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 → P9 → Pα → Pβ → P10 → P11 → P12 → P13 → P14 → P15 → P16
+                                                                                              ├── Pγ (UI redesign)
+                                                                                              ├── P17 (markdown editor + diff)
+                                                                                              └── P18 (API key metrics)
+                                                                                                       ↓
+                                                                                                      V2 (templates)
 ```
-Lineal por diseño: cada fase extiende capacidades sobre la anterior. Paralelizable solo si hay 2 devs (ej. P13 export + P11 commit pueden hacerse en paralelo después de P10, pero la cadena oficial es lineal). Pα/Pβ son fases de alineación — no entregan features de producto pero blindan la base para todas las fases siguientes.
+Lineal por diseño hasta P16: cada fase extiende capacidades sobre
+la anterior. Pγ/P17/P18 son post-MVP y paralelizables — comparten
+solo el design system (Pγ debería arrancar primero o en paralelo
+con tokens publicados antes de que P17/P18 lleguen al frontend).
+Templates (V2) deliberadamente fuera de la cadena V1.
+Pα/Pβ son fases de alineación — no entregan features de producto
+pero blindan la base para todas las fases siguientes.

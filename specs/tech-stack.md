@@ -125,6 +125,11 @@ Schemas core (V1):
 - Usos V1:
   - Rate limiting de la API pública por API key (sliding window).
   - Cache de "última versión publicada" por prompt.
+  - Lock distribuido por `(userId, slug)` para serializar commits
+    a GitHub (P11 + P12).
+  - **Metrics counters** (P18): `INCR` para counts diarios y
+    `LPUSH` con `LTRIM` para muestras de latencia (cap 10K por
+    día por key). Consolidados a Postgres por cron diario.
 
 ## Auth
 - **Auth.js** (`@auth/core`) — framework-agnostic.
@@ -178,6 +183,23 @@ Application/domain code nunca importa `crypto`, `node:crypto` ni
 - **react-hook-form** + **zod** — forms y validación.
 - Bundling vía Bun HTML imports (sin Vite, per CLAUDE.md).
 
+### Editor markdown + diff (P17)
+- **CodeMirror 6** (`@codemirror/state`, `@codemirror/view`,
+  `@codemirror/lang-markdown`, `@codemirror/merge`). Headless,
+  ~70KB gzipped, soporta diff side-by-side via `MergeView`.
+  Razón: lightweight vs Monaco (~700KB), control total del theme
+  para alinearlo a los design tokens de Pγ.
+- Tema custom mapeado a los tokens del design system (no usar
+  el theme `one-dark` por default).
+- El diff se computa client-side; los contenidos vienen del SWR
+  cache de `useVersions`. Cero load extra al backend.
+
+### Charting (P18)
+- **recharts** (~40KB) — line + bar + sparkline para el dashboard
+  de API key metrics. React-native, SVG-based, customizable con
+  el design system. Alternativa descartada: `chart.js` (canvas,
+  más pesado, menos integrado a React).
+
 ## Validation
 - **Zod** — schemas compartidos entre client y server.
 - Caso canónico: `src/infrastructure/config/env.ts` parsea
@@ -216,7 +238,21 @@ Ver `conventions.md` §2–§4 y §9.
 ## Observability (mínimo V1)
 - Logs estructurados (`console.log` con JSON) en middleware Elysia.
 - Error tracking: Sentry (opt-in, no bloqueante).
-- Sin metrics / tracing en V1.
+- **Métricas de producto** (P18): agregados Redis →
+  consolidación diaria a Postgres → dashboard del usuario.
+  Storage barato (counters + sample arrays), retention 90d.
+  Esto es métrica de uso para el usuario final, no
+  observability de infra (no replace para Prometheus/Grafana
+  futuro).
+- Sin tracing distribuido en V1.
+
+## Templates engine (V2 only)
+- Decisión post-V1. Tentativa: **Mustache** logic-less
+  (`{{var}}` raw, sin escape) — npm `mustache` o parser propio
+  (~30 LOC con regex `/\{\{(\w+)\}\}/g` + replace).
+- Motivo de diferir: drawbacks pendientes (escape semantics,
+  prompt injection from vars, versioning de breaking changes,
+  schema declarado vs inferido). Ver `roadmap.md` → sección V2.
 
 ## Deploy — Docker Compose
 `docker-compose.yml` con servicios:
@@ -245,6 +281,14 @@ swr
 react-hook-form
 @hookform/resolvers
 zod
+```
+Frontend post-MVP (P17 + P18):
+```
+@codemirror/state
+@codemirror/view
+@codemirror/lang-markdown
+@codemirror/merge
+recharts
 ```
 Dev/tooling (Pα):
 ```
