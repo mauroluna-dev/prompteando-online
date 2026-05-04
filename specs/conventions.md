@@ -2,7 +2,9 @@
 
 Single source of truth for architectural conventions. All phases (P0–P16)
 must follow these. New phases are written natively to these conventions;
-P0–P9 were retroactively aligned in Pα/Pβ (2026-05-03).
+P0–P9 were retroactively aligned in Pα/Pβ (2026-05-03). §11 (design
+tokens + typography roles) was added in Pγ (2026-05-04) and applies
+retroactively to all frontend code.
 
 When something here conflicts with `tech-stack.md` or `roadmap.md`, this
 document wins.
@@ -24,11 +26,18 @@ const schema = z.object({
   REDIS_URL: z.string().url(),
   AUTH_SECRET: z.string().min(32),
   AUTH_URL: z.string().url(),
-  GITHUB_CLIENT_ID: z.string().min(1),
-  GITHUB_CLIENT_SECRET: z.string().min(1),
+  // Auth.js login OAuth App (callback: /auth/callback/github).
+  GITHUB_AUTH_CLIENT_ID: z.string().min(1),
+  GITHUB_AUTH_CLIENT_SECRET: z.string().min(1),
+  // Settings → Connect GitHub OAuth App (callback:
+  // /api/integrations/github/oauth-callback). Must be a separate
+  // OAuth App in GitHub because OAuth Apps allow only ONE
+  // Authorization callback URL each.
+  GITHUB_INTEGRATIONS_CLIENT_ID: z.string().min(1),
+  GITHUB_INTEGRATIONS_CLIENT_SECRET: z.string().min(1),
   GOOGLE_CLIENT_ID: z.string().min(1),
   GOOGLE_CLIENT_SECRET: z.string().min(1),
-  ENCRYPTION_KEY: z.string().optional(),
+  ENCRYPTION_KEY: z.string().min(40),
   SENTRY_DSN: z.string().optional(),
   NODE_ENV: z.enum(["development", "production", "test"])
     .default("development"),
@@ -346,6 +355,109 @@ export class Slug {
 
 ---
 
+## 11. Design tokens + typography roles (frontend)
+
+**Added in Pγ (2026-05-04).** Applies to all React components in
+`src/frontend/`.
+
+### 11.1 Design tokens (no hardcoded colors)
+
+All colors in components must come from Tailwind utility classes
+that map to CSS custom properties defined in `styles/globals.css`.
+**No hex, no `rgb()`, no `oklch()` literals inline in JSX or
+component CSS.**
+
+The token layer has two tiers:
+
+- **Shadcn semantic tokens** (existing): `bg-background`,
+  `text-foreground`, `bg-card`, `border-border`,
+  `bg-primary`/`text-primary-foreground`, `bg-destructive`,
+  `text-muted-foreground`, etc.
+- **promptstash semantic tokens** (Pγ): `bg-success-bg`,
+  `text-success-fg`, `bg-warning-bg`/`text-warning-fg`,
+  `bg-info-bg`/`text-info-fg`, `bg-diff-add-bg`/`text-diff-add-fg`,
+  `bg-diff-del-bg`/`text-diff-del-fg`. Defined in
+  `globals.css` `@theme` block.
+
+```tsx
+// ❌ Wrong — hardcoded color
+<span className="bg-green-100 text-green-800">synced</span>
+
+// ✅ Right — semantic token
+<span className="bg-success-bg text-success-fg">synced</span>
+```
+
+**Exceptions**:
+- Marketing-only inline color (e.g. brand logo SVG fill).
+- Tailwind base palette names (`bg-blue-100`, `text-red-700`)
+  ARE allowed for one-off decorative accents that don't have a
+  semantic meaning (e.g. the hashed-color icon tile in
+  `<PromptsListPage>`). When in doubt, define a token.
+
+**Rule**: Any color that conveys state (success/warning/error/
+info) or product semantics (diff/sync/template) must use a
+`-fg`/`-bg` token. New tokens get added to `globals.css` first,
+THEN used in components.
+
+### 11.2 Typography roles
+
+Three font families, each with a single canonical use:
+
+| Token | Family | Use |
+|---|---|---|
+| `font-display` | Cal Sans | H1–H4, card titles (`<CardTitle>`), hero text, page titles. Line-height 1.1. |
+| `font-sans` (default) | Numans | Body paragraphs, labels, button text, descriptions. Line-height 1.5 (browser default OK). |
+| `font-mono` | Geist Mono | Code blocks, slugs, API keys, version SHAs, JSON, file paths, monospaced data tables. |
+
+```tsx
+// ✅ Right
+<h1 className="font-display text-3xl font-semibold tracking-tight">
+  Your Prompts
+</h1>
+<p className="text-muted-foreground text-sm">4 prompts · synced</p>
+<code className="font-mono text-xs">my-prompt</code>
+
+// ❌ Wrong — bold body text where a heading is meant
+<p className="text-3xl font-bold">Your Prompts</p>
+
+// ❌ Wrong — display font on body text
+<p className="font-display text-sm">My description</p>
+```
+
+**Why fixed roles**: Cal Sans is a tight display face; using it
+on body text reduces legibility. Numans is neutral and high-x-
+height; using it on H1 looks weak. Geist Mono signals "this is
+data, not prose."
+
+**Rule**: H1–H4 always `font-display` (the global rule in
+`index.css` already enforces this for actual `<h*>` tags; for
+non-heading components rendering visually as a heading — like
+`<CardTitle>` which is a `<div>` — apply `font-display`
+explicitly).
+
+### 11.3 Spacing scale
+
+Use the Tailwind default scale (`gap-2`, `gap-3`, `gap-4`,
+`gap-6`, `gap-8` and corresponding `p-*`). Per Pγ design brief
+the canonical values for each context:
+
+| Context | Class |
+|---|---|
+| Form fields stacked | `gap-4` (16px) |
+| Page sections vertical | `gap-6` (24px) or `gap-8` (32px) |
+| Card grid horizontal | `gap-3` or `gap-4` |
+| Inside cards | `p-6` |
+| Inside buttons (sm) | `px-3` |
+| Inside buttons (default/xl) | `px-4` / `px-5` |
+| Sidebar items | `px-3 py-2` |
+| Page content padding | `px-6 py-8` |
+
+**Rule**: No arbitrary spacing values like `gap-[18px]` or
+`p-[27px]`. If the scale doesn't fit, propose a token addition
+in PR review rather than escape-hatching.
+
+---
+
 ## Validation
 
 The retroactive enforcement of these conventions can be sanity-checked
@@ -369,4 +481,14 @@ grep -rn "crypto\.\(randomUUID\|getRandomValues\)" src/ \
 # (4) no branded-type unique symbol in domain
 grep -rn "unique symbol" src/domain/
 # expect: empty
+
+# (5) no hardcoded hex/rgb/oklch colors in frontend components
+# (Tailwind palette names like text-blue-700 are allowed; raw color
+# literals in className/style attrs are not.)
+grep -rnE 'className=.*"#[0-9a-fA-F]{3,8}"|style=\{\{.*(rgb|oklch|#[0-9a-fA-F])' src/frontend/
+# expect: empty (or only marketing/brand SVGs)
+
+# (6) Cal Sans + Numans + Geist Mono are loaded via @fontsource
+grep -E '@fontsource/(cal-sans|numans|geist-mono)' styles/globals.css
+# expect: 3 import lines
 ```
