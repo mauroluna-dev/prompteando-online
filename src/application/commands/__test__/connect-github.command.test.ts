@@ -69,6 +69,10 @@ class FakeGateway implements GitHubGateway {
     this.ensureReadmeCalls++;
     return this.readmeResponse;
   }
+
+  async commitVersion(): Promise<{ sha: string }> {
+    throw new Error("commitVersion not exercised in these tests");
+  }
 }
 
 const fakeCrypto: CryptoPort = {
