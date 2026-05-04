@@ -1,4 +1,4 @@
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNull } from "drizzle-orm";
 import type { VersionRepository } from "@/application/ports/version-repository.port";
 import type { DB } from "@/infrastructure/persistence/db";
 import {
@@ -102,6 +102,68 @@ export class PostgresVersionRepository implements VersionRepository {
       .select({ value: count() })
       .from(promptVersions)
       .where(eq(promptVersions.promptId, promptId));
+    return rows[0]?.value ?? 0;
+  }
+
+  async findOldestPendingForUser(userId: string): Promise<{
+    version: PromptVersion;
+    promptName: string;
+    promptSlug: string;
+  } | null> {
+    const rows = await this.db
+      .select({
+        id: promptVersions.id,
+        promptId: promptVersions.promptId,
+        versionNumber: promptVersions.versionNumber,
+        content: promptVersions.content,
+        commitMessage: promptVersions.commitMessage,
+        githubCommitSha: promptVersions.githubCommitSha,
+        githubSyncError: promptVersions.githubSyncError,
+        createdAt: promptVersions.createdAt,
+        promptName: prompts.name,
+        promptSlug: prompts.slug,
+      })
+      .from(promptVersions)
+      .innerJoin(prompts, eq(prompts.id, promptVersions.promptId))
+      .where(
+        and(
+          eq(prompts.userId, userId),
+          isNull(promptVersions.githubCommitSha),
+          isNull(promptVersions.githubSyncError),
+        ),
+      )
+      .orderBy(asc(promptVersions.createdAt))
+      .limit(1);
+    const row = rows[0];
+    if (!row) return null;
+    return {
+      version: PromptVersion.fromRow({
+        id: row.id,
+        promptId: row.promptId,
+        versionNumber: row.versionNumber,
+        content: row.content,
+        commitMessage: row.commitMessage,
+        githubCommitSha: row.githubCommitSha,
+        githubSyncError: row.githubSyncError,
+        createdAt: row.createdAt,
+      }),
+      promptName: row.promptName,
+      promptSlug: row.promptSlug,
+    };
+  }
+
+  async countPendingForUser(userId: string): Promise<number> {
+    const rows = await this.db
+      .select({ value: count() })
+      .from(promptVersions)
+      .innerJoin(prompts, eq(prompts.id, promptVersions.promptId))
+      .where(
+        and(
+          eq(prompts.userId, userId),
+          isNull(promptVersions.githubCommitSha),
+          isNull(promptVersions.githubSyncError),
+        ),
+      );
     return rows[0]?.value ?? 0;
   }
 }
