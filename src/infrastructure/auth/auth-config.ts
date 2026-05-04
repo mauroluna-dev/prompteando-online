@@ -23,8 +23,8 @@ export const authConfig: AuthConfig = {
   }),
   providers: [
     GitHub({
-      clientId: env.GITHUB_CLIENT_ID,
-      clientSecret: env.GITHUB_CLIENT_SECRET,
+      clientId: env.GITHUB_AUTH_CLIENT_ID,
+      clientSecret: env.GITHUB_AUTH_CLIENT_SECRET,
       authorization: { params: { scope: "read:user user:email" } },
       // Both providers verify email server-side (Google always; GitHub
       // when the primary email is marked verified). Linking by email
