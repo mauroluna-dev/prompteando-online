@@ -45,3 +45,14 @@ export class InvalidRepoFullNameError extends Error {
     this.name = "InvalidRepoFullNameError";
   }
 }
+
+export class BackfillStateTransitionError extends Error {
+  readonly code = "BACKFILL_STATE_TRANSITION" as const;
+  constructor(
+    readonly from: string | null,
+    readonly to: string,
+  ) {
+    super(`Cannot transition backfill state from ${from ?? "null"} to ${to}`);
+    this.name = "BackfillStateTransitionError";
+  }
+}
