@@ -277,6 +277,17 @@ curl con Bearer ok).
 ---
 
 ## P15 — Deploy a VPS (Traefik externo)
+**Status**: ✅ COMPLETE (2026-06-02). Entregado con una variante
+**sin Traefik**: la app queda internal-only en la network `prompteando`
+y se le pone adelante un reverse proxy propio (BYO). Lo efectivamente
+mergeado (PR #31): `docker-compose.prod.yml` (app internal-only +
+servicio `migrate` one-shot + postgres/redis no publicados, healthchecks,
+`restart: unless-stopped`), `Dockerfile` de prod arreglado (copia
+`scripts/` + `tsconfig.json`), `.env.production.example`, `.gitignore`.
+**Descopeado** (no se hará bajo P15): labels Traefik (decisión: sin proxy
+embebido), `scripts/deploy.sh`, sección "Deploy" en README, y el cron de
+cleanup de sesiones expiradas. Si se retoman, abrir fase/PR aparte.
+
 **Goal**: app accesible en dominio público con HTTPS.
 **Asunción**: la VPS ya tiene Traefik corriendo como reverse proxy global. prompteando solo aporta su `docker-compose.prod.yml` con labels Traefik para auto-discovery.
 **Deliverables**:
