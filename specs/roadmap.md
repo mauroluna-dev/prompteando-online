@@ -309,10 +309,12 @@ cleanup de sesiones expiradas. Si se retoman, abrir fase/PR aparte.
 
 ---
 
-## P16 — E2E + polish
+## P16 — Polish
 **Goal**: producto sentido como producto.
+> **Nota (2026-06-02)**: Playwright E2E **removido del scope** por
+> decisión del owner. El flujo crítico se valida con `bun test`
+> (unit + integration) + smoke manual. P16 queda como fase de polish.
 **Deliverables**:
-- Playwright E2E: signup con GitHub → crear prompt → editar 2x → consumir desde curl con key generada → ver ambos commits en repo.
 - Empty states (sin prompts, sin keys, sin GitHub conectado).
 - Loading skeletons en lista de prompts y versiones.
 - Toasts de error/éxito (con `sonner` o equivalente).
@@ -320,7 +322,7 @@ cleanup de sesiones expiradas. Si se retoman, abrir fase/PR aparte.
 - README con demo GIF + badge de CI.
 - Sentry opt-in (si `SENTRY_DSN` está seteado, se inicializa).
 
-**Verification**: Playwright suite pasa en CI. Demo en video de < 2 min cubriendo end-to-end.
+**Verification**: smoke manual end-to-end + `bun test` verde en CI. Demo en video de < 2 min cubriendo end-to-end.
 **Depends on**: P15.
 
 ---
