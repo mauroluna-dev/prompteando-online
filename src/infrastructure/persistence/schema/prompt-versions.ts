@@ -1,5 +1,6 @@
 import {
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -21,6 +22,12 @@ export const promptVersions = pgTable(
     commitMessage: text("commit_message"),
     githubCommitSha: text("github_commit_sha"),
     githubSyncError: text("github_sync_error"),
+    // P19 — immutable snapshot of the `{{var}}` names present in this
+    // version's content, computed at save time.
+    templateVars: jsonb("template_vars")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
     createdAt: timestamp("created_at", { mode: "date" })
       .notNull()
       .defaultNow(),

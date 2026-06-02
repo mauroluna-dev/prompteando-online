@@ -10,6 +10,7 @@ describe("PromptVersion", () => {
       VersionNumber.parse(1),
       "body",
       "first",
+      [],
       now,
     );
     expect(v.githubCommitSha).toBeNull();
@@ -23,6 +24,7 @@ describe("PromptVersion", () => {
       VersionNumber.parse(1),
       "body",
       null,
+      [],
       new Date(),
     );
     v.markGithubSyncFailed("transient");
@@ -39,6 +41,7 @@ describe("PromptVersion", () => {
       VersionNumber.parse(1),
       "body",
       null,
+      [],
       new Date(),
     );
     v.attachGithubCommit("sha-x");
@@ -56,10 +59,12 @@ describe("PromptVersion", () => {
       commitMessage: "msg",
       githubCommitSha: null,
       githubSyncError: "rate_limited",
+      templateVars: ["nombre"],
       createdAt: new Date("2026-05-03T20:00:00Z"),
     });
     expect(v.githubCommitSha).toBeNull();
     expect(v.githubSyncError).toBe("rate_limited");
+    expect(v.templateVars).toEqual(["nombre"]);
   });
 
   test("toJSON() includes githubSyncError", () => {
@@ -69,6 +74,7 @@ describe("PromptVersion", () => {
       VersionNumber.parse(1),
       "body",
       null,
+      [],
       new Date("2026-05-03T20:00:00Z"),
     );
     v.markGithubSyncFailed("repo_missing");

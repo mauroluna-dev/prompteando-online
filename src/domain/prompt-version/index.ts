@@ -5,4 +5,7 @@ export type {
   PromptVersionDTO,
   PromptVersionRow,
 } from "./prompt-version.entity";
-export type { PublicPromptDTO } from "./public-prompt-dto";
+export type {
+  PublicPromptDTO,
+  RenderedPromptDTO,
+} from "./public-prompt-dto";

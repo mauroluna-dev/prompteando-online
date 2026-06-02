@@ -1,10 +1,13 @@
 import {
+  boolean,
+  jsonb,
   pgTable,
   text,
   timestamp,
   uniqueIndex,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
+import type { TemplateVarMeta } from "@/domain/prompt";
 import { users } from "./auth";
 import { promptVersions } from "./prompt-versions";
 
@@ -24,6 +27,13 @@ export const prompts = pgTable(
       (): AnyPgColumn => promptVersions.id,
       { onDelete: "set null" },
     ),
+    // P19 — template variables. Opt-in flag + prompt-level (mutable,
+    // non-versioned) per-variable metadata (description, default).
+    isTemplate: boolean("is_template").notNull().default(false),
+    templateVarMeta: jsonb("template_var_meta")
+      .$type<TemplateVarMeta>()
+      .notNull()
+      .default({}),
     createdAt: timestamp("created_at", { mode: "date" })
       .notNull()
       .defaultNow(),

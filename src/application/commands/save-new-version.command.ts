@@ -3,7 +3,7 @@ import type { CryptoPort } from "@/application/ports/crypto.port";
 import type { PromptRepository } from "@/application/ports/prompt-repository.port";
 import type { VersionRepository } from "@/application/ports/version-repository.port";
 import { publicPromptCacheKey } from "@/application/queries/get-latest-published-version.query";
-import { PromptNotFoundError, Slug } from "@/domain/prompt";
+import { extractTemplateVariables, PromptNotFoundError, Slug } from "@/domain/prompt";
 import { PromptVersion, VersionNumber } from "@/domain/prompt-version";
 
 export type SaveNewVersionResult = {
@@ -42,6 +42,7 @@ export class SaveNewVersionCommand {
       VersionNumber.parse(count + 1),
       content,
       trimmedMessage && trimmedMessage.length > 0 ? trimmedMessage : null,
+      extractTemplateVariables(content),
       new Date(),
     );
     await this.versionRepo.appendNewVersion(version);
