@@ -29,7 +29,16 @@ prompteando = versionador de prompts con cero fricción para no-coders.
   Si no, igual funciona — la app es plenamente usable sin GitHub.
 
 ## Diferenciador
-Posicionamiento: **"PromptLayer pero gratis y sin vendor lock-in"**.
+Posicionamiento (V1): **"PromptLayer pero gratis y sin vendor lock-in"**.
+
+Posicionamiento (V2+, decidido 2026-06-02): **el prompt-management de
+Langfuse, pero como producto enfocado** — no una pieza de una plataforma
+de observability, sino *la* herramienta especializada en gestionar
+prompts, y encima gratis, sin lock-in y usable por no-coders. Langfuse
+es observability-first (traces, evals, costos) y el prompt-management es
+un feature; nosotros hacemos solo eso, mejor, y para un público que
+Langfuse no atiende (el orquestador no-coder en n8n). Ver
+[`roadmap.md`](./roadmap.md) → sección V2.
 - **Gratis sin asteriscos** en V1 (sin trial, sin paywall, sin billing
   infra). Solo rate limits anti-abuso por API Key.
 - **Tu historial, tu repo (opcional pero flagship)**: si conectás
@@ -69,21 +78,35 @@ de uso**. Nada más.
 > sigue out-of-scope por costo de storage y por no aportar valor
 > al persona target.
 
-## V2 — Próximo gran salto (post-MVP)
-Después de cerrar V1 (P0–P18 + Pγ), V2 abre con:
-- **Templates con variables** (P19 — kickoff de V2, decidido
-  2026-06-02): `{{var}}` substitution server-side, endpoint
-  `POST /v1/prompts/:slug/render`. Activación opt-in por prompt
-  (`is_template`), detección híbrida de vars (inferidas + metadata
-  opcional), falla estricta 422 ante vars faltantes. Spec completo
-  en `specs/2026-06-02-p19-template-variables/`.
-- **Evaluation framework** (TBD): comparar outputs entre versiones
-  contra un test set definido por el usuario.
-- **Teams / sharing** (TBD): un primer pase de colaboración chica
-  (1-3 personas), no enterprise IAM.
+## V2 — Prompt-management completo (paridad enfocada con Langfuse)
+Cerrado V1, V2 lleva Prompteando de "versionador + consumo por API" a
+**el producto especializado en gestionar prompts**, con paridad de
+features con el prompt-management de Langfuse — pero enfocado, gratis,
+sin lock-in y para no-coders. Capacidades (detalle y fases en
+[`roadmap.md`](./roadmap.md) → V2):
 
-Lo que decidamos en V2 emerge del feedback real de usuarios V1,
-no de hipótesis ahora.
+- **Templates con variables** — ✅ P19 (kickoff, 2026-06-02). `{{var}}`
+  server-side, `POST /v1/prompts/:slug/render`, detección híbrida,
+  falla estricta. Spec en `specs/2026-06-02-p19-template-variables/`.
+- **Labels / aliases de deploy** — `production`, `staging`, `latest`,
+  custom. Pedir el prompt por label (no por número), deploy = mover el
+  label, rollback = re-asignarlo. Protected labels (quién puede tocar
+  `production`). Es el primitivo que vuelve al versionado un *deployment*.
+- **Chat prompts** — además de texto, arrays de mensajes con roles
+  (`system`/`user`/`assistant`) + message placeholders.
+- **Config por versión** — model params (modelo, temperature, etc.) como
+  JSON versionado junto al prompt; cambiar de modelo sin tocar código.
+- **SDKs (TS + Python)** — `getPrompt(label)` + `.compile(vars)` +
+  caching con fallback. Distribución real para el vibe-coder.
+- **Webhooks** on new-version / label-change → enganche a CI/CD.
+- **Composición + organización** — referenciar prompts entre sí,
+  folders / tags / búsqueda a escala.
+
+### Fuera de foco (es territorio de Langfuse, no nuestro)
+Observability/tracing event-level, evaluation/scoring frameworks,
+análisis de costos/tokens. No competimos en la plataforma entera —
+ganamos en el slice de prompt-management. (Teams/sharing chico queda
+como "tal vez", supeditado a feedback real.)
 
 ## North Star (V1)
 Time-to-first-value < 5 minutos:

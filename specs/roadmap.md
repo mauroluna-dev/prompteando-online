@@ -482,12 +482,96 @@ El `GET /v1/prompts/:slug` raw existente queda intacto.
 **Depends on**: P9 (API pública + keys + rate limit), P7 (versionado),
 P18 (RecordApiKeyHit — el render queda medido como el GET).
 
-### V2 — siguientes (TBD, post-P19)
-- **Evaluation framework**: comparar outputs entre versiones contra un
-  test set del usuario.
-- **Teams / sharing**: primer pase de colaboración chica (1-3 personas).
+---
 
-Emergen del feedback real de P19 + usuarios V1, no de hipótesis ahora.
+## V2 — Prompt-management completo (paridad enfocada con Langfuse)
+
+**Decisión (2026-06-02)**: reposicionar Prompteando como **el producto
+especializado en prompt-management** — paridad de features con el slice
+de prompt-management de Langfuse, pero enfocado, gratis, sin lock-in y
+para no-coders. Langfuse es observability-first; nosotros hacemos solo
+prompt-management, mejor. Ver [`mission.md`](./mission.md) → V2.
+
+Orden por leverage. Cada fase sigue las convenciones y se especifica en
+detalle (requirements/plan/validation) al arrancarla, como P19.
+
+### P20 — Labels / aliases de deploy
+**Goal**: pedir un prompt por *label* (`production`, `staging`,
+`latest`, custom) en vez de por número. Deploy = mover un label;
+rollback = re-asignarlo. Es el primitivo que vuelve el versionado un
+*deployment* y resuelve la mission ("saber qué corre en prod").
+**Deliverables**:
+- **Domain**: VO `Label` (reservados `production`/`staging`/`latest` +
+  custom; charset acotado). `latest` siempre apunta a la última versión.
+- **Schema**: `prompt_labels` (`prompt_id`, `label`, `version_id`,
+  `updated_at`), único `(prompt_id, label)`.
+- **Application**: `AssignLabelCommand`, `RemoveLabelCommand`,
+  `GetByLabelQuery`, `ListLabelsQuery`.
+- **HTTP**: `GET /v1/prompts/:slug?label=production` (default de consumo:
+  `production`, fallback configurable a `latest`); `POST .../render`
+  también acepta `label`. UI: asignar/mover labels desde el historial.
+- **Protected labels**: gate sobre quién mueve `production` (dueño por
+  ahora; RBAC real cuando/si haya teams).
+**Depends on**: P7, P9, P19.
+
+### P21 — Chat prompts + message placeholders
+**Goal**: además de texto plano, prompts tipo **chat** (array de mensajes
+con roles `system`/`user`/`assistant`) y placeholders de mensajes.
+**Deliverables**:
+- **Domain**: `PromptType` (`text` | `chat`); estructura de mensajes;
+  resolución de placeholders.
+- **Schema**: `prompt_versions.type` + contenido chat como `jsonb`
+  (texto sigue como string). Backward compat total.
+- **Render**: `/render` compila a mensajes para chat; placeholders
+  resueltos con la lista provista en runtime.
+- **UI**: editor de chat (mensajes por rol) en el editor existente.
+**Depends on**: P19.
+
+### P22 — Config por versión
+**Goal**: model params versionados junto al prompt (cambiar de modelo
+sin tocar código).
+**Deliverables**:
+- **Schema**: `prompt_versions.config` (`jsonb` libre: modelo,
+  temperature, max_tokens, etc.).
+- **API**: GET / render devuelven `config`.
+- **UI**: editor de config (JSON / key-value) por versión.
+**Depends on**: P7.
+
+### P23 — SDKs oficiales (TS + Python)
+**Goal**: consumir desde código con ergonomía — el feature de
+distribución para el vibe-coder.
+**Deliverables**:
+- `@prompteando/client` (TS) y `prompteando` (Python):
+  `getPrompt(slug, { label | version })` → `.compile(vars)`
+  (string para text, mensajes para chat), **cache con TTL + fallback** a
+  la última versión OK, auth por API key.
+- Publicar a npm / PyPI; ejemplos en README + nodo n8n.
+**Depends on**: P9, P19; idealmente después de P20–P22 para que el SDK
+cubra labels, chat y config.
+
+### P24 — Webhooks
+**Goal**: notificar cambios (nueva versión, cambio de label) a sistemas
+externos → enganche a CI/CD.
+**Deliverables**:
+- **Domain/Schema**: webhooks por usuario (`url`, `secret`, eventos).
+- Entrega firmada (HMAC) con retry/backoff (reusar el patrón de los
+  reintentos de commit a GitHub, P11).
+- Eventos: `version.created`, `label.assigned`.
+- **UI**: `settings/webhooks`.
+**Depends on**: P7, P20.
+
+### P25 — Composición + organización
+**Goal**: prompts que referencian a otros + organización a escala.
+**Deliverables**:
+- **Composición**: incluir un prompt dentro de otro (`{{>slug}}` o
+  similar), resuelto en render con detección de ciclos.
+- **Organización**: folders / tags / búsqueda.
+**Depends on**: P19, P21.
+
+### Fuera de foco (territorio de Langfuse)
+Observability/tracing event-level, evaluation/scoring, análisis de
+costos. No competimos en la plataforma entera — ganamos en el slice de
+prompt-management. Teams/sharing chico: "tal vez", supeditado a feedback.
 
 ---
 
@@ -504,6 +588,13 @@ Lineal por diseño hasta P16: cada fase extiende capacidades sobre
 la anterior. Pγ/P17/P18 son post-MVP y paralelizables — comparten
 solo el design system (Pγ debería arrancar primero o en paralelo
 con tokens publicados antes de que P17/P18 lleguen al frontend).
-P19 (templates) arranca V2 una vez cerrado V1.
+P19 (templates) arranca V2 una vez cerrado V1. V2 sigue con el giro a
+**prompt-management completo** (paridad enfocada con Langfuse):
+```
+P19 (templates ✅) → P20 (labels/deploy) → P21 (chat prompts) ┐
+                                          → P22 (config) ──────┼→ P23 (SDKs) → P24 (webhooks) → P25 (composición/org)
+```
+P20 primero (mayor leverage); P21/P22 paralelizables; P23 (SDK) después
+de que la superficie esté rica; P24/P25 son profundidad.
 Pα/Pβ son fases de alineación — no entregan features de producto
 pero blindan la base para todas las fases siguientes.
