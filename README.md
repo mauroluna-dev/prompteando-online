@@ -104,6 +104,21 @@ Cada versión puede llevar **config** (model params como JSON libre:
 `/render` la devuelven en el campo `config`, así cambiás de modelo o
 tuneás parámetros sin tocar el código del consumidor.
 
+## SDKs
+
+Clientes oficiales para consumir tus prompts desde código, con caching +
+fallback y soporte de labels/versiones:
+
+- **TypeScript/JavaScript**: [`@prompteando/client`](packages/client-ts) —
+  `npm install @prompteando/client`.
+- **Python**: [`prompteando`](packages/client-py) — `pip install prompteando`.
+
+```ts
+import { PrompteandoClient } from "@prompteando/client";
+const stash = new PrompteandoClient({ apiKey: "po_live_...", baseUrl: "https://prompts.tu-dominio.com" });
+const { content } = await stash.render("welcome-email", { vars: { nombre: "Ana" }, label: "production" });
+```
+
 ## Self-host
 
 Prompteando es 100% self-hosteable. La app no se publica al host: escucha

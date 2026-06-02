@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "prompteando"
+version = "0.1.0"
+description = "Cliente oficial de Prompteando — consumí tus prompts versionados desde Python."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+keywords = ["prompt", "prompt-management", "llm", "prompteando"]
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/mauroluna-dev/prompteando-online"
+
+[tool.hatch.build.targets.wheel]
+packages = ["prompteando"]
