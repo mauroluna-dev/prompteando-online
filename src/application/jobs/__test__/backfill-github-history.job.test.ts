@@ -69,6 +69,7 @@ function makeVersion(
     `body of v${num}\n`,
     msg,
     [],
+    {},
     createdAt,
   );
 }

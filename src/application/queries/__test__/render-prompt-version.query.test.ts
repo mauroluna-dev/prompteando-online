@@ -39,6 +39,7 @@ function makeVersion(over: Partial<PromptVersionRow>): PromptVersion {
     githubCommitSha: null,
     githubSyncError: null,
     templateVars: ["nombre", "producto"],
+    config: {},
     createdAt: new Date("2026-01-01T00:00:00Z"),
     ...over,
   });
@@ -74,6 +75,7 @@ describe("RenderPromptVersionQuery", () => {
       type: "text",
       content: "Hola Ana, sobre Plan Pro.",
       messages: null,
+      config: {},
       version: 2,
       varsUsed: ["nombre", "producto"],
       missingVars: [],

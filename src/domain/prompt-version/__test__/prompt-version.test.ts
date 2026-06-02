@@ -12,6 +12,7 @@ describe("PromptVersion", () => {
       "body",
       "first",
       [],
+      {},
       now,
     );
     expect(v.githubCommitSha).toBeNull();
@@ -27,6 +28,7 @@ describe("PromptVersion", () => {
       "body",
       null,
       [],
+      {},
       new Date(),
     );
     v.markGithubSyncFailed("transient");
@@ -45,6 +47,7 @@ describe("PromptVersion", () => {
       "body",
       null,
       [],
+      {},
       new Date(),
     );
     v.attachGithubCommit("sha-x");
@@ -64,6 +67,7 @@ describe("PromptVersion", () => {
       githubCommitSha: null,
       githubSyncError: "rate_limited",
       templateVars: ["nombre"],
+      config: {},
       createdAt: new Date("2026-05-03T20:00:00Z"),
     });
     expect(v.githubCommitSha).toBeNull();
@@ -80,6 +84,7 @@ describe("PromptVersion", () => {
       "body",
       null,
       [],
+      {},
       new Date("2026-05-03T20:00:00Z"),
     );
     v.markGithubSyncFailed("repo_missing");

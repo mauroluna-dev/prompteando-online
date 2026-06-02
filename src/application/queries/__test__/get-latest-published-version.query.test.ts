@@ -34,6 +34,7 @@ function makeVersion(id: string, num: number): PromptVersion {
     githubCommitSha: null,
     githubSyncError: null,
     templateVars: [],
+    config: {},
     createdAt: new Date("2026-01-01T00:00:00Z"),
   };
   return PromptVersion.fromRow(row);

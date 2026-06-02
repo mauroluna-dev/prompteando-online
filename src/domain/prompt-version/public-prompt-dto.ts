@@ -1,4 +1,5 @@
 import type { ChatMessage, PromptType } from "@/domain/prompt";
+import type { PromptConfig } from "./prompt-version.entity";
 
 /**
  * The shape returned by the public consumption endpoint
@@ -16,6 +17,8 @@ export type PublicPromptDTO = {
   templateVars: string[];
   // P21 — "text" | "chat".
   type: PromptType;
+  // P22 — versioned model params.
+  config: PromptConfig;
 };
 
 /**
@@ -28,6 +31,7 @@ export type RenderedPromptDTO = {
   type: PromptType;
   content: string | null;
   messages: ChatMessage[] | null;
+  config: PromptConfig;
   version: number;
   varsUsed: string[];
   missingVars: string[];

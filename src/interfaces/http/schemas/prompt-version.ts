@@ -4,6 +4,7 @@ import { CONSTANTS } from "@/domain/prompt";
 export const saveVersionSchema = z.object({
   content: z.string().max(100_000),
   type: z.enum(["text", "chat"]).default("text"),
+  config: z.record(z.string(), z.unknown()).default({}),
   commitMessage: z.string().trim().max(200).optional(),
 });
 

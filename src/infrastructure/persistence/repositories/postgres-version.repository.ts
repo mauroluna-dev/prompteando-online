@@ -25,6 +25,7 @@ export class PostgresVersionRepository implements VersionRepository {
         githubCommitSha: version.githubCommitSha,
         githubSyncError: version.githubSyncError,
         templateVars: version.templateVars,
+        config: version.config,
         createdAt: version.createdAt,
       });
       await tx
@@ -123,6 +124,7 @@ export class PostgresVersionRepository implements VersionRepository {
         githubCommitSha: promptVersions.githubCommitSha,
         githubSyncError: promptVersions.githubSyncError,
         templateVars: promptVersions.templateVars,
+        config: promptVersions.config,
         createdAt: promptVersions.createdAt,
         promptName: prompts.name,
         promptSlug: prompts.slug,
@@ -151,6 +153,7 @@ export class PostgresVersionRepository implements VersionRepository {
         githubCommitSha: row.githubCommitSha,
         githubSyncError: row.githubSyncError,
         templateVars: row.templateVars,
+        config: row.config,
         createdAt: row.createdAt,
       }),
       promptName: row.promptName,
