@@ -1,18 +1,74 @@
-# prompteando
+# Prompteando
 
-Versionador de prompts gratis y sin vendor lock-in para no-coders y
-vibe-coders. Mirá la "Constitution" en `specs/`:
+**Versioná tus prompts sin perder lo que funcionaba — gratis y sin
+vendor lock-in.** Open source, hecho desde Argentina para no-coders y
+vibe-coders.
 
-- [`specs/mission.md`](specs/mission.md) — visión, personas, scope V1.
-- [`specs/tech-stack.md`](specs/tech-stack.md) — stack y arquitectura.
-- [`specs/roadmap.md`](specs/roadmap.md) — fases atómicas P0–P16.
+[![CI](https://github.com/mauroluna-dev/prompteando-online/actions/workflows/ci.yml/badge.svg)](https://github.com/mauroluna-dev/prompteando-online/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Bun](https://img.shields.io/badge/runtime-Bun-000.svg)](https://bun.sh)
 
-## Quickstart
+> _"PromptLayer, pero gratis y sin vendor lock-in."_
+
+<!-- TODO: agregar GIF/captura de la app acá (dashboard → editor → consumo por API). -->
+
+## El problema
+
+Hoy la gente sobreescribe sus prompts directo: no hay historial, no hay
+rollback cuando una iteración rompe el output, y nadie sabe qué versión
+está corriendo en producción. El "backup" es pegarlo en un Google Doc.
+
+## Qué es Prompteando
+
+Un versionador de prompts con cero fricción:
+
+- 📌 **Cada `Save` crea una versión inmutable y numerada.** Historial
+  completo, rollback a cualquier versión.
+- 🔌 **Cada prompt expone un endpoint público de lectura** con API Key,
+  para consumirlo desde n8n, Zapier, Make, `curl` o tu código.
+- 🐙 **Tu historial, tu repo (opcional pero flagship).** Si conectás
+  GitHub, cada save se commitea en *tu* repo bajo *tu* cuenta. Si mañana
+  Prompteando desaparece, te quedás con todo.
+- 📦 **Exportable por diseño.** Aun sin GitHub, bajás todo tu historial
+  en ZIP/JSON cuando quieras. Nunca rehén de un proveedor.
+- 📊 **Métricas de uso por API Key**: requests/día, p50/p95, error rate,
+  top prompts.
+
+## Para quién
+
+1. **No-coder orquestador** — founders, PMs, marketers que arman flujos
+   con LLMs en n8n / Zapier / Make. No tocan código pero iteran prompts
+   y no quieren perder lo que andaba.
+2. **Vibe-coder** — devs que copy-pastean prompts entre Cursor, Claude
+   Code y ChatGPT, y pierden la versión que funcionaba.
+
+Más detalle de visión, personas y scope en [`specs/mission.md`](specs/mission.md).
+
+## Self-host
+
+Prompteando es 100% self-hosteable. La app no se publica al host: escucha
+solo en la red interna de Docker (`app:3010`). Poné tu propio reverse
+proxy (nginx / Caddy / Traefik) adelante y reenviá a `app:3010`.
+
+```bash
+cp .env.production.example .env.production    # completá los secretos
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+```
+
+El servicio `migrate` aplica las migrations una sola vez antes de que la
+app arranque. Postgres y Redis quedan internos (nunca publicados al
+host). Detalle de variables en [`.env.production.example`](.env.production.example).
+
+> Generá `AUTH_SECRET` y `ENCRYPTION_KEY` con `openssl rand -base64 32`.
+> Serví siempre detrás de HTTPS. Ver [`SECURITY.md`](./SECURITY.md).
+
+## Quickstart (desarrollo local)
 
 ```bash
 bun install                              # deps
-cp .env.example .env                     # config local
+cp .env.example .env                     # config local (ver "Auth setup")
 docker compose up -d postgres redis      # data services
+bun run db:migrate                       # aplica migrations
 bun dev                                  # app en host con HMR
 ```
 
@@ -82,7 +138,7 @@ aplicaron.
 
 ## Auth setup
 
-prompteando usa [Auth.js](https://authjs.dev) (`@auth/core`) con el
+Prompteando usa [Auth.js](https://authjs.dev) (`@auth/core`) con el
 Drizzle adapter. Login con **GitHub** o **Google** (OAuth-only,
 sin email/password). El mismo email vía distintos providers se
 unifica al mismo `users` row (`allowDangerousEmailAccountLinking`
@@ -91,61 +147,64 @@ habilitado en ambos providers — ambos verifican email server-side).
 > Tip: generá `AUTH_SECRET` con `openssl rand -base64 32` y guardá
 > el valor; rotarlo invalida todas las sesiones activas.
 
-### GitHub OAuth App
+### Dos OAuth Apps de GitHub
 
-**A. Local-only (sin tunnel)**
+GitHub permite **una sola** Authorization callback URL por OAuth App, así
+que Prompteando usa **dos** apps separadas:
 
-1. https://github.com/settings/applications/new
-2. **Application name**: `prompteando (local)`
-3. **Homepage URL**: `http://localhost:3010`
-4. **Authorization callback URL**: `http://localhost:3010/auth/callback/github`
-5. Copiar Client ID y generar Client Secret.
+1. **Login** (Auth.js) — callback `<AUTH_URL>/auth/callback/github`.
+   Variables `GITHUB_AUTH_CLIENT_ID` / `GITHUB_AUTH_CLIENT_SECRET`.
+2. **Integración** (Settings → Conectar GitHub) — callback
+   `<AUTH_URL>/api/integrations/github/oauth-callback`. Variables
+   `GITHUB_INTEGRATIONS_CLIENT_ID` / `GITHUB_INTEGRATIONS_CLIENT_SECRET`.
 
-**B. Detrás de un tunnel HTTPS** (Cloudflare Tunnel, ngrok, etc.)
-
-GitHub no permite múltiples callbacks por app, así que registrá
-**otra** OAuth App apuntando al hostname público:
-
-- **Homepage URL**: `https://<sub>.<domain>`
-- **Authorization callback URL**: `https://<sub>.<domain>/auth/callback/github`
+Para cada una: https://github.com/settings/applications/new →
+**Homepage URL** `http://localhost:3010` (o tu host público) y la
+**Authorization callback URL** correspondiente. Copiá Client ID y generá
+el Client Secret.
 
 ### Google OAuth Client
 
-**A. Local-only**
-
 1. https://console.cloud.google.com/ → crear o reusar un proyecto.
 2. **APIs & Services** → **OAuth consent screen** → tipo *External*,
-   completar los campos requeridos (app name, support email, scopes:
-   `email`, `profile`, `openid`).
-3. **APIs & Services** → **Credentials** → **Create Credentials** →
-   **OAuth client ID** → tipo *Web application*.
+   completar los campos requeridos (scopes: `email`, `profile`, `openid`).
+3. **Credentials** → **Create Credentials** → **OAuth client ID** →
+   *Web application*.
 4. **Authorized JavaScript origins**: `http://localhost:3010`
 5. **Authorized redirect URIs**: `http://localhost:3010/auth/callback/google`
-6. Copiar Client ID y Client Secret.
-
-**B. Detrás de un tunnel HTTPS**
-
-A diferencia de GitHub, Google permite múltiples authorized redirect
-URIs en el mismo OAuth client. Agregá:
-
-- **Authorized JavaScript origins**: `https://<sub>.<domain>`
-- **Authorized redirect URIs**: `https://<sub>.<domain>/auth/callback/google`
+   (Google sí permite varios redirect URIs, así que agregá también el
+   host público si usás un tunnel).
 
 ### `.env`
 
+Copiá [`.env.example`](.env.example) y completá. Variables principales:
+
 ```env
-# Local
-AUTH_URL=http://localhost:3010
-# o detrás de tunnel:
-# AUTH_URL=https://<sub>.<domain>
+# Data services
+DATABASE_URL=postgres://prompteando:prompteando@localhost:5432/prompteando
+REDIS_URL=redis://localhost:6379
 
+# Auth.js
 AUTH_SECRET=<openssl rand -base64 32>
+AUTH_URL=http://localhost:3010        # o la URL pública del tunnel
 
-GITHUB_CLIENT_ID=<...>
-GITHUB_CLIENT_SECRET=<...>
+# GitHub OAuth App #1 — login
+GITHUB_AUTH_CLIENT_ID=<...>
+GITHUB_AUTH_CLIENT_SECRET=<...>
 
+# GitHub OAuth App #2 — integración (Conectar GitHub)
+GITHUB_INTEGRATIONS_CLIENT_ID=<...>
+GITHUB_INTEGRATIONS_CLIENT_SECRET=<...>
+
+# Google OAuth
 GOOGLE_CLIENT_ID=<...>
 GOOGLE_CLIENT_SECRET=<...>
+
+# Cifrado at-rest del token de GitHub (AES-256-GCM). 32 bytes base64.
+ENCRYPTION_KEY=<openssl rand -base64 32>
+
+# Opcional: observabilidad
+SENTRY_DSN=
 ```
 
 `trustHost: true` está activado, así que Auth.js infiere el host del
@@ -198,7 +257,18 @@ src/
 ## Stack
 
 Bun · Elysia · React 19 · React Router · SWR · Tailwind 4 · shadcn/ui ·
-Postgres + Drizzle · Redis (Bun.redis) · Auth.js · Octokit (en P10).
+Postgres + Drizzle · Redis (Bun.redis) · Auth.js · Octokit.
 
 Detalle completo y razonamiento en
 [`specs/tech-stack.md`](specs/tech-stack.md).
+
+## Contribuir
+
+Toda contribución suma. Leé [`CONTRIBUTING.md`](./CONTRIBUTING.md) para
+levantar el proyecto, las convenciones canónicas
+([`specs/conventions.md`](specs/conventions.md)) y el flujo de PR. La
+comunicación es en español; el código y los commits, en inglés.
+
+## Licencia
+
+[MIT](./LICENSE) © Mauro Luna.

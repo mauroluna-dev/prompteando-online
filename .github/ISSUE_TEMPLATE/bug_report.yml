@@ -1,0 +1,53 @@
+name: "🐛 Reporte de bug"
+description: Algo no funciona como debería
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar. Cuanto más concreto, más rápido lo
+        resolvemos. Si es una **vulnerabilidad de seguridad**, NO uses
+        este formulario — seguí `SECURITY.md`.
+  - type: textarea
+    id: que-paso
+    attributes:
+      label: ¿Qué pasó?
+      description: Descripción clara del problema.
+      placeholder: Al guardar una versión, la app devuelve 500...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduccion
+    attributes:
+      label: Pasos para reproducir
+      placeholder: |
+        1. Ir a '...'
+        2. Hacer click en '...'
+        3. Ver el error
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: ¿Qué esperabas que pasara?
+    validations:
+      required: true
+  - type: textarea
+    id: entorno
+    attributes:
+      label: Entorno
+      description: Versión de Bun, SO, cómo lo corrés (local / self-host / Docker).
+      placeholder: |
+        - Bun: 1.3.0
+        - SO: macOS 15
+        - Modo: docker compose (self-host)
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / capturas
+      description: Pegá logs relevantes o adjuntá capturas.
+      render: shell
+    validations:
+      required: false
