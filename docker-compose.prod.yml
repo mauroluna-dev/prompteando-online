@@ -1,0 +1,108 @@
+# Production compose — no reverse proxy bundled (bring your own).
+#
+# The app is NOT published to the host: it only listens on the internal
+# `prompteando` Docker network on port 3010. Put your own reverse proxy
+# (nginx / Caddy / etc.) in front and forward to `app:3010` — either by
+# adding it as a service here on the same network, or by attaching an
+# existing proxy container to the network:
+#     docker network connect prompteando <your-proxy-container>
+#
+# Deploy (interpolation + container env both come from .env.production):
+#     docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+#
+# Postgres and Redis are internal-only (never published to the host).
+
+name: prompteando
+
+networks:
+  prompteando:
+    name: prompteando
+
+volumes:
+  postgres_data:
+  redis_data:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env.production}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.production}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env.production}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - prompteando
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - prompteando
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # One-shot: applies Drizzle migrations, then exits. The app waits for
+  # it to complete successfully before booting.
+  migrate:
+    build:
+      context: .
+      target: prod
+    image: prompteando-app
+    restart: "no"
+    command: ["bun", "run", "db:migrate"]
+    env_file: .env.production
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - prompteando
+
+  app:
+    build:
+      context: .
+      target: prod
+    image: prompteando-app
+    restart: unless-stopped
+    env_file: .env.production
+    # Service-name hosts override whatever DATABASE_URL/REDIS_URL might
+    # be set in .env.production (environment wins over env_file).
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
+    # Internal only — reachable as `app:3010` on the prompteando network.
+    expose:
+      - "3010"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - prompteando
+    healthcheck:
+      test:
+        - CMD
+        - bun
+        - --eval
+        - "fetch('http://localhost:3010/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
