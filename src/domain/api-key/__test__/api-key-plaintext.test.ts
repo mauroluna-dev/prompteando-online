@@ -15,9 +15,9 @@ describe("ApiKeyPlaintext.fromRandomBytes", () => {
     expect(k.value.startsWith(CONSTANTS.PREFIX)).toBe(true);
   });
 
-  test("matches ps_live_<32 hex>", () => {
+  test("matches po_live_<32 hex>", () => {
     const k = ApiKeyPlaintext.fromRandomBytes(randomBytes(CONSTANTS.RANDOM_BYTES));
-    expect(k.value).toMatch(/^ps_live_[a-f0-9]{32}$/);
+    expect(k.value).toMatch(/^po_live_[a-f0-9]{32}$/);
   });
 
   test("has full plaintext length", () => {
@@ -40,7 +40,7 @@ describe("ApiKeyPlaintext.fromRandomBytes", () => {
 
 describe("ApiKeyPlaintext.parse", () => {
   test("accepts a valid plaintext", () => {
-    const raw = "ps_live_a1b2c3d4e5f60718293a4b5c6d7e8f90";
+    const raw = "po_live_a1b2c3d4e5f60718293a4b5c6d7e8f90";
     expect(ApiKeyPlaintext.parse(raw).value).toBe(raw);
   });
 
@@ -51,8 +51,8 @@ describe("ApiKeyPlaintext.parse", () => {
 
 describe("extractPrefix", () => {
   test("returns first PREFIX_LENGTH chars", () => {
-    const k = ApiKeyPlaintext.parse("ps_live_a1b2c3d4e5f60718293a4b5c6d7e8f90");
-    expect(k.extractPrefix()).toBe("ps_live_a1b2c3d4");
+    const k = ApiKeyPlaintext.parse("po_live_a1b2c3d4e5f60718293a4b5c6d7e8f90");
+    expect(k.extractPrefix()).toBe("po_live_a1b2c3d4");
     expect(k.extractPrefix().length).toBe(CONSTANTS.PREFIX_LENGTH);
   });
 });

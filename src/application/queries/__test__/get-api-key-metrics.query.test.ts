@@ -18,7 +18,7 @@ function makeOwnedKey(): ApiKey {
     "k1",
     "u1",
     ApiKeyName.parse("Production"),
-    "ps_live_abcd1234",
+    "po_live_abcd1234",
     "hash",
     new Date("2026-04-01T00:00:00Z"),
   );
