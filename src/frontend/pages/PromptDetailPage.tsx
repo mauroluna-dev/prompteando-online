@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { MarkdownEditor } from "@/frontend/components/MarkdownEditor";
 import { Skeleton } from "@/frontend/components/states";
+import { TemplatePanel } from "@/frontend/components/TemplatePanel";
 import { VersionDiff } from "@/frontend/components/VersionDiff";
 import { VersionHistory } from "@/frontend/components/VersionHistory";
 import { useGithubConnection } from "@/frontend/hooks/use-github-connection";
@@ -258,6 +259,15 @@ export function PromptDetailPage() {
               saveDisabled={saveDisabled}
             />
           )}
+
+          {mode === "edit" && !isViewing && !isEmpty && slug ? (
+            <TemplatePanel
+              slug={slug}
+              isTemplate={prompt.isTemplate}
+              varMeta={prompt.templateVarMeta}
+              content={content}
+            />
+          ) : null}
         </div>
 
         {/* Sidebar */}

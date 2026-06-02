@@ -44,6 +44,33 @@ Un versionador de prompts con cero fricción:
 
 Más detalle de visión, personas y scope en [`specs/mission.md`](specs/mission.md).
 
+## Templates con variables
+
+Un prompt puede marcarse como **template** (opt-in) y usar
+`{{variables}}` que se sustituyen server-side al consumirlo. Activás el
+modo template desde el editor, anotás descripción/default por variable, y
+lo consumís por un endpoint dedicado:
+
+```bash
+curl -X POST https://<tu-host>/v1/prompts/<slug>/render \
+  -H "Authorization: Bearer po_live_..." \
+  -H "content-type: application/json" \
+  -d '{"vars": {"nombre": "Ana", "producto": "Plan Pro"}}'
+# → {"content":"Hola Ana, sobre Plan Pro.","version":1,"vars_used":[...],"missing_vars":[]}
+```
+
+- **Detección híbrida**: las variables se infieren del contenido; podés
+  declarar un `default` por variable (la vuelve opcional).
+- **Falla estricta**: si falta una variable requerida, devuelve `422`
+  con `missing_vars` — nunca manda un prompt a medio renderizar.
+- **Versionado**: pasá `"version": N` para fijar una versión; cada
+  versión guarda su propio set de variables.
+- **Discovery**: el `GET /v1/prompts/:slug` raw devuelve también
+  `isTemplate` y `templateVars`, así un consumidor sabe qué variables
+  mandarle al `/render` sin parsear el contenido.
+- **Backward compatible**: el `GET` sigue devolviendo el contenido con
+  los `{{}}` literales; solo se sumaron campos nuevos a la respuesta.
+
 ## Self-host
 
 Prompteando es 100% self-hosteable. La app no se publica al host: escucha
