@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+# Skip husky's `prepare` hook on `bun install` — git hooks are
+# meaningless on an ephemeral runner.
+env:
+  HUSKY: 0
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    # Dummy values: no Postgres/Redis services run in CI. These only
+    # need to satisfy env.ts's Zod schema at import time. The single
+    # live-Redis test (BunRedisLock) self-skips because CI=true.
+    env:
+      DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+      REDIS_URL: redis://localhost:6379
+      AUTH_SECRET: "0123456789012345678901234567890123"
+      AUTH_URL: http://localhost:3010
+      GITHUB_AUTH_CLIENT_ID: ci
+      GITHUB_AUTH_CLIENT_SECRET: ci
+      GITHUB_INTEGRATIONS_CLIENT_ID: ci
+      GITHUB_INTEGRATIONS_CLIENT_SECRET: ci
+      GOOGLE_CLIENT_ID: ci
+      GOOGLE_CLIENT_SECRET: ci
+      ENCRYPTION_KEY: AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run build
