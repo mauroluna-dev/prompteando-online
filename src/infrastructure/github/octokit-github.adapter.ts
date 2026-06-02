@@ -143,7 +143,7 @@ export class OctokitGitHubAdapter implements GitHubGateway {
       owner,
       repo,
       path: "README.md",
-      message: "chore: initial promptstash README",
+      message: "chore: initial prompteando README",
       content: contentB64,
       branch: defaultBranch,
     });

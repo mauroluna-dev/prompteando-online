@@ -46,7 +46,7 @@ export const apiKeyMetricsDaily = pgTable(
 + PK compuesta + index).
 
 1.1.4. `bun run db:migrate`. Verificar
-`docker compose exec postgres psql -U promptstash -d promptstash
+`docker compose exec postgres psql -U prompteando -d prompteando
 -c "\d api_key_metrics_daily"`.
 
 ### 1.2. Domain extension

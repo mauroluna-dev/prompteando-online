@@ -9,7 +9,7 @@ por fase. Sirve como mapa explícito del sistema.
 
 ```env
 # ───────────────────── P1 (this phase) ─────────────────────
-DATABASE_URL=postgres://promptstash:promptstash@localhost:5432/promptstash
+DATABASE_URL=postgres://prompteando:prompteando@localhost:5432/prompteando
 REDIS_URL=redis://localhost:6379
 
 # ───────────────────── P3 (Auth.js) ─────────────────────
@@ -80,7 +80,7 @@ CMD ["bun", "start"]
 
 3.2. Verificar build local:
 ```bash
-docker build --target prod -t promptstash:dev-test .
+docker build --target prod -t prompteando:dev-test .
 ```
 Debe terminar sin error.
 
@@ -89,8 +89,8 @@ Debe terminar sin error.
 
 ```yaml
 networks:
-  promptstash:
-    name: promptstash
+  prompteando:
+    name: prompteando
 
 volumes:
   postgres_data:
@@ -100,17 +100,17 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: promptstash
-      POSTGRES_PASSWORD: promptstash
-      POSTGRES_DB: promptstash
+      POSTGRES_USER: prompteando
+      POSTGRES_PASSWORD: prompteando
+      POSTGRES_DB: prompteando
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - promptstash
+      - prompteando
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U promptstash"]
+      test: ["CMD-SHELL", "pg_isready -U prompteando"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -122,7 +122,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - promptstash
+      - prompteando
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -136,7 +136,7 @@ services:
       target: prod
     env_file: .env
     environment:
-      DATABASE_URL: postgres://promptstash:promptstash@postgres:5432/promptstash
+      DATABASE_URL: postgres://prompteando:prompteando@postgres:5432/prompteando
       REDIS_URL: redis://redis:6379
     ports:
       - "3000:3000"
@@ -146,7 +146,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - promptstash
+      - prompteando
     healthcheck:
       test: ["CMD", "bun", "--eval", "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 5s
@@ -165,7 +165,7 @@ Notas:
 5.2. `docker compose up -d postgres redis` levanta ambos.
 5.3. `docker compose ps` muestra ambos `healthy` tras unos segundos.
 5.4. Conexiones funcionan:
-- `psql postgres://promptstash:promptstash@localhost:5432/promptstash -c '\l'` lista DBs.
+- `psql postgres://prompteando:prompteando@localhost:5432/prompteando -c '\l'` lista DBs.
 - `redis-cli -h localhost -p 6379 ping` → `PONG`.
 5.5. `bun dev` en host arranca y `curl localhost:3000/health` responde.
 5.6. `docker compose down` deja todo limpio (volumes persistentes).

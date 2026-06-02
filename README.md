@@ -1,4 +1,4 @@
-# promptstash
+# prompteando
 
 Versionador de prompts gratis y sin vendor lock-in para no-coders y
 vibe-coders. Mirá la "Constitution" en `specs/`:
@@ -52,8 +52,8 @@ docker compose down                      # mantiene volumes
 docker compose down -v                   # borra volumes (DB limpia)
 ```
 
-Credenciales dev de Postgres: usuario `promptstash`, password
-`promptstash`, db `promptstash`. La connection string ya viene en
+Credenciales dev de Postgres: usuario `prompteando`, password
+`prompteando`, db `prompteando`. La connection string ya viene en
 `.env.example` como `DATABASE_URL`.
 
 ## DB ops
@@ -82,7 +82,7 @@ aplicaron.
 
 ## Auth setup
 
-promptstash usa [Auth.js](https://authjs.dev) (`@auth/core`) con el
+prompteando usa [Auth.js](https://authjs.dev) (`@auth/core`) con el
 Drizzle adapter. Login con **GitHub** o **Google** (OAuth-only,
 sin email/password). El mismo email vía distintos providers se
 unifica al mismo `users` row (`allowDangerousEmailAccountLinking`
@@ -96,7 +96,7 @@ habilitado en ambos providers — ambos verifican email server-side).
 **A. Local-only (sin tunnel)**
 
 1. https://github.com/settings/applications/new
-2. **Application name**: `promptstash (local)`
+2. **Application name**: `prompteando (local)`
 3. **Homepage URL**: `http://localhost:3010`
 4. **Authorization callback URL**: `http://localhost:3010/auth/callback/github`
 5. Copiar Client ID y generar Client Secret.

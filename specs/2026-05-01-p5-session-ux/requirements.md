@@ -194,7 +194,7 @@ en `lib/auth-actions.ts`.
 
 ### Frontend layout
 - `App.tsx` ahora tiene un header full-width:
-  - Izquierda: logo "promptstash" (texto, no SVG por ahora).
+  - Izquierda: logo "prompteando" (texto, no SVG por ahora).
   - Derecha: `<DropdownMenu>` con trigger `<Avatar>` (image del user
     si existe, fallback a iniciales).
 - El contenido del scaffold queda debajo dentro de un `<main>`.

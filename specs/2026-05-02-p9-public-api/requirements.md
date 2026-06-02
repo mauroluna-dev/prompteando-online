@@ -5,7 +5,7 @@ Refer: `specs/roadmap.md` → P9. P8 dejó la gestión de API keys
 funcional (UI + backend); P9 las pone a trabajar: el endpoint
 **`GET /v1/prompts/:slug`** que cualquier consumidor (n8n, Zapier,
 Make, curl, fetch en un backend) puede llamar con
-`Authorization: Bearer ps_live_xxx` para obtener la última versión
+`Authorization: Bearer po_live_xxx` para obtener la última versión
 del prompt en JSON.
 
 Es el primer endpoint público (sin sesión web; solo bearer token).

@@ -1,4 +1,4 @@
-# Tech Stack — promptstash
+# Tech Stack — prompteando
 
 > **Convenciones canónicas: ver [`conventions.md`](./conventions.md)**.
 > Si algo de este doc entra en conflicto con `conventions.md`, gana
@@ -164,7 +164,7 @@ signing con private key, no compatible con Auth.js GitHub provider
 de oficio).
 
 ## API Keys (consumo público)
-- Generadas en dashboard. Formato: `ps_live_<32 chars>`.
+- Generadas en dashboard. Formato: `po_live_<32 chars>`.
 - Plaintext mostrado UNA sola vez. En BD solo `key_hash`
   (argon2id vía `BunCryptoAdapter.hashPassword`).
 - Header de consumo: `Authorization: Bearer <key>`.
@@ -185,7 +185,7 @@ Application/domain code nunca importa `crypto`, `node:crypto` ni
 - Flujo:
   1. Usuario conecta GitHub (OAuth, scope `repo`) — Auth.js ya capturó
      el token en `accounts`.
-  2. Backend crea repo `promptstash-<username>` (privado por default).
+  2. Backend crea repo `prompteando-<username>` (privado por default).
   3. Cada `SaveNewVersion` command, después de persistir en Postgres,
      llama a `GitHubGateway.commitVersion()`.
 - Errors: retry con backoff. Si falla 3 veces, `github_commit_sha = null`
@@ -208,7 +208,7 @@ Reglas duras en `conventions.md` §11. Resumen del stack:
 - **Tailwind v4 `@theme`** en `styles/globals.css` define los
   CSS vars que mapean a clases utility (`bg-primary`,
   `text-success-fg`, `font-display`, etc.).
-- **Tokens semánticos promptstash**: `--ps-success-{fg,bg}`,
+- **Tokens semánticos prompteando**: `--ps-success-{fg,bg}`,
   `--ps-warning-{fg,bg}`, `--ps-info-{fg,bg}`,
   `--ps-diff-add-{fg,bg}`, `--ps-diff-del-{fg,bg}`. Expuestos
   como `bg-success-bg`, `text-diff-add-fg`, etc. via el

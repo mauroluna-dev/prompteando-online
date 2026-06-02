@@ -1,4 +1,4 @@
-# Mission — promptstash
+# Mission — prompteando
 
 ## Visión
 Que cualquier persona pueda versionar y consumir prompts con la
@@ -22,7 +22,7 @@ Hoy los usuarios sobreescriben prompts directamente:
 - El "backup" es pegarlo en un Google Doc o en Notion.
 
 ## Solución
-promptstash = versionador de prompts con cero fricción para no-coders.
+prompteando = versionador de prompts con cero fricción para no-coders.
 - Cada `Save` crea una versión inmutable, numerada.
 - Cada prompt expone un endpoint público de lectura con API Key.
 - Si el usuario conecta GitHub, el versionado se replica en su repo.
@@ -34,7 +34,7 @@ Posicionamiento: **"PromptLayer pero gratis y sin vendor lock-in"**.
   infra). Solo rate limits anti-abuso por API Key.
 - **Tu historial, tu repo (opcional pero flagship)**: si conectás
   GitHub, el storage canónico vive en TU repo bajo TU cuenta. Si
-  mañana cerramos promptstash, te quedás con todo el historial.
+  mañana cerramos prompteando, te quedás con todo el historial.
 - **Exportable por diseño**: aun sin GitHub, podés bajarte tus
   prompts en cualquier momento (export ZIP / JSON). Nunca rehén.
 
@@ -47,7 +47,7 @@ Posicionamiento: **"PromptLayer pero gratis y sin vendor lock-in"**.
   Al conectarse, se hace backfill del historial al repo nuevo.
 
 ## Out of scope (V1)
-promptstash V1 **no** incluye:
+prompteando V1 **no** incluye:
 - Evaluación / scoring de prompts
 - A/B testing entre versiones
 - Logging detallado de invocaciones (event-level tracing)

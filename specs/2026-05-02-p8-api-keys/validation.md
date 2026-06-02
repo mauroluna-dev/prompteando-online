@@ -40,8 +40,8 @@ curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "Cookie: $T" \
 curl -s -X POST -H "Cookie: $T" -H "Content-Type: application/json" \
   -d '{"name":"n8n-prod"}' http://localhost:3010/api/keys
 # Expected: JSON con keys "apiKey" y "plaintext".
-# - plaintext: matches /^ps_live_[a-f0-9]{32}$/
-# - apiKey.prefix: matches /^ps_live_[a-f0-9]{8}$/
+# - plaintext: matches /^po_live_[a-f0-9]{32}$/
+# - apiKey.prefix: matches /^po_live_[a-f0-9]{8}$/
 # - apiKey: NO incluye field "keyHash".
 ```
 
@@ -126,7 +126,7 @@ bun run db:psql -- -c "SELECT length(key_hash) FROM api_keys LIMIT 1;"
 - Page con counter "X / 10 active" arriba.
 - Click "+ Generate new key" → form con Input name → Create.
 - `Dialog` se abre con:
-  - Plaintext en monospace (40 chars `ps_live_<32 hex>`).
+  - Plaintext en monospace (40 chars `po_live_<32 hex>`).
   - Botón "Copy" copia al clipboard.
   - Warning visible.
   - Botón "Done" cierra.

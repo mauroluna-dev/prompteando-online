@@ -3,12 +3,12 @@
 ## Why this phase
 
 Refer: `specs/roadmap.md` → P11. P10 dejó conectado el repo
-`promptstash-<login>` en GitHub. P11 cierra el loop del flagship
+`prompteando-<login>` en GitHub. P11 cierra el loop del flagship
 differentiator: cada `Save` en la app deja **un commit en TU repo**
 sin que el usuario tenga que hacer nada.
 
 Después de P11:
-- Versionar un prompt en promptstash ⇒ commit en GitHub.
+- Versionar un prompt en prompteando ⇒ commit en GitHub.
 - El historial del repo es leíble como markdown: cada archivo
   `prompts/<slug>.md` es la última versión + frontmatter, y el
   `git log` cuenta el versionado.

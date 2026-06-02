@@ -24,7 +24,7 @@ push, NO usar `--no-verify`.
 - Migration 0008 generada y aplicada (`bun run db:migrate`).
 - Verificar columnas:
   ```bash
-  docker compose exec -T postgres psql -U promptstash -d promptstash \
+  docker compose exec -T postgres psql -U prompteando -d prompteando \
     -c "\d api_key_metrics_daily"
   ```
   Esperar 8 columnas + PK compuesta + index `api_key_metrics_daily_day_idx`.
@@ -33,11 +33,11 @@ push, NO usar `--no-verify`.
 
 #### S1.1. Recording funciona end-to-end
 
-Setup: una API key activa del user (`ps_live_…`) y al menos un
+Setup: una API key activa del user (`po_live_…`) y al menos un
 prompt accesible.
 
 ```bash
-KEY=ps_live_xxxxx
+KEY=po_live_xxxxx
 SLUG=onboarding-welcome
 
 curl -H "Authorization: Bearer $KEY" \
@@ -127,7 +127,7 @@ bun run cron:consolidate-metrics --day=2026-05-03
 
 Verificar Postgres:
 ```bash
-docker compose exec -T postgres psql -U promptstash -d promptstash \
+docker compose exec -T postgres psql -U prompteando -d prompteando \
   -c "SELECT * FROM api_key_metrics_daily WHERE day='2026-05-03';"
 ```
 
@@ -206,7 +206,7 @@ curl -s -b "$COOKIE" \
 
 Insertar fila de prueba con día > 90 días atrás:
 ```bash
-docker compose exec -T postgres psql -U promptstash -d promptstash <<SQL
+docker compose exec -T postgres psql -U prompteando -d prompteando <<SQL
 INSERT INTO api_key_metrics_daily (api_key_id, day, total_requests)
 VALUES ('$KEYID', '2025-01-01', 100);
 SQL
@@ -219,7 +219,7 @@ bun run cron:prune-old-metrics
 
 Verificar:
 ```bash
-docker compose exec -T postgres psql -U promptstash -d promptstash \
+docker compose exec -T postgres psql -U prompteando -d prompteando \
   -c "SELECT count(*) FROM api_key_metrics_daily WHERE day < CURRENT_DATE - INTERVAL '90 days';"
 # Expected: 0
 ```

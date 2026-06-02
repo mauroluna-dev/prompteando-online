@@ -634,4 +634,4 @@ const server = Bun.serve({
   },
 });
 
-console.log(`🚀 promptstash listening on ${server.url}`);
+console.log(`🚀 prompteando listening on ${server.url}`);

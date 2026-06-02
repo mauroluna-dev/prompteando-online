@@ -169,7 +169,7 @@ Total: 9 frames principales + 4 estados auxiliares.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  promptstash | Prompts | API Keys | Settings           [👤]  │  64px header
+│  prompteando | Prompts | API Keys | Settings           [👤]  │  64px header
 ├──────────────────────────────────────────────────────────────┤
 │  ← Back to prompts                                            │
 │  ┌─────────────────────────────────────────────────────────┐ │
@@ -232,14 +232,14 @@ Total: 9 frames principales + 4 estados auxiliares.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  promptstash | Prompts | API Keys | Settings           [👤]  │
+│  prompteando | Prompts | API Keys | Settings           [👤]  │
 ├──────────────────────────────────────────────────────────────┤
 │  API Keys                                  [+ Generate Key]  │
 │  Manage keys for consuming prompts via the public API.       │
 │                                                               │
 │  ┌─────────────────────────────────────────────────────────┐ │
 │  │ ⚠ Copy your key now. It won't be shown again.           │ │  alert banner
-│  │ ps_live_a1f2c2da9d6f74a5c80cea2f34c0c067     [📋 Copy]   │ │  (when just generated)
+│  │ po_live_a1f2c2da9d6f74a5c80cea2f34c0c067     [📋 Copy]   │ │  (when just generated)
 │  └─────────────────────────────────────────────────────────┘ │
 │                                                               │
 │  ┌─────────────────────────────────────────────────────────┐ │
@@ -247,7 +247,7 @@ Total: 9 frames principales + 4 estados auxiliares.
 │  └─────────────────────────────────────────────────────────┘ │
 │                                                               │
 │  ┌─────────────────────────────────────────────────────────┐ │
-│  │ ▼ Production              ps_live_..7c80c067            │ │  expandable row
+│  │ ▼ Production              po_live_..7c80c067            │ │  expandable row
 │  │   Created May 1 • Last used 2 minutes ago               │ │
 │  │   ┌─────────┬─────────┬──────────┬────────────────────┐ │ │
 │  │   │ 12,543  │ 0.4%    │ 87ms     │ onboarding-welcome │ │ │  KPI cards
@@ -271,12 +271,12 @@ Total: 9 frames principales + 4 estados auxiliares.
 │  └─────────────────────────────────────────────────────────┘ │
 │                                                               │
 │  ┌─────────────────────────────────────────────────────────┐ │
-│  │ ▶ n8n Workflow              ps_live_..ee4d              │ │  collapsed
+│  │ ▶ n8n Workflow              po_live_..ee4d              │ │  collapsed
 │  │   Created Apr 22 • Last used 1h ago                     │ │
 │  └─────────────────────────────────────────────────────────┘ │
 │                                                               │
 │  ┌─────────────────────────────────────────────────────────┐ │
-│  │ ▶ Dev testing               ps_live_..0148              │ │
+│  │ ▶ Dev testing               po_live_..0148              │ │
 │  │   Created Apr 25 • Never used                           │ │
 │  └─────────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────────┘

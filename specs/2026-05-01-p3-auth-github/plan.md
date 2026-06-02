@@ -105,7 +105,7 @@ estándar (`url => fetch(url).then(r => r.ok ? r.json() : null)`).
 **A. Local-only (sin tunnel)**:
 - Registrar GitHub OAuth App
   (`https://github.com/settings/applications/new`):
-  - Application name: `promptstash (local)`
+  - Application name: `prompteando (local)`
   - Homepage URL: `http://localhost:3010`
   - Authorization callback URL: `http://localhost:3010/auth/callback/github`
 - Copiar Client ID, generar Client Secret.

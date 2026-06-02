@@ -1,4 +1,4 @@
-# Conventions — promptstash
+# Conventions — prompteando
 
 Single source of truth for architectural conventions. All phases (P0–P16)
 must follow these. New phases are written natively to these conventions;
@@ -117,7 +117,7 @@ shared file).
 ```ts
 // src/domain/api-key/constants.ts
 export const CONSTANTS = {
-  PREFIX: "ps_live_",
+  PREFIX: "po_live_",
   RANDOM_BYTES: 16,
   PLAINTEXT_LENGTH: 40,
   PREFIX_LENGTH: 16,
@@ -373,7 +373,7 @@ The token layer has two tiers:
   `text-foreground`, `bg-card`, `border-border`,
   `bg-primary`/`text-primary-foreground`, `bg-destructive`,
   `text-muted-foreground`, etc.
-- **promptstash semantic tokens** (Pγ): `bg-success-bg`,
+- **prompteando semantic tokens** (Pγ): `bg-success-bg`,
   `text-success-fg`, `bg-warning-bg`/`text-warning-fg`,
   `bg-info-bg`/`text-info-fg`, `bg-diff-add-bg`/`text-diff-add-fg`,
   `bg-diff-del-bg`/`text-diff-del-fg`. Defined in

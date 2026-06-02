@@ -84,14 +84,14 @@ Ya está creado por el MCP (`ro9Dv`, "Login (Pγ)") en
 ```
 Login (1440×900, fill: surface-secondary)
 ├── Nav (horizontal, fill, 64h, padding [0,32], fill: surface-elevated, border-bottom subtle)
-│   ├── Brand text: "promptstash" (Geist 18, weight 600)
+│   ├── Brand text: "prompteando" (Geist 18, weight 600)
 │   └── NavRight (horizontal, gap 16)
 │       ├── "Docs" (Inter 14, foreground-secondary)
 │       └── "GitHub" (Inter 14, foreground-secondary)
 └── Body (vertical, fill, fill_container h, padding [80,0], center align)
     └── Center (480w, fit_content, gap 32, vertical, center align)
         ├── HeroBlock (vertical, fill, gap 12, center)
-        │   ├── Title: "Welcome to promptstash" (Geist 36/600, lineHeight 1.1)
+        │   ├── Title: "Welcome to prompteando" (Geist 36/600, lineHeight 1.1)
         │   └── Subtitle: "Version your prompts. Never lose one again." (Inter 16, lineHeight 1.5)
         ├── Card (vertical, fill, padding 32, gap 16, fill: surface-elevated, radius-md, border subtle)
         │   ├── GitHub Button (horizontal, fill, h 48, fill: accent-primary, radius-sm)
@@ -101,7 +101,7 @@ Login (1440×900, fill: surface-secondary)
         │   │   ├── Icon: lucide globe 20×20 dark
         │   │   └── Label: "Continuar con Google" (Inter 15/500, dark)
         │   ├── Divider (1h, fill: border-subtle)
-        │   └── Microcopy: "Solo leemos los repos que vos crees con promptstash. Auditá nuestro código en GitHub." (Inter 12, foreground-muted, center, lineHeight 1.4)
+        │   └── Microcopy: "Solo leemos los repos que vos crees con prompteando. Auditá nuestro código en GitHub." (Inter 12, foreground-muted, center, lineHeight 1.4)
         └── Footer text: "¿Sin cuenta de GitHub o Google? Próximamente más opciones." (Inter 13, foreground-muted, center)
 ```
 
@@ -174,7 +174,7 @@ SettingsProfile (vertical, fill: surface-secondary)
 │   └── Content (vertical, padding 32, gap 24)
 │       ├── PageHeader (vertical, gap 4)
 │       │   ├── H1: "Profile" (Geist 32/600)
-│       │   └── Subtitle: "Tu identidad en promptstash."
+│       │   └── Subtitle: "Tu identidad en prompteando."
 │       ├── Card (Account)
 │       │   ├── Header: "Account" (Geist 18/600) + description
 │       │   └── Content
@@ -203,7 +203,7 @@ SettingsIntegrations (vertical, fill: surface-secondary)
 │           ├── Body
 │           │   ├── Connected state row:
 │           │   │   ├── Account: octocat
-│           │   │   ├── Repo: octocat/promptstash-octocat (link)
+│           │   │   ├── Repo: octocat/prompteando-octocat (link)
 │           │   │   ├── Connected: May 1
 │           │   │   └── Disconnect button (outline)
 │           │   └── Backfill section (only if status != null)

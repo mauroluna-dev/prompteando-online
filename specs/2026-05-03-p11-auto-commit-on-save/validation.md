@@ -59,7 +59,7 @@ En GitHub:
 
 Verificar en DB:
 ```bash
-docker compose exec -T postgres psql -U promptstash -d promptstash \
+docker compose exec -T postgres psql -U prompteando -d prompteando \
   -c "SELECT version_number, github_commit_sha, github_sync_error FROM prompt_versions ORDER BY version_number DESC LIMIT 1;"
 # Expected:
 # - version_number = N
@@ -71,7 +71,7 @@ docker compose exec -T postgres psql -U promptstash -d promptstash \
 
 Setup: con un user **sin** conexión:
 ```bash
-docker compose exec -T postgres psql -U promptstash -d promptstash \
+docker compose exec -T postgres psql -U prompteando -d prompteando \
   -c "DELETE FROM user_github_connection WHERE user_id = '<user-sin-conn>';"
 ```
 
@@ -139,7 +139,7 @@ gh api repos/<repoFullName>/commits --jq 'length'
 ### 8. Failure path: token revocado externamente
 
 1. En GitHub, ir a Settings → Applications → Authorized OAuth
-   Apps → revocar el de promptstash.
+   Apps → revocar el de prompteando.
 2. Volver a la app y hacer save.
 3. UI: la versión aparece con icon "syncing", luego transiciona
    a icon "warning" con tooltip "Token inválido. Reconectá
@@ -159,7 +159,7 @@ hacer un save nuevo para validar que la recuperación funciona
 
 ### 9. Failure path: repo borrado externamente
 
-1. En GitHub borrar el repo `promptstash-<login>`.
+1. En GitHub borrar el repo `prompteando-<login>`.
 2. Save en la app.
 3. Badge → warning con tooltip "No encuentro el repo en GitHub.".
 4. DB: `github_sync_error = "repo_missing"`.

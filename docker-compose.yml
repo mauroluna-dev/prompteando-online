@@ -1,6 +1,8 @@
+name: prompteando
+
 networks:
-  promptstash:
-    name: promptstash
+  prompteando:
+    name: prompteando
 
 volumes:
   postgres_data:
@@ -10,17 +12,17 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: promptstash
-      POSTGRES_PASSWORD: promptstash
-      POSTGRES_DB: promptstash
+      POSTGRES_USER: prompteando
+      POSTGRES_PASSWORD: prompteando
+      POSTGRES_DB: prompteando
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - promptstash
+      - prompteando
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U promptstash"]
+      test: ["CMD-SHELL", "pg_isready -U prompteando"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -32,7 +34,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - promptstash
+      - prompteando
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -46,7 +48,7 @@ services:
       target: prod
     env_file: .env
     environment:
-      DATABASE_URL: postgres://promptstash:promptstash@postgres:5432/promptstash
+      DATABASE_URL: postgres://prompteando:prompteando@postgres:5432/prompteando
       REDIS_URL: redis://redis:6379
     ports:
       - "3010:3010"
@@ -56,7 +58,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - promptstash
+      - prompteando
     healthcheck:
       test:
         - CMD

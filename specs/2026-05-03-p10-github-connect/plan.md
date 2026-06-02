@@ -51,17 +51,17 @@ export const userGithubConnection = pgTable("user_github_connection", {
 export const CONSTANTS = {
   REQUIRED_SCOPES: ["repo"],
   OAUTH_STATE_TTL_SECONDS: 600,
-  REPO_DESCRIPTION: "Versioned prompts managed by promptstash",
+  REPO_DESCRIPTION: "Versioned prompts managed by prompteando",
   DEFAULT_BRANCH: "main",
-  README_TEMPLATE: `# promptstash
+  README_TEMPLATE: `# prompteando
 
-Versioned prompts managed by [promptstash](https://promptstash.app).
+Versioned prompts managed by [prompteando](https://prompteando.app).
 
-This repo mirrors the prompts you create in your promptstash dashboard.
+This repo mirrors the prompts you create in your prompteando dashboard.
 Each save commits a new version of the affected prompt under
 \`prompts/<slug>.md\`.
 
-Disconnect at any time from your promptstash settings — your data lives
+Disconnect at any time from your prompteando settings — your data lives
 here either way.
 `,
 } as const;
@@ -158,7 +158,7 @@ class `ConnectGitHubCommand` con
 2. `const missing = CONSTANTS.REQUIRED_SCOPES.filter(s => !scopes.includes(s))`
    → si non-empty, throw `GitHubInsufficientScopeError(missing)`.
 3. `const { login } = await gateway.getAuthenticatedUser(accessToken)`
-4. `const repoName = "promptstash-" + login`
+4. `const repoName = "prompteando-" + login`
 5. `const { fullName, defaultBranch } = await gateway.ensureRepo(accessToken, repoName)`
 6. `await gateway.ensureReadme(accessToken, fullName, defaultBranch)`
 7. Construir `GitHubConnection.create(userId, login,
