@@ -7,6 +7,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import type { PromptType } from "@/domain/prompt";
+import type { PromptConfig } from "@/domain/prompt-version";
 import { prompts } from "./prompts";
 
 export const promptVersions = pgTable(
@@ -32,6 +33,9 @@ export const promptVersions = pgTable(
       .$type<string[]>()
       .notNull()
       .default([]),
+    // P22 — free-form model params (model, temperature, etc.) versioned
+    // together with the prompt.
+    config: jsonb("config").$type<PromptConfig>().notNull().default({}),
     createdAt: timestamp("created_at", { mode: "date" })
       .notNull()
       .defaultNow(),

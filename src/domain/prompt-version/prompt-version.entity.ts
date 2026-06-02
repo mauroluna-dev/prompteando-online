@@ -1,6 +1,9 @@
 import type { PromptType } from "@/domain/prompt";
 import { VersionNumber } from "./version-number.vo";
 
+/** Free-form model params versioned with the prompt (P22). */
+export type PromptConfig = Record<string, unknown>;
+
 export type PromptVersionRow = {
   id: string;
   promptId: string;
@@ -11,6 +14,7 @@ export type PromptVersionRow = {
   githubCommitSha: string | null;
   githubSyncError: string | null;
   templateVars: string[];
+  config: PromptConfig;
   createdAt: Date;
 };
 
@@ -25,6 +29,7 @@ export class PromptVersion {
     private _githubCommitSha: string | null,
     private _githubSyncError: string | null,
     readonly templateVars: string[],
+    readonly config: PromptConfig,
     readonly createdAt: Date,
   ) {}
 
@@ -36,6 +41,7 @@ export class PromptVersion {
     content: string,
     commitMessage: string | null,
     templateVars: string[],
+    config: PromptConfig,
     now: Date,
   ): PromptVersion {
     return new PromptVersion(
@@ -48,6 +54,7 @@ export class PromptVersion {
       null,
       null,
       templateVars,
+      config,
       now,
     );
   }
@@ -63,6 +70,7 @@ export class PromptVersion {
       row.githubCommitSha,
       row.githubSyncError,
       row.templateVars,
+      row.config,
       row.createdAt,
     );
   }
@@ -95,6 +103,7 @@ export class PromptVersion {
       githubCommitSha: this._githubCommitSha,
       githubSyncError: this._githubSyncError,
       templateVars: this.templateVars,
+      config: this.config,
       createdAt: this.createdAt,
     };
   }
@@ -110,5 +119,6 @@ export type PromptVersionDTO = {
   githubCommitSha: string | null;
   githubSyncError: string | null;
   templateVars: string[];
+  config: PromptConfig;
   createdAt: Date;
 };

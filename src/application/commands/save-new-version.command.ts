@@ -9,7 +9,11 @@ import {
   PromptNotFoundError,
   Slug,
 } from "@/domain/prompt";
-import { PromptVersion, VersionNumber } from "@/domain/prompt-version";
+import {
+  type PromptConfig,
+  PromptVersion,
+  VersionNumber,
+} from "@/domain/prompt-version";
 
 export type SaveNewVersionResult = {
   version: PromptVersion;
@@ -29,6 +33,7 @@ export class SaveNewVersionCommand {
     rawSlug: string,
     content: string,
     type: PromptType = "text",
+    config: PromptConfig = {},
     commitMessage?: string,
   ): Promise<SaveNewVersionResult> {
     const slug = Slug.parse(rawSlug);
@@ -36,7 +41,12 @@ export class SaveNewVersionCommand {
     if (!prompt) throw new PromptNotFoundError(rawSlug);
 
     const current = await this.versionRepo.findCurrentForPrompt(prompt.id);
-    if (current && current.content === content && current.type === type) {
+    if (
+      current &&
+      current.content === content &&
+      current.type === type &&
+      JSON.stringify(current.config) === JSON.stringify(config)
+    ) {
       return { version: current, isNoOp: true };
     }
 
@@ -50,6 +60,7 @@ export class SaveNewVersionCommand {
       content,
       trimmedMessage && trimmedMessage.length > 0 ? trimmedMessage : null,
       extractVariablesForType(content, type),
+      config,
       new Date(),
     );
     await this.versionRepo.appendNewVersion(version);

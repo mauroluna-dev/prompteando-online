@@ -52,6 +52,7 @@ export class RestoreVersionCommand {
       target.content,
       `Restore v${versionNumber.value}`,
       target.templateVars,
+      target.config,
       new Date(),
     );
     await this.versionRepo.appendNewVersion(version);

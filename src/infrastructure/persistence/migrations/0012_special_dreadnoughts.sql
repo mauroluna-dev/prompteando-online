@@ -1,0 +1,1 @@
+ALTER TABLE "prompt_versions" ADD COLUMN "config" jsonb DEFAULT '{}'::jsonb NOT NULL;

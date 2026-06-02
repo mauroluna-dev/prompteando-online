@@ -97,6 +97,13 @@ historial). El `POST .../render` de un prompt chat devuelve `messages`
 (array compilado) en vez de `content`. Se editan desde el toggle
 Text/Chat del editor.
 
+## Config por versión
+
+Cada versión puede llevar **config** (model params como JSON libre:
+`model`, `temperature`, etc.) versionada junto al prompt. El `GET` y el
+`/render` la devuelven en el campo `config`, así cambiás de modelo o
+tuneás parámetros sin tocar el código del consumidor.
+
 ## Self-host
 
 Prompteando es 100% self-hosteable. La app no se publica al host: escucha

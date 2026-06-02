@@ -55,6 +55,7 @@ function makeVersion(): PromptVersion {
     "hello\n",
     "Tweak",
     [],
+    {},
     new Date("2026-05-03T20:30:00Z"),
   );
 }

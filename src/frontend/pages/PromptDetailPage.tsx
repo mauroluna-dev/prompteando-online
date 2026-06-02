@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { PromptType } from "@/domain/prompt";
 import { MarkdownEditor } from "@/frontend/components/MarkdownEditor";
@@ -59,6 +60,7 @@ export function PromptDetailPage() {
   const [diffB, setDiffB] = useState<number | null>(null);
   const [content, setContent] = useState("");
   const [type, setType] = useState<PromptType>("text");
+  const [configText, setConfigText] = useState("{}");
   const [commitMessage, setCommitMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -91,6 +93,7 @@ export function PromptDetailPage() {
     if (mode === "edit" && viewingNumber === null) {
       setContent(currentVersion?.content ?? "");
       setType(currentVersion?.type ?? "text");
+      setConfigText(JSON.stringify(currentVersion?.config ?? {}, null, 2));
     }
   }, [currentVersion?.id, viewingNumber, mode]);
 
@@ -132,11 +135,19 @@ export function PromptDetailPage() {
 
   const handleSave = async () => {
     if (!slug) return;
+    let config: Record<string, unknown>;
+    try {
+      config = configText.trim() ? JSON.parse(configText) : {};
+    } catch {
+      toast.error("El config no es JSON válido.");
+      return;
+    }
     setSaving(true);
     try {
       const result = await saveVersion(slug, {
         content,
         type,
+        config,
         commitMessage: commitMessage.trim() || undefined,
       });
       if (result.isNoOp) {
@@ -195,7 +206,8 @@ export function PromptDetailPage() {
   const editorDirty =
     !isEmpty &&
     (content !== (currentVersion?.content ?? "") ||
-      type !== (currentVersion?.type ?? "text"));
+      type !== (currentVersion?.type ?? "text") ||
+      configText !== JSON.stringify(currentVersion?.config ?? {}, null, 2));
   const saveDisabled = saving || (!isEmpty && !editorDirty);
 
   return (
@@ -263,6 +275,8 @@ export function PromptDetailPage() {
               onContentChange={setContent}
               type={type}
               onTypeChange={setType}
+              configText={configText}
+              onConfigChange={setConfigText}
               commitMessage={commitMessage}
               onCommitMessageChange={setCommitMessage}
               onSave={() => void handleSave()}
@@ -394,6 +408,8 @@ function EditPane({
   onContentChange,
   type,
   onTypeChange,
+  configText,
+  onConfigChange,
   commitMessage,
   onCommitMessageChange,
   onSave,
@@ -405,6 +421,8 @@ function EditPane({
   onContentChange: (next: string) => void;
   type: PromptType;
   onTypeChange: (next: PromptType) => void;
+  configText: string;
+  onConfigChange: (next: string) => void;
   commitMessage: string;
   onCommitMessageChange: (next: string) => void;
   onSave: () => void;
@@ -441,6 +459,17 @@ function EditPane({
           className="min-h-[480px]"
         />
       )}
+      <details className="bg-card rounded-md border p-3">
+        <summary className="text-muted-foreground cursor-pointer text-xs font-medium">
+          Config (model params · JSON)
+        </summary>
+        <Textarea
+          value={configText}
+          onChange={(e) => onConfigChange(e.target.value)}
+          placeholder={'{\n  "model": "claude-opus-4-8",\n  "temperature": 0.7\n}'}
+          className="mt-2 min-h-[120px] font-mono text-xs"
+        />
+      </details>
       <div className="bg-card flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-end">
         <div className="flex flex-1 flex-col gap-1.5">
           <Label htmlFor="commit-message" className="text-xs">

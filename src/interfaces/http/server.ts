@@ -388,6 +388,7 @@ const app = new Elysia()
         params.slug,
         parsed.content,
         parsed.type,
+        parsed.config,
         parsed.commitMessage,
       );
       if (!result.isNoOp) {
@@ -537,6 +538,7 @@ const app = new Elysia()
         type: dto.type,
         content: dto.content,
         messages: dto.messages,
+        config: dto.config,
         version: dto.version,
         vars_used: dto.varsUsed,
         missing_vars: dto.missingVars,
@@ -862,6 +864,7 @@ const app = new Elysia()
             type: dto.type,
             content: dto.content,
             messages: dto.messages,
+            config: dto.config,
             version: dto.version,
             vars_used: dto.varsUsed,
             missing_vars: dto.missingVars,
