@@ -288,8 +288,8 @@ Una sola fuente de verdad para envs:
 ## Testing
 - `bun test` para unit (domain + application puros, con fakes para
   los ports) + integration (Postgres dedicado).
-- **Playwright** para E2E del flujo crítico: signup → crear prompt
-  → consumirlo por API desde curl.
+- E2E automatizado (Playwright) quedó **fuera de scope** (decisión
+  2026-06-02). El flujo crítico se cubre con `bun test` + smoke manual.
 
 ## Tooling — lint, hooks, commits
 Ver `conventions.md` §2–§4 y §9.
