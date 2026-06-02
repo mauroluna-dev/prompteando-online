@@ -6,6 +6,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import type { PromptType } from "@/domain/prompt";
 import { prompts } from "./prompts";
 
 export const promptVersions = pgTable(
@@ -18,6 +19,9 @@ export const promptVersions = pgTable(
       .notNull()
       .references(() => prompts.id, { onDelete: "cascade" }),
     versionNumber: integer("version_number").notNull(),
+    // P21 — "text" (content is the prompt) or "chat" (content is a
+    // JSON-serialized message array).
+    type: text("type").$type<PromptType>().notNull().default("text"),
     content: text("content").notNull(),
     commitMessage: text("commit_message"),
     githubCommitSha: text("github_commit_sha"),

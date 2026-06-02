@@ -24,6 +24,7 @@ function makeVersion(
   row: Partial<PromptVersionRow> & { id: string; promptId: string; versionNumber: number },
 ): PromptVersion {
   return PromptVersion.fromRow({
+    type: "text",
     content: `content-${row.versionNumber}`,
     commitMessage: null,
     githubCommitSha: null,

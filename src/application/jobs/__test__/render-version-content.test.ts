@@ -26,6 +26,7 @@ function makeVersion(
     `v${num}`,
     "p1",
     VersionNumber.parse(num),
+    "text",
     content,
     commitMessage,
     [],

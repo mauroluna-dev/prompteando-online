@@ -1,9 +1,11 @@
+import type { PromptType } from "@/domain/prompt";
 import { VersionNumber } from "./version-number.vo";
 
 export type PromptVersionRow = {
   id: string;
   promptId: string;
   versionNumber: number;
+  type: PromptType;
   content: string;
   commitMessage: string | null;
   githubCommitSha: string | null;
@@ -17,6 +19,7 @@ export class PromptVersion {
     readonly id: string,
     readonly promptId: string,
     readonly versionNumber: VersionNumber,
+    readonly type: PromptType,
     readonly content: string,
     readonly commitMessage: string | null,
     private _githubCommitSha: string | null,
@@ -29,6 +32,7 @@ export class PromptVersion {
     id: string,
     promptId: string,
     versionNumber: VersionNumber,
+    type: PromptType,
     content: string,
     commitMessage: string | null,
     templateVars: string[],
@@ -38,6 +42,7 @@ export class PromptVersion {
       id,
       promptId,
       versionNumber,
+      type,
       content,
       commitMessage,
       null,
@@ -52,6 +57,7 @@ export class PromptVersion {
       row.id,
       row.promptId,
       VersionNumber.parse(row.versionNumber),
+      row.type,
       row.content,
       row.commitMessage,
       row.githubCommitSha,
@@ -83,6 +89,7 @@ export class PromptVersion {
       id: this.id,
       promptId: this.promptId,
       versionNumber: this.versionNumber.value,
+      type: this.type,
       content: this.content,
       commitMessage: this.commitMessage,
       githubCommitSha: this._githubCommitSha,
@@ -97,6 +104,7 @@ export type PromptVersionDTO = {
   id: string;
   promptId: string;
   versionNumber: number;
+  type: PromptType;
   content: string;
   commitMessage: string | null;
   githubCommitSha: string | null;

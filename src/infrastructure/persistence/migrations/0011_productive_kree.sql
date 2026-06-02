@@ -1,0 +1,1 @@
+ALTER TABLE "prompt_versions" ADD COLUMN "type" text DEFAULT 'text' NOT NULL;

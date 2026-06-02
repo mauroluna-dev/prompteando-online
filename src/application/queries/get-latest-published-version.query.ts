@@ -20,6 +20,7 @@ function toDTO(prompt: Prompt, version: PromptVersion): PublicPromptDTO {
     commitMessage: version.commitMessage,
     isTemplate: prompt.isTemplate,
     templateVars: version.templateVars,
+    type: version.type,
   };
 }
 

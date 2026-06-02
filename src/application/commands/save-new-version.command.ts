@@ -3,7 +3,12 @@ import type { CryptoPort } from "@/application/ports/crypto.port";
 import type { PromptRepository } from "@/application/ports/prompt-repository.port";
 import type { VersionRepository } from "@/application/ports/version-repository.port";
 import { publicPromptCacheKey } from "@/application/queries/get-latest-published-version.query";
-import { extractTemplateVariables, PromptNotFoundError, Slug } from "@/domain/prompt";
+import {
+  extractVariablesForType,
+  type PromptType,
+  PromptNotFoundError,
+  Slug,
+} from "@/domain/prompt";
 import { PromptVersion, VersionNumber } from "@/domain/prompt-version";
 
 export type SaveNewVersionResult = {
@@ -23,6 +28,7 @@ export class SaveNewVersionCommand {
     userId: string,
     rawSlug: string,
     content: string,
+    type: PromptType = "text",
     commitMessage?: string,
   ): Promise<SaveNewVersionResult> {
     const slug = Slug.parse(rawSlug);
@@ -30,7 +36,7 @@ export class SaveNewVersionCommand {
     if (!prompt) throw new PromptNotFoundError(rawSlug);
 
     const current = await this.versionRepo.findCurrentForPrompt(prompt.id);
-    if (current && current.content === content) {
+    if (current && current.content === content && current.type === type) {
       return { version: current, isNoOp: true };
     }
 
@@ -40,9 +46,10 @@ export class SaveNewVersionCommand {
       this.crypto.randomUUID(),
       prompt.id,
       VersionNumber.parse(count + 1),
+      type,
       content,
       trimmedMessage && trimmedMessage.length > 0 ? trimmedMessage : null,
-      extractTemplateVariables(content),
+      extractVariablesForType(content, type),
       new Date(),
     );
     await this.versionRepo.appendNewVersion(version);

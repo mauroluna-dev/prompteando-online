@@ -48,6 +48,7 @@ export class RestoreVersionCommand {
       this.crypto.randomUUID(),
       prompt.id,
       VersionNumber.parse(count + 1),
+      target.type,
       target.content,
       `Restore v${versionNumber.value}`,
       target.templateVars,

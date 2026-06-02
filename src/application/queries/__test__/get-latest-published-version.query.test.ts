@@ -28,6 +28,7 @@ function makeVersion(id: string, num: number): PromptVersion {
     id,
     promptId: "p1",
     versionNumber: num,
+    type: "text",
     content: `soy v${num}`,
     commitMessage: null,
     githubCommitSha: null,
