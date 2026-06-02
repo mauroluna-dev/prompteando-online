@@ -15,6 +15,11 @@ export const renderPromptSchema = z.object({
     .record(z.string(), z.string().max(CONSTANTS.MAX_VAR_VALUE_LENGTH))
     .default({}),
   version: z.number().int().positive().optional(),
+  label: z.string().max(CONSTANTS.MAX_LABEL_LENGTH).optional(),
+});
+
+export const assignLabelSchema = z.object({
+  versionNumber: z.number().int().positive(),
 });
 
 export type RenderPromptBody = z.infer<typeof renderPromptSchema>;

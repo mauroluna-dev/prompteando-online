@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { MarkdownEditor } from "@/frontend/components/MarkdownEditor";
 import { Skeleton } from "@/frontend/components/states";
+import { LabelsManager } from "@/frontend/components/LabelsManager";
 import { TemplatePanel } from "@/frontend/components/TemplatePanel";
 import { VersionDiff } from "@/frontend/components/VersionDiff";
 import { VersionHistory } from "@/frontend/components/VersionHistory";
@@ -271,7 +272,14 @@ export function PromptDetailPage() {
         </div>
 
         {/* Sidebar */}
-        <aside>
+        <aside className="flex flex-col gap-4">
+          {!isEmpty && slug ? (
+            <LabelsManager
+              slug={slug}
+              versionNumbers={versions.map((v) => v.versionNumber)}
+              defaultVersion={currentVersion?.versionNumber ?? null}
+            />
+          ) : null}
           <VersionHistory
             versions={versions}
             currentNumber={currentVersion?.versionNumber ?? null}

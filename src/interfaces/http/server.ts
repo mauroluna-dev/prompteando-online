@@ -31,6 +31,10 @@ import { AuthenticateApiKeyQuery } from "@/application/queries/authenticate-api-
 import { GetLatestPublishedVersionQuery } from "@/application/queries/get-latest-published-version.query";
 import { RenderPromptVersionQuery } from "@/application/queries/render-prompt-version.query";
 import { UpdatePromptTemplateSettingsCommand } from "@/application/commands/update-prompt-template-settings.command";
+import { AssignLabelCommand } from "@/application/commands/assign-label.command";
+import { RemoveLabelCommand } from "@/application/commands/remove-label.command";
+import { ListLabelsQuery } from "@/application/queries/list-labels.query";
+import { PostgresLabelRepository } from "@/infrastructure/persistence/repositories/postgres-label.repository";
 import { RecordApiKeyHitCommand } from "@/application/commands/record-api-key-hit.command";
 import { GetApiKeyMetricsQuery } from "@/application/queries/get-api-key-metrics.query";
 import { BunRedisMetricsCounter } from "@/infrastructure/cache/bun-redis-metrics-counter.adapter";
@@ -62,9 +66,12 @@ import {
   MetricsRange,
 } from "@/domain/api-key";
 import {
+  CannotAssignVirtualLabelError,
+  InvalidLabelError,
   InvalidPromptNameError,
   InvalidSlugError,
   InvalidTemplateVariableNameError,
+  LabelNotFoundError,
   MissingTemplateVariablesError,
   NotATemplateError,
   PromptDescriptionTooLongError,
@@ -78,6 +85,7 @@ import {
 } from "@/domain/prompt-version";
 import { createPromptSchema, templateSettingsSchema } from "./schemas/prompt";
 import {
+  assignLabelSchema,
   renderPromptSchema,
   saveVersionSchema,
 } from "./schemas/prompt-version";
@@ -117,14 +125,24 @@ const createApiKey = new CreateApiKeyCommand(apiKeyRepo, cryptoAdapter);
 const revokeApiKey = new RevokeApiKeyCommand(apiKeyRepo);
 const listApiKeys = new ListApiKeysForUserQuery(apiKeyRepo);
 const authenticateApiKey = new AuthenticateApiKeyQuery(apiKeyRepo, cryptoAdapter);
+// P20 — deploy labels / aliases
+const labelRepo = new PostgresLabelRepository(db);
 const getLatestPublishedVersion = new GetLatestPublishedVersionQuery(
   promptRepo,
   versionRepo,
   cache,
+  labelRepo,
 );
 // P19 — template variables
-const renderPromptVersion = new RenderPromptVersionQuery(promptRepo, versionRepo);
+const renderPromptVersion = new RenderPromptVersionQuery(
+  promptRepo,
+  versionRepo,
+  labelRepo,
+);
 const updateTemplateSettings = new UpdatePromptTemplateSettingsCommand(promptRepo);
+const assignLabel = new AssignLabelCommand(promptRepo, versionRepo, labelRepo);
+const removeLabel = new RemoveLabelCommand(promptRepo, labelRepo);
+const listLabels = new ListLabelsQuery(promptRepo, versionRepo, labelRepo);
 // P18 — API key usage metrics
 const apiKeyMetricsRepo = new PostgresApiKeyMetricsRepository(db);
 const metricsCounter = new BunRedisMetricsCounter();
@@ -207,6 +225,32 @@ function jsonError(status: number, message: string) {
     status,
     headers: { "content-type": "application/json" },
   });
+}
+
+// Maps known label-route domain errors to a response; null if unmapped
+// (caller rethrows). Keeps the handlers under the complexity budget.
+function mapLabelRouteError(err: unknown): Response | null {
+  if (err instanceof ZodError) {
+    return jsonError(400, err.issues[0]?.message ?? "Invalid input");
+  }
+  if (
+    err instanceof InvalidLabelError ||
+    err instanceof CannotAssignVirtualLabelError
+  ) {
+    return jsonError(400, err.message);
+  }
+  if (err instanceof InvalidVersionNumberError) {
+    return jsonError(400, "Invalid version number");
+  }
+  if (
+    err instanceof VersionNotFoundError ||
+    err instanceof LabelNotFoundError ||
+    err instanceof PromptNotFoundError
+  ) {
+    return jsonError(404, err.message);
+  }
+  if (err instanceof InvalidSlugError) return jsonError(404, "Prompt not found");
+  return null;
 }
 
 // JSON response with CORS headers, for the public /v1 surface.
@@ -478,7 +522,7 @@ const app = new Elysia()
         userOr401.id,
         params.slug,
         parsed.vars,
-        parsed.version,
+        { version: parsed.version, label: parsed.label },
       );
       if (!dto) return jsonError(404, "Prompt not found");
       return Response.json({
@@ -496,6 +540,55 @@ const app = new Elysia()
           { status: 422, headers: { "content-type": "application/json" } },
         );
       }
+      throw err;
+    }
+  })
+  // P20 — session: manage deploy labels.
+  .get("/api/prompts/:slug/labels", async ({ request, params }) => {
+    const userOr401 = await requireUser(request, getCurrentUser);
+    if (userOr401 instanceof Response) return userOr401;
+    try {
+      const labels = await listLabels.execute(userOr401.id, params.slug);
+      return Response.json(labels);
+    } catch (err) {
+      if (err instanceof PromptNotFoundError) return jsonError(404, err.message);
+      if (err instanceof InvalidSlugError) return jsonError(404, "Prompt not found");
+      throw err;
+    }
+  })
+  .put("/api/prompts/:slug/labels/:label", async ({ request, params }) => {
+    const userOr401 = await requireUser(request, getCurrentUser);
+    if (userOr401 instanceof Response) return userOr401;
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return jsonError(400, "Invalid JSON body");
+    }
+    try {
+      const parsed = assignLabelSchema.parse(body);
+      await assignLabel.execute(
+        userOr401.id,
+        params.slug,
+        params.label,
+        VersionNumber.parse(parsed.versionNumber),
+      );
+      return new Response(null, { status: 204 });
+    } catch (err) {
+      const mapped = mapLabelRouteError(err);
+      if (mapped) return mapped;
+      throw err;
+    }
+  })
+  .delete("/api/prompts/:slug/labels/:label", async ({ request, params }) => {
+    const userOr401 = await requireUser(request, getCurrentUser);
+    if (userOr401 instanceof Response) return userOr401;
+    try {
+      await removeLabel.execute(userOr401.id, params.slug, params.label);
+      return new Response(null, { status: 204 });
+    } catch (err) {
+      const mapped = mapLabelRouteError(err);
+      if (mapped) return mapped;
       throw err;
     }
   })
@@ -649,7 +742,7 @@ const app = new Elysia()
   })
   // ───────────────── Public consumption API ─────────────────
   .options("/v1/prompts/:slug", () => new Response(null, { status: 204, headers: corsHeaders }))
-  .get("/v1/prompts/:slug", async ({ request, params }) => {
+  .get("/v1/prompts/:slug", async ({ request, params, query }) => {
     const start = performance.now();
     const keyOr401 = await requireApiKey(request, authenticateApiKey, corsHeaders);
     // 401 path has no resolved key — nothing to attribute the metric to.
@@ -674,9 +767,11 @@ const app = new Elysia()
       );
     }
 
+    const label = typeof query.label === "string" ? query.label : undefined;
     const dto = await getLatestPublishedVersion.execute(
       keyOr401.userId,
       slug,
+      label,
     );
     if (!dto) {
       return recordAndReturn(
@@ -742,7 +837,7 @@ const app = new Elysia()
         keyOr401.userId,
         slug,
         parsed.vars,
-        parsed.version,
+        { version: parsed.version, label: parsed.label },
       );
       if (!dto) return recordAndReturn(corsJson(404, { error: "Prompt not found" }));
       return recordAndReturn(

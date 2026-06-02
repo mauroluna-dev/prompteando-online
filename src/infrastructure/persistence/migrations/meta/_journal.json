@@ -71,6 +71,13 @@
       "when": 1780434975726,
       "tag": "0009_plain_ultimo",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1780442399074,
+      "tag": "0010_spotty_ravenous",
+      "breakpoints": true
     }
   ]
 }

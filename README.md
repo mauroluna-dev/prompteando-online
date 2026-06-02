@@ -71,6 +71,22 @@ curl -X POST https://<tu-host>/v1/prompts/<slug>/render \
 - **Backward compatible**: el `GET` sigue devolviendo el contenido con
   los `{{}}` literales; solo se sumaron campos nuevos a la respuesta.
 
+## Labels de deploy
+
+Versionar no alcanza: necesitás saber *qué versión está en producción*.
+Asigná labels (`production`, `staging`, o custom) a una versión y
+consumila por label — deploy = mover el label, rollback = re-asignarlo.
+
+```bash
+# consumir la versión etiquetada production
+curl "https://<tu-host>/v1/prompts/<slug>?label=production" \
+  -H "Authorization: Bearer po_live_..."
+```
+
+`latest` es virtual (siempre la última versión). Sin `?label=`, el `GET`
+devuelve la última versión (como siempre). El `POST .../render` también
+acepta `label`. Los labels se gestionan desde el editor.
+
 ## Self-host
 
 Prompteando es 100% self-hosteable. La app no se publica al host: escucha
