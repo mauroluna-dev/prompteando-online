@@ -32,7 +32,7 @@ function makeConn(overrides: Partial<{
     "octocat",
     "enc:gho_abc",
     ["repo"],
-    RepoFullName.parse("octocat/promptstash-octocat"),
+    RepoFullName.parse("octocat/prompteando-octocat"),
     "main",
     NOW,
   );
@@ -226,7 +226,7 @@ describe("BackfillGitHubHistoryJob", () => {
     expect(commitMock).toHaveBeenCalledTimes(3);
     const args = commitMock.mock.calls.map((c) => c[0]);
     expect(args[0]?.accessToken).toBe("gho_abc");
-    expect(args[0]?.repoFullName).toBe("octocat/promptstash-octocat");
+    expect(args[0]?.repoFullName).toBe("octocat/prompteando-octocat");
     expect(args[0]?.path).toBe("prompts/my-prompt.md");
     expect(args[0]?.committedAt).toEqual(v1.createdAt);
     expect(args[0]?.authorName).toBe("octocat");

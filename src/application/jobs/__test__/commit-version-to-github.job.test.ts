@@ -29,7 +29,7 @@ function makeConn(): GitHubConnection {
     "octocat",
     "enc:gho_abc",
     ["repo"],
-    RepoFullName.parse("octocat/promptstash-octocat"),
+    RepoFullName.parse("octocat/prompteando-octocat"),
     "main",
     new Date("2026-05-03T10:00:00Z"),
   );
@@ -162,7 +162,7 @@ describe("CommitVersionToGitHubJob", () => {
     const arg = commitVersion.mock.calls[0]?.[0];
     if (!arg) throw new Error("commitVersion was not called");
     expect(arg.accessToken).toBe("gho_abc");
-    expect(arg.repoFullName).toBe("octocat/promptstash-octocat");
+    expect(arg.repoFullName).toBe("octocat/prompteando-octocat");
     expect(arg.branch).toBe("main");
     expect(arg.path).toBe("prompts/my-prompt.md");
     expect(arg.commitMessage).toBe("My Prompt v2: Tweak");

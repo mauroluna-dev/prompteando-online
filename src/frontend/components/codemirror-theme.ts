@@ -3,13 +3,13 @@ import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { tags as t } from "@lezer/highlight";
 
 /**
- * Pγ — CodeMirror 6 theme aligned to promptstash design tokens.
+ * Pγ — CodeMirror 6 theme aligned to prompteando design tokens.
  *
  * All colors map to CSS vars defined in `styles/globals.css`. No
  * hardcoded hex (per conventions §11.1) so theme switches with the
  * rest of the design system if/when we add dark mode.
  */
-export const promptstashEditorTheme = EditorView.theme({
+export const prompteandoEditorTheme = EditorView.theme({
   "&": {
     backgroundColor: "var(--color-background)",
     color: "var(--color-foreground)",
@@ -47,7 +47,7 @@ export const promptstashEditorTheme = EditorView.theme({
  * Heading levels get progressively larger; emphasis bold/italic;
  * code spans use a subtle muted bg.
  */
-export const promptstashMarkdownHighlight = HighlightStyle.define([
+export const prompteandoMarkdownHighlight = HighlightStyle.define([
   { tag: t.heading1, fontSize: "1.4em", fontWeight: "600", color: "var(--color-foreground)" },
   { tag: t.heading2, fontSize: "1.25em", fontWeight: "600", color: "var(--color-foreground)" },
   { tag: t.heading3, fontSize: "1.1em", fontWeight: "600", color: "var(--color-foreground)" },
@@ -65,6 +65,6 @@ export const promptstashMarkdownHighlight = HighlightStyle.define([
   { tag: t.invalid, color: "var(--color-destructive)" },
 ]);
 
-export const promptstashSyntaxHighlighting = syntaxHighlighting(
-  promptstashMarkdownHighlight,
+export const prompteandoSyntaxHighlighting = syntaxHighlighting(
+  prompteandoMarkdownHighlight,
 );

@@ -5,8 +5,8 @@ import { history, defaultKeymap, historyKeymap } from "@codemirror/commands";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { cn } from "@/lib/utils";
 import {
-  promptstashEditorTheme,
-  promptstashSyntaxHighlighting,
+  prompteandoEditorTheme,
+  prompteandoSyntaxHighlighting,
 } from "./codemirror-theme";
 
 /**
@@ -61,8 +61,8 @@ export function MarkdownEditor({
         keymap.of([...defaultKeymap, ...historyKeymap]),
         markdown({ base: markdownLanguage }),
         EditorView.lineWrapping,
-        promptstashEditorTheme,
-        promptstashSyntaxHighlighting,
+        prompteandoEditorTheme,
+        prompteandoSyntaxHighlighting,
         readOnlyCompartment.of(EditorState.readOnly.of(readOnly)),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {

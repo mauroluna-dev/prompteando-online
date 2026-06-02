@@ -5,8 +5,8 @@ import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { MergeView } from "@codemirror/merge";
 import { cn } from "@/lib/utils";
 import {
-  promptstashEditorTheme,
-  promptstashSyntaxHighlighting,
+  prompteandoEditorTheme,
+  prompteandoSyntaxHighlighting,
 } from "./codemirror-theme";
 
 /**
@@ -45,8 +45,8 @@ export function VersionDiff({
       EditorView.lineWrapping,
       EditorView.editable.of(false),
       EditorState.readOnly.of(true),
-      promptstashEditorTheme,
-      promptstashSyntaxHighlighting,
+      prompteandoEditorTheme,
+      prompteandoSyntaxHighlighting,
       diffHighlightTheme,
     ];
 

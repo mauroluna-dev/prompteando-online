@@ -47,7 +47,7 @@ class FakeGateway implements GitHubGateway {
     private readonly tokenResponse: GitHubTokenExchange,
     private readonly userResponse: GitHubAuthenticatedUser = { login: "octocat" },
     private readonly repoResponse: GitHubEnsureRepoResult = {
-      fullName: "octocat/promptstash-octocat",
+      fullName: "octocat/prompteando-octocat",
       defaultBranch: "main",
       wasCreated: true,
     },
@@ -109,7 +109,7 @@ describe("ConnectGitHubCommand", () => {
     expect(result.githubLogin).toBe("octocat");
     expect(result.encryptedAccessToken).toBe("enc:gho_abc");
     expect(result.scopes).toEqual(["repo", "read:user"]);
-    expect(result.repoFullName.value).toBe("octocat/promptstash-octocat");
+    expect(result.repoFullName.value).toBe("octocat/prompteando-octocat");
     expect(repo.saveCalls.length).toBe(1);
     expect(gateway.ensureRepoCalls).toBe(1);
     expect(gateway.ensureReadmeCalls).toBe(1);
