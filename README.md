@@ -65,8 +65,11 @@ curl -X POST https://<tu-host>/v1/prompts/<slug>/render \
   con `missing_vars` — nunca manda un prompt a medio renderizar.
 - **Versionado**: pasá `"version": N` para fijar una versión; cada
   versión guarda su propio set de variables.
-- **Backward compatible**: el `GET /v1/prompts/:slug` raw sigue igual y
-  devuelve el contenido con los `{{}}` literales.
+- **Discovery**: el `GET /v1/prompts/:slug` raw devuelve también
+  `isTemplate` y `templateVars`, así un consumidor sabe qué variables
+  mandarle al `/render` sin parsear el contenido.
+- **Backward compatible**: el `GET` sigue devolviendo el contenido con
+  los `{{}}` literales; solo se sumaron campos nuevos a la respuesta.
 
 ## Self-host
 

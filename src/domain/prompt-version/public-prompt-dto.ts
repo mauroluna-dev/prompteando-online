@@ -7,6 +7,10 @@ export type PublicPromptDTO = {
   version: number;
   updatedAt: string; // ISO 8601 timestamp
   commitMessage: string | null;
+  // P19 — lets a consumer discover whether the prompt is a template
+  // and which `{{vars}}` it expects (for POST .../render).
+  isTemplate: boolean;
+  templateVars: string[];
 };
 
 /**

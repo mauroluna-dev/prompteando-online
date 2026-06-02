@@ -1,18 +1,17 @@
 import { useState } from "react";
-import { Copy, Loader2, Play, Variable } from "lucide-react";
+import { Copy, Play, Variable } from "lucide-react";
 import { mutate } from "swr";
 import { toast } from "sonner";
-import { extractTemplateVariables, type TemplateVarMeta } from "@/domain/prompt";
+import {
+  extractTemplateVariables,
+  renderTemplate,
+  type TemplateVarMeta,
+} from "@/domain/prompt";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  renderPreview,
-  type RenderPreviewErr,
-  type RenderPreviewOk,
-  updateTemplateSettings,
-} from "@/frontend/lib/api/prompts";
+import { updateTemplateSettings } from "@/frontend/lib/api/prompts";
 
 /** Live var detection from editor content; never throws in the UI. */
 function detectVars(content: string): string[] {
@@ -74,7 +73,7 @@ export function TemplatePanel({
       {isTemplate ? (
         <div className="flex flex-col gap-5">
           <VariablesEditor slug={slug} vars={vars} varMeta={varMeta} />
-          <RenderTester slug={slug} vars={vars} varMeta={varMeta} />
+          <RenderTester content={content} vars={vars} varMeta={varMeta} />
           <RenderSnippet slug={slug} vars={vars} />
         </div>
       ) : null}
@@ -155,41 +154,49 @@ function VariablesEditor({
   );
 }
 
+type RenderOutcome =
+  | { kind: "ok"; content: string }
+  | { kind: "missing"; missingVars: string[] };
+
 function RenderTester({
-  slug,
+  content,
   vars,
   varMeta,
 }: {
-  slug: string;
+  content: string;
   vars: string[];
   varMeta: TemplateVarMeta;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<RenderPreviewOk | RenderPreviewErr | null>(
-    null,
-  );
-  const [rendering, setRendering] = useState(false);
+  const [result, setResult] = useState<RenderOutcome | null>(null);
 
-  const handleRender = async () => {
-    setRendering(true);
-    try {
-      const filled: Record<string, string> = {};
-      for (const [k, v] of Object.entries(values)) {
-        if (v.length > 0) filled[k] = v;
+  // Renders the LIVE editor content (same pure domain function the
+  // server uses), applying declared defaults — strict like /render.
+  const handleRender = () => {
+    const effective: Record<string, string> = {};
+    for (const name of vars) {
+      const typed = values[name];
+      if (typed && typed.length > 0) {
+        effective[name] = typed;
+      } else {
+        const def = varMeta[name]?.default;
+        if (def != null) effective[name] = def;
       }
-      setResult(await renderPreview(slug, filled));
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "No se pudo renderizar");
-    } finally {
-      setRendering(false);
     }
+    const rendered = renderTemplate(content, effective);
+    setResult(
+      rendered.missingVars.length > 0
+        ? { kind: "missing", missingVars: rendered.missingVars }
+        : { kind: "ok", content: rendered.content },
+    );
   };
 
   return (
     <div className="flex flex-col gap-2">
       <Label className="text-xs">Probar render</Label>
       <p className="text-muted-foreground text-xs">
-        Renderiza la última versión guardada (no el texto sin guardar).
+        Renderiza el texto que tenés en el editor ahora (no hace falta
+        guardar).
       </p>
       {vars.map((name) => (
         <Input
@@ -207,32 +214,22 @@ function RenderTester({
         />
       ))}
       <div>
-        <Button size="sm" onClick={() => void handleRender()} disabled={rendering}>
-          {rendering ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Play className="mr-2 h-4 w-4" />
-          )}
+        <Button size="sm" onClick={handleRender}>
+          <Play className="mr-2 h-4 w-4" />
           Renderizar
         </Button>
       </div>
-      {result?.ok === true ? (
+      {result?.kind === "ok" ? (
         <pre className="bg-muted overflow-x-auto rounded-md p-3 text-xs whitespace-pre-wrap">
           {result.content}
         </pre>
       ) : null}
-      {result?.ok === false ? (
-        <div className="bg-destructive/5 text-destructive rounded-md border border-destructive/30 px-3 py-2 text-xs">
-          {result.status === 422 ? (
-            <>
-              Faltan variables:{" "}
-              <span className="font-mono font-medium">
-                {result.missingVars.join(", ")}
-              </span>
-            </>
-          ) : (
-            result.error
-          )}
+      {result?.kind === "missing" ? (
+        <div className="bg-destructive/5 text-destructive border-destructive/30 rounded-md border px-3 py-2 text-xs">
+          Faltan variables:{" "}
+          <span className="font-mono font-medium">
+            {result.missingVars.join(", ")}
+          </span>
         </div>
       ) : null}
     </div>

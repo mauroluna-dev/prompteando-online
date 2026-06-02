@@ -7,7 +7,8 @@ import type { PublicPromptDTO } from "@/domain/prompt-version";
 const CACHE_TTL_SECONDS = 300;
 
 export function publicPromptCacheKey(userId: string, slug: string): string {
-  return `prompt:current:${userId}:${slug}`;
+  // v2: DTO shape gained isTemplate + templateVars (P19).
+  return `prompt:current:v2:${userId}:${slug}`;
 }
 
 export class GetLatestPublishedVersionQuery {
@@ -44,6 +45,8 @@ export class GetLatestPublishedVersionQuery {
       version: version.versionNumber.value,
       updatedAt: prompt.updatedAt.toISOString(),
       commitMessage: version.commitMessage,
+      isTemplate: prompt.isTemplate,
+      templateVars: version.templateVars,
     };
 
     await this.cache.set(cacheKey, dto, CACHE_TTL_SECONDS);
