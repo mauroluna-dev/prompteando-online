@@ -67,6 +67,7 @@ function makeVersion(
     VersionNumber.parse(num),
     `body of v${num}\n`,
     msg,
+    [],
     createdAt,
   );
 }

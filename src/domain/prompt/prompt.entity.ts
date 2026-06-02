@@ -3,6 +3,16 @@ import { PromptDescriptionTooLongError } from "./prompt.errors";
 import { PromptName } from "./prompt-name.vo";
 import { Slug } from "./slug.vo";
 
+/**
+ * User-declared, prompt-level metadata per template variable. Mutable
+ * and NOT versioned (it's UX, not prompt content). A declared `default`
+ * makes the variable optional at render time.
+ */
+export type TemplateVarMeta = Record<
+  string,
+  { description: string | null; default: string | null }
+>;
+
 export type PromptRow = {
   id: string;
   userId: string;
@@ -10,6 +20,8 @@ export type PromptRow = {
   slug: string;
   description: string | null;
   currentVersionId: string | null;
+  isTemplate: boolean;
+  templateVarMeta: TemplateVarMeta;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -22,6 +34,8 @@ export class Prompt {
     readonly slug: Slug,
     private _description: string | null,
     private _currentVersionId: string | null,
+    private _isTemplate: boolean,
+    private _templateVarMeta: TemplateVarMeta,
     readonly createdAt: Date,
     private _updatedAt: Date,
   ) {}
@@ -35,7 +49,18 @@ export class Prompt {
     now: Date,
   ): Prompt {
     Prompt.assertDescriptionLength(description);
-    return new Prompt(id, userId, name, slug, description, null, now, now);
+    return new Prompt(
+      id,
+      userId,
+      name,
+      slug,
+      description,
+      null,
+      false,
+      {},
+      now,
+      now,
+    );
   }
 
   static fromRow(row: PromptRow): Prompt {
@@ -46,6 +71,8 @@ export class Prompt {
       Slug.parse(row.slug),
       row.description,
       row.currentVersionId,
+      row.isTemplate,
+      row.templateVarMeta,
       row.createdAt,
       row.updatedAt,
     );
@@ -60,12 +87,28 @@ export class Prompt {
   get currentVersionId(): string | null {
     return this._currentVersionId;
   }
+  get isTemplate(): boolean {
+    return this._isTemplate;
+  }
+  get templateVarMeta(): TemplateVarMeta {
+    return this._templateVarMeta;
+  }
   get updatedAt(): Date {
     return this._updatedAt;
   }
 
   setCurrentVersion(versionId: string, now: Date): void {
     this._currentVersionId = versionId;
+    this._updatedAt = now;
+  }
+
+  setTemplateMode(isTemplate: boolean, now: Date): void {
+    this._isTemplate = isTemplate;
+    this._updatedAt = now;
+  }
+
+  replaceVarMeta(meta: TemplateVarMeta, now: Date): void {
+    this._templateVarMeta = meta;
     this._updatedAt = now;
   }
 
@@ -77,6 +120,8 @@ export class Prompt {
       slug: this.slug.value,
       description: this._description,
       currentVersionId: this._currentVersionId,
+      isTemplate: this._isTemplate,
+      templateVarMeta: this._templateVarMeta,
       createdAt: this.createdAt,
       updatedAt: this._updatedAt,
     };
@@ -96,6 +141,8 @@ export type PromptDTO = {
   slug: string;
   description: string | null;
   currentVersionId: string | null;
+  isTemplate: boolean;
+  templateVarMeta: TemplateVarMeta;
   createdAt: Date;
   updatedAt: Date;
 };

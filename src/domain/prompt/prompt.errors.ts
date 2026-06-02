@@ -29,3 +29,35 @@ export class PromptNotFoundError extends Error {
     this.name = "PromptNotFoundError";
   }
 }
+
+export class InvalidTemplateVariableNameError extends Error {
+  readonly code = "INVALID_TEMPLATE_VARIABLE_NAME" as const;
+  constructor(value: string) {
+    super(`Invalid template variable name: "${value}"`);
+    this.name = "InvalidTemplateVariableNameError";
+  }
+}
+
+export class TooManyTemplateVariablesError extends Error {
+  readonly code = "TOO_MANY_TEMPLATE_VARIABLES" as const;
+  constructor(max: number) {
+    super(`Template exceeds ${max} variables`);
+    this.name = "TooManyTemplateVariablesError";
+  }
+}
+
+export class NotATemplateError extends Error {
+  readonly code = "NOT_A_TEMPLATE" as const;
+  constructor(slug: string) {
+    super(`Prompt is not a template: "${slug}"`);
+    this.name = "NotATemplateError";
+  }
+}
+
+export class MissingTemplateVariablesError extends Error {
+  readonly code = "MISSING_TEMPLATE_VARIABLES" as const;
+  constructor(readonly missingVars: string[]) {
+    super(`Missing template variables: ${missingVars.join(", ")}`);
+    this.name = "MissingTemplateVariablesError";
+  }
+}

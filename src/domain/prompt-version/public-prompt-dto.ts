@@ -8,3 +8,14 @@ export type PublicPromptDTO = {
   updatedAt: string; // ISO 8601 timestamp
   commitMessage: string | null;
 };
+
+/**
+ * The shape returned by the template render endpoint
+ * `POST /v1/prompts/:slug/render` (P19). Not cached (varies per call).
+ */
+export type RenderedPromptDTO = {
+  content: string;
+  version: number;
+  varsUsed: string[];
+  missingVars: string[];
+};

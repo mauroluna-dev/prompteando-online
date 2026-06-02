@@ -71,10 +71,12 @@ de uso**. Nada más.
 
 ## V2 — Próximo gran salto (post-MVP)
 Después de cerrar V1 (P0–P18 + Pγ), V2 abre con:
-- **Templates con variables**: `{{var}}` substitution server-side,
-  endpoint `POST /v1/prompts/:slug/render`. Activación opt-in
-  por prompt para no romper backward-compat. Detalles tentativos
-  en `roadmap.md` → sección V2.
+- **Templates con variables** (P19 — kickoff de V2, decidido
+  2026-06-02): `{{var}}` substitution server-side, endpoint
+  `POST /v1/prompts/:slug/render`. Activación opt-in por prompt
+  (`is_template`), detección híbrida de vars (inferidas + metadata
+  opcional), falla estricta 422 ante vars faltantes. Spec completo
+  en `specs/2026-06-02-p19-template-variables/`.
 - **Evaluation framework** (TBD): comparar outputs entre versiones
   contra un test set definido por el usuario.
 - **Teams / sharing** (TBD): un primer pase de colaboración chica

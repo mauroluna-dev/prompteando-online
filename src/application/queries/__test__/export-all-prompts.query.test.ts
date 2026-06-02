@@ -12,6 +12,8 @@ function makePrompt(row: Partial<PromptRow> & { id: string }): Prompt {
     slug: row.id,
     description: null,
     currentVersionId: null,
+    isTemplate: false,
+    templateVarMeta: {},
     createdAt: new Date("2026-01-01T00:00:00Z"),
     updatedAt: new Date("2026-01-01T00:00:00Z"),
     ...row,
@@ -26,6 +28,7 @@ function makeVersion(
     commitMessage: null,
     githubCommitSha: null,
     githubSyncError: null,
+    templateVars: [],
     createdAt: new Date("2026-01-01T00:00:00Z"),
     ...row,
   });

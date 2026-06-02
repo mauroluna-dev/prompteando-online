@@ -29,6 +29,8 @@ import { RevokeApiKeyCommand } from "@/application/commands/revoke-api-key.comma
 import { ListApiKeysForUserQuery } from "@/application/queries/list-api-keys-for-user.query";
 import { AuthenticateApiKeyQuery } from "@/application/queries/authenticate-api-key.query";
 import { GetLatestPublishedVersionQuery } from "@/application/queries/get-latest-published-version.query";
+import { RenderPromptVersionQuery } from "@/application/queries/render-prompt-version.query";
+import { UpdatePromptTemplateSettingsCommand } from "@/application/commands/update-prompt-template-settings.command";
 import { RecordApiKeyHitCommand } from "@/application/commands/record-api-key-hit.command";
 import { GetApiKeyMetricsQuery } from "@/application/queries/get-api-key-metrics.query";
 import { BunRedisMetricsCounter } from "@/infrastructure/cache/bun-redis-metrics-counter.adapter";
@@ -62,6 +64,9 @@ import {
 import {
   InvalidPromptNameError,
   InvalidSlugError,
+  InvalidTemplateVariableNameError,
+  MissingTemplateVariablesError,
+  NotATemplateError,
   PromptDescriptionTooLongError,
   PromptNotFoundError,
   Slug,
@@ -71,8 +76,11 @@ import {
   VersionNotFoundError,
   VersionNumber,
 } from "@/domain/prompt-version";
-import { createPromptSchema } from "./schemas/prompt";
-import { saveVersionSchema } from "./schemas/prompt-version";
+import { createPromptSchema, templateSettingsSchema } from "./schemas/prompt";
+import {
+  renderPromptSchema,
+  saveVersionSchema,
+} from "./schemas/prompt-version";
 import { createApiKeySchema } from "./schemas/api-key";
 import { requireUser } from "./lib/require-user";
 import { requireApiKey } from "./lib/require-api-key";
@@ -114,6 +122,9 @@ const getLatestPublishedVersion = new GetLatestPublishedVersionQuery(
   versionRepo,
   cache,
 );
+// P19 — template variables
+const renderPromptVersion = new RenderPromptVersionQuery(promptRepo, versionRepo);
+const updateTemplateSettings = new UpdatePromptTemplateSettingsCommand(promptRepo);
 // P18 — API key usage metrics
 const apiKeyMetricsRepo = new PostgresApiKeyMetricsRepository(db);
 const metricsCounter = new BunRedisMetricsCounter();
@@ -196,6 +207,28 @@ function jsonError(status: number, message: string) {
     status,
     headers: { "content-type": "application/json" },
   });
+}
+
+// JSON response with CORS headers, for the public /v1 surface.
+function corsJson(status: number, body: unknown) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "content-type": "application/json" },
+  });
+}
+
+// Wraps a response in a fire-and-forget API key metric write (latency +
+// status). Best-effort: the public endpoints never block on metrics.
+function makeRecordAndReturn(apiKeyId: string, slug: string, start: number) {
+  return (response: Response): Response => {
+    const latencyMs = Math.round(performance.now() - start);
+    void recordApiKeyHit
+      .execute(apiKeyId, slug, response.status, latencyMs)
+      .catch((err: unknown) => {
+        console.error("[metrics-record]", err);
+      });
+    return response;
+  };
 }
 
 function parsePromptSlugParam(value: string): Slug | null {
@@ -398,6 +431,74 @@ const app = new Elysia()
       throw err;
     }
   })
+  // P19 — session: toggle template mode + edit per-variable metadata.
+  .patch("/api/prompts/:slug/template", async ({ request, params }) => {
+    const userOr401 = await requireUser(request, getCurrentUser);
+    if (userOr401 instanceof Response) return userOr401;
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return jsonError(400, "Invalid JSON body");
+    }
+
+    try {
+      const parsed = templateSettingsSchema.parse(body);
+      const prompt = await updateTemplateSettings.execute(
+        userOr401.id,
+        params.slug,
+        parsed,
+      );
+      return Response.json(prompt);
+    } catch (err) {
+      if (err instanceof ZodError) return jsonError(400, err.issues[0]?.message ?? "Invalid input");
+      if (err instanceof InvalidTemplateVariableNameError) return jsonError(400, err.message);
+      if (err instanceof PromptNotFoundError) return jsonError(404, err.message);
+      if (err instanceof InvalidSlugError) return jsonError(404, "Prompt not found");
+      throw err;
+    }
+  })
+  // P19 — session: faithful render preview (reuses the public query
+  // without API key / rate limit / metrics) for the editor tester.
+  .post("/api/prompts/:slug/render-preview", async ({ request, params }) => {
+    const userOr401 = await requireUser(request, getCurrentUser);
+    if (userOr401 instanceof Response) return userOr401;
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return jsonError(400, "Invalid JSON body");
+    }
+
+    try {
+      const parsed = renderPromptSchema.parse(body);
+      const dto = await renderPromptVersion.execute(
+        userOr401.id,
+        params.slug,
+        parsed.vars,
+        parsed.version,
+      );
+      if (!dto) return jsonError(404, "Prompt not found");
+      return Response.json({
+        content: dto.content,
+        version: dto.version,
+        vars_used: dto.varsUsed,
+        missing_vars: dto.missingVars,
+      });
+    } catch (err) {
+      if (err instanceof ZodError) return jsonError(400, err.issues[0]?.message ?? "Invalid input");
+      if (err instanceof NotATemplateError) return jsonError(400, err.message);
+      if (err instanceof MissingTemplateVariablesError) {
+        return new Response(
+          JSON.stringify({ error: "Missing variables", missing_vars: err.missingVars }),
+          { status: 422, headers: { "content-type": "application/json" } },
+        );
+      }
+      throw err;
+    }
+  })
   .post("/api/keys", async ({ request }) => {
     const userOr401 = await requireUser(request, getCurrentUser);
     if (userOr401 instanceof Response) return userOr401;
@@ -554,20 +655,10 @@ const app = new Elysia()
     // 401 path has no resolved key — nothing to attribute the metric to.
     if (keyOr401 instanceof Response) return keyOr401;
 
-    // Captures start + apiKeyId; records every response branch (200,
-    // 404, 429) fire-and-forget. Best-effort: the public endpoint
-    // never blocks on metrics writes.
+    // Records every response branch (200, 404, 429) fire-and-forget.
     const apiKeyId = keyOr401.id;
     const slug = params.slug;
-    const recordAndReturn = (response: Response): Response => {
-      const latencyMs = Math.round(performance.now() - start);
-      void recordApiKeyHit
-        .execute(apiKeyId, slug, response.status, latencyMs)
-        .catch((err: unknown) => {
-          console.error("[metrics-record]", err);
-        });
-      return response;
-    };
+    const recordAndReturn = makeRecordAndReturn(apiKeyId, slug, start);
 
     const rl = await rateLimiter.consume(`apikey:${apiKeyId}`, 100, 60);
     if (!rl.allowed) {
@@ -608,6 +699,96 @@ const app = new Elysia()
         },
       }),
     );
+  })
+  // P19 — public template render. Mirrors the GET stack: API key auth,
+  // fire-and-forget metric, rate limit. Strict-fails 422 on missing
+  // vars. The raw GET above stays untouched for non-template reads.
+  .options("/v1/prompts/:slug/render", () =>
+    new Response(null, { status: 204, headers: corsHeaders }),
+  )
+  .post("/v1/prompts/:slug/render", async ({ request, params }) => {
+    const start = performance.now();
+    const keyOr401 = await requireApiKey(request, authenticateApiKey, corsHeaders);
+    if (keyOr401 instanceof Response) return keyOr401;
+
+    const apiKeyId = keyOr401.id;
+    const slug = params.slug;
+    const recordAndReturn = makeRecordAndReturn(apiKeyId, slug, start);
+
+    const rl = await rateLimiter.consume(`apikey:${apiKeyId}`, 100, 60);
+    if (!rl.allowed) {
+      return recordAndReturn(
+        new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            "content-type": "application/json",
+            "retry-after": String(rl.retryAfter),
+          },
+        }),
+      );
+    }
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return recordAndReturn(corsJson(400, { error: "Invalid JSON body" }));
+    }
+
+    try {
+      const parsed = renderPromptSchema.parse(body);
+      const dto = await renderPromptVersion.execute(
+        keyOr401.userId,
+        slug,
+        parsed.vars,
+        parsed.version,
+      );
+      if (!dto) return recordAndReturn(corsJson(404, { error: "Prompt not found" }));
+      return recordAndReturn(
+        new Response(
+          JSON.stringify({
+            content: dto.content,
+            version: dto.version,
+            vars_used: dto.varsUsed,
+            missing_vars: dto.missingVars,
+          }),
+          {
+            status: 200,
+            headers: {
+              ...corsHeaders,
+              "content-type": "application/json",
+              "x-ratelimit-limit": "100",
+              "x-ratelimit-remaining": String(rl.remaining),
+              "x-ratelimit-reset": String(rl.resetAt),
+            },
+          },
+        ),
+      );
+    } catch (err) {
+      if (err instanceof ZodError) {
+        return recordAndReturn(
+          corsJson(400, { error: err.issues[0]?.message ?? "Invalid input" }),
+        );
+      }
+      if (err instanceof NotATemplateError) {
+        return recordAndReturn(
+          corsJson(400, {
+            error: "Not a template",
+            hint: "use GET /v1/prompts/:slug",
+          }),
+        );
+      }
+      if (err instanceof MissingTemplateVariablesError) {
+        return recordAndReturn(
+          corsJson(422, {
+            error: "Missing variables",
+            missing_vars: err.missingVars,
+          }),
+        );
+      }
+      throw err;
+    }
   });
 
 // Boot reconciler: resume backfills interrupted by a server crash.

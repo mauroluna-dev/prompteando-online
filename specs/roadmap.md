@@ -450,37 +450,44 @@ fila aparece en `api_key_metrics_daily`.
 
 ---
 
-## V2 — Templates con substitución de variables (deferred)
-**Goal (V2 only, no V1)**: prompts con `{{variable}}` que se
-sustituyen al consumirlos por la API. Permite reutilizar un mismo
-template con datos distintos sin duplicar contenido ni hacer
-substitución del lado cliente.
-**Decisión (sesión 2026-05-04)**: queda OUT del roadmap V1 por
-volumen de drawbacks pendientes de discusión:
-- Breaking change con prompts que contengan `{{` literal
-  (mitigación: opt-in `is_template` per-prompt).
-- Escape semantics (Mustache HTML-escapa por default; para
-  prompts crudos hay que forzar raw).
-- Versionado: rename de `{{var}}` entre versiones rompe callers
-  existentes; necesita pinning por `?version=N` en el render.
-- Schema management (declarado vs inferido auto-parseando `{{}}`).
-- Prompt injection desde vars (responsabilidad del consumer,
-  pero documentar warning).
-- Endpoints (`POST /v1/prompts/:slug/render` separado vs extender
-  el `GET` actual con `?var.x=Y`).
+## P19 — Template variables (kickoff de V2)
+**Status**: 📋 SPEC'D (2026-06-02). Promovido desde la sección V2
+*deferred* a fase decidida. Spec completo en
+[`specs/2026-06-02-p19-template-variables/`](./2026-06-02-p19-template-variables/)
+(requirements + plan + validation).
 
-**Pre-decisión tentativa**:
-- Sintaxis: Mustache logic-less con `{{var}}` raw (sin escape).
-- Engine: `mustache` (npm) o el parser propio (regex `/\{\{(\w+)\}\}/g`
-  + replace, ~30 líneas) si no se necesitan loops.
-- Activación: opt-in via `is_template: bool` en `prompts`.
-- Detección de vars: inferida parseando el content al guardar
-  versión, persistida en `prompt_versions.template_vars: jsonb`.
-- Endpoint: `POST /v1/prompts/:slug/render` con body
-  `{vars: {...}, version?: N}` → `{content: <rendered>, version,
-  vars_used, missing_vars}`. El `GET` raw existente sigue funcionando.
+**Goal**: prompts con `{{variable}}` que se sustituyen al consumirlos
+por la API. Permite reutilizar un mismo template con datos distintos sin
+duplicar contenido ni hacer substitución del lado cliente.
 
-A retomar después de cerrar V1 (P0–P18 + Pγ).
+**Decisiones cerradas (sesión 2026-06-02)** — las cuatro forks abiertas:
+- **Engine**: parser propio (~30 líneas, regex
+  `/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g` + replace). Sin `mustache`, sin
+  loops/condicionales.
+- **Detección**: híbrida — vars inferidas del content (snapshot
+  inmutable per-versión en `prompt_versions.template_vars`) + metadata
+  opcional (`description`/`default`) editable per-prompt en
+  `prompts.template_var_meta`.
+- **Vars faltantes**: falla estricta **422** con `missing_vars` (un
+  `default` declarado vuelve opcional a la var).
+- **Alcance**: full-stack (endpoint + persistencia + UI de modo template
+  con panel de vars y "probar render").
+
+**Defaults adoptados**: `{{var}}` raw sin escape; opt-in `is_template`
+per-prompt (backward compat con `{{` literal cuando está OFF); pinning
+por `version?: N`; endpoint separado `POST /v1/prompts/:slug/render` con
+body `{ vars, version? }` → `{ content, version, vars_used, missing_vars }`.
+El `GET /v1/prompts/:slug` raw existente queda intacto.
+
+**Depends on**: P9 (API pública + keys + rate limit), P7 (versionado),
+P18 (RecordApiKeyHit — el render queda medido como el GET).
+
+### V2 — siguientes (TBD, post-P19)
+- **Evaluation framework**: comparar outputs entre versiones contra un
+  test set del usuario.
+- **Teams / sharing**: primer pase de colaboración chica (1-3 personas).
+
+Emergen del feedback real de P19 + usuarios V1, no de hipótesis ahora.
 
 ---
 
@@ -491,12 +498,12 @@ P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 → P9 → Pα → P�
                                                                                               ├── P17 (markdown editor + diff)
                                                                                               └── P18 (API key metrics)
                                                                                                        ↓
-                                                                                                      V2 (templates)
+                                                                                          P19 (template variables · kickoff V2)
 ```
 Lineal por diseño hasta P16: cada fase extiende capacidades sobre
 la anterior. Pγ/P17/P18 son post-MVP y paralelizables — comparten
 solo el design system (Pγ debería arrancar primero o en paralelo
 con tokens publicados antes de que P17/P18 lleguen al frontend).
-Templates (V2) deliberadamente fuera de la cadena V1.
+P19 (templates) arranca V2 una vez cerrado V1.
 Pα/Pβ son fases de alineación — no entregan features de producto
 pero blindan la base para todas las fases siguientes.
