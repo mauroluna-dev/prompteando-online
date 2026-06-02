@@ -1,4 +1,4 @@
-import { AlertTriangle, Trash2 } from "lucide-react";
+import { AlertTriangle, Download, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +68,29 @@ export function SettingsProfilePage() {
             </div>
           </>
         )}
+      </section>
+
+      <section className="bg-card flex flex-col gap-5 rounded-lg border p-6">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-display text-lg font-semibold">Tus datos</h2>
+          <p className="text-muted-foreground text-sm">
+            Bajate todos tus prompts y el historial completo de versiones en un
+            ZIP. Disponible aun sin GitHub conectado.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          <p className="text-muted-foreground text-xs">
+            Incluye todos los prompts y todas sus versiones. Markdown + JSON.
+            Tarda unos segundos.
+          </p>
+          <Button asChild className="shrink-0">
+            <a href="/api/export.zip" download>
+              <Download className="mr-2 h-4 w-4" />
+              Descargar mis datos
+            </a>
+          </Button>
+        </div>
       </section>
 
       <section className="border-destructive/30 bg-destructive/5 flex flex-col gap-3 rounded-lg border p-6 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
