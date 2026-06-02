@@ -51,6 +51,7 @@ function makeVersion(): PromptVersion {
     "v1",
     "p1",
     VersionNumber.parse(2),
+    "text",
     "hello\n",
     "Tweak",
     [],

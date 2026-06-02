@@ -16,7 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import type { PromptType } from "@/domain/prompt";
 import { MarkdownEditor } from "@/frontend/components/MarkdownEditor";
+import { ChatEditor } from "@/frontend/components/ChatEditor";
 import { Skeleton } from "@/frontend/components/states";
 import { LabelsManager } from "@/frontend/components/LabelsManager";
 import { TemplatePanel } from "@/frontend/components/TemplatePanel";
@@ -56,6 +58,7 @@ export function PromptDetailPage() {
   const [diffA, setDiffA] = useState<number | null>(null);
   const [diffB, setDiffB] = useState<number | null>(null);
   const [content, setContent] = useState("");
+  const [type, setType] = useState<PromptType>("text");
   const [commitMessage, setCommitMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -87,6 +90,7 @@ export function PromptDetailPage() {
   useEffect(() => {
     if (mode === "edit" && viewingNumber === null) {
       setContent(currentVersion?.content ?? "");
+      setType(currentVersion?.type ?? "text");
     }
   }, [currentVersion?.id, viewingNumber, mode]);
 
@@ -132,6 +136,7 @@ export function PromptDetailPage() {
     try {
       const result = await saveVersion(slug, {
         content,
+        type,
         commitMessage: commitMessage.trim() || undefined,
       });
       if (result.isNoOp) {
@@ -187,7 +192,10 @@ export function PromptDetailPage() {
     toast.success("Slug copiado.");
   };
 
-  const editorDirty = !isEmpty && content !== (currentVersion?.content ?? "");
+  const editorDirty =
+    !isEmpty &&
+    (content !== (currentVersion?.content ?? "") ||
+      type !== (currentVersion?.type ?? "text"));
   const saveDisabled = saving || (!isEmpty && !editorDirty);
 
   return (
@@ -253,6 +261,8 @@ export function PromptDetailPage() {
               isEmpty={isEmpty}
               content={content}
               onContentChange={setContent}
+              type={type}
+              onTypeChange={setType}
               commitMessage={commitMessage}
               onCommitMessageChange={setCommitMessage}
               onSave={() => void handleSave()}
@@ -267,6 +277,7 @@ export function PromptDetailPage() {
               isTemplate={prompt.isTemplate}
               varMeta={prompt.templateVarMeta}
               content={content}
+              type={type}
             />
           ) : null}
         </div>
@@ -381,6 +392,8 @@ function EditPane({
   isEmpty,
   content,
   onContentChange,
+  type,
+  onTypeChange,
   commitMessage,
   onCommitMessageChange,
   onSave,
@@ -390,6 +403,8 @@ function EditPane({
   isEmpty: boolean;
   content: string;
   onContentChange: (next: string) => void;
+  type: PromptType;
+  onTypeChange: (next: PromptType) => void;
   commitMessage: string;
   onCommitMessageChange: (next: string) => void;
   onSave: () => void;
@@ -398,12 +413,34 @@ function EditPane({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <MarkdownEditor
-        value={content}
-        onChange={onContentChange}
-        placeholder="Escribí tu prompt acá…"
-        className="min-h-[480px]"
-      />
+      <div className="bg-muted inline-flex self-start rounded-md p-0.5 text-sm">
+        {(["text", "chat"] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => onTypeChange(t)}
+            className={cn(
+              "rounded px-3 py-1 capitalize transition-colors",
+              type === t
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            aria-pressed={type === t}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+      {type === "chat" ? (
+        <ChatEditor value={content} onChange={onContentChange} />
+      ) : (
+        <MarkdownEditor
+          value={content}
+          onChange={onContentChange}
+          placeholder="Escribí tu prompt acá…"
+          className="min-h-[480px]"
+        />
+      )}
       <div className="bg-card flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-end">
         <div className="flex flex-1 flex-col gap-1.5">
           <Label htmlFor="commit-message" className="text-xs">

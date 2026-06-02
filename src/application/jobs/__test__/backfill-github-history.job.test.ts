@@ -65,6 +65,7 @@ function makeVersion(
     id,
     "p1",
     VersionNumber.parse(num),
+    "text",
     `body of v${num}\n`,
     msg,
     [],

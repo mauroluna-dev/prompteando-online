@@ -2,9 +2,12 @@ import type { LabelRepository } from "@/application/ports/label-repository.port"
 import type { PromptRepository } from "@/application/ports/prompt-repository.port";
 import type { VersionRepository } from "@/application/ports/version-repository.port";
 import {
+  type ChatMessage,
   CONSTANTS,
   MissingTemplateVariablesError,
   NotATemplateError,
+  parseChatMessages,
+  renderChat,
   renderTemplate,
   Slug,
 } from "@/domain/prompt";
@@ -14,7 +17,11 @@ import {
   VersionNumber,
 } from "@/domain/prompt-version";
 
-export type RenderTarget = { version?: number; label?: string };
+export type RenderTarget = {
+  version?: number;
+  label?: string;
+  placeholders?: Record<string, ChatMessage[]>;
+};
 
 /**
  * Renders a template prompt by substituting `{{var}}`. Strict: throws
@@ -60,13 +67,33 @@ export class RenderPromptVersionQuery {
       }
     }
 
+    if (version.type === "chat") {
+      const result = renderChat(
+        parseChatMessages(version.content),
+        values,
+        target.placeholders ?? {},
+      );
+      if (result.missingVars.length > 0) {
+        throw new MissingTemplateVariablesError(result.missingVars);
+      }
+      return {
+        type: "chat",
+        content: null,
+        messages: result.messages,
+        version: version.versionNumber.value,
+        varsUsed: result.varsUsed,
+        missingVars: [],
+      };
+    }
+
     const result = renderTemplate(version.content, values);
     if (result.missingVars.length > 0) {
       throw new MissingTemplateVariablesError(result.missingVars);
     }
-
     return {
+      type: "text",
       content: result.content,
+      messages: null,
       version: version.versionNumber.value,
       varsUsed: result.varsUsed,
       missingVars: [],

@@ -31,7 +31,7 @@ export async function getVersion(
 
 export async function saveVersion(
   slug: string,
-  body: { content: string; commitMessage?: string },
+  body: { content: string; type?: "text" | "chat"; commitMessage?: string },
 ): Promise<SaveVersionResult> {
   const res = await fetch(basePath(slug), {
     method: "POST",

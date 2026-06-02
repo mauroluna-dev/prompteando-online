@@ -87,6 +87,16 @@ curl "https://<tu-host>/v1/prompts/<slug>?label=production" \
 devuelve la última versión (como siempre). El `POST .../render` también
 acepta `label`. Los labels se gestionan desde el editor.
 
+## Chat prompts
+
+Además de prompts de texto, podés crear prompts **chat**: un array de
+mensajes con roles (`system` / `user` / `assistant`). Soportan las mismas
+`{{variables}}` y **message placeholders** (un mensaje `placeholder` que
+se reemplaza en runtime con una lista de mensajes — útil para inyectar
+historial). El `POST .../render` de un prompt chat devuelve `messages`
+(array compilado) en vez de `content`. Se editan desde el toggle
+Text/Chat del editor.
+
 ## Self-host
 
 Prompteando es 100% self-hosteable. La app no se publica al host: escucha

@@ -33,6 +33,7 @@ function makeVersion(over: Partial<PromptVersionRow>): PromptVersion {
     id: "v2",
     promptId: "p1",
     versionNumber: 2,
+    type: "text",
     content: "Hola {{nombre}}, sobre {{producto}}.",
     commitMessage: null,
     githubCommitSha: null,
@@ -70,7 +71,9 @@ describe("RenderPromptVersionQuery", () => {
       producto: "Plan Pro",
     });
     expect(dto).toEqual({
+      type: "text",
       content: "Hola Ana, sobre Plan Pro.",
+      messages: null,
       version: 2,
       varsUsed: ["nombre", "producto"],
       missingVars: [],

@@ -66,6 +66,7 @@ import {
   MetricsRange,
 } from "@/domain/api-key";
 import {
+  type ChatMessage,
   CannotAssignVirtualLabelError,
   InvalidLabelError,
   InvalidPromptNameError,
@@ -386,6 +387,7 @@ const app = new Elysia()
         userOr401.id,
         params.slug,
         parsed.content,
+        parsed.type,
         parsed.commitMessage,
       );
       if (!result.isNoOp) {
@@ -522,11 +524,19 @@ const app = new Elysia()
         userOr401.id,
         params.slug,
         parsed.vars,
-        { version: parsed.version, label: parsed.label },
+        {
+          version: parsed.version,
+          label: parsed.label,
+          placeholders: parsed.placeholders as
+            | Record<string, ChatMessage[]>
+            | undefined,
+        },
       );
       if (!dto) return jsonError(404, "Prompt not found");
       return Response.json({
+        type: dto.type,
         content: dto.content,
+        messages: dto.messages,
         version: dto.version,
         vars_used: dto.varsUsed,
         missing_vars: dto.missingVars,
@@ -837,13 +847,21 @@ const app = new Elysia()
         keyOr401.userId,
         slug,
         parsed.vars,
-        { version: parsed.version, label: parsed.label },
+        {
+          version: parsed.version,
+          label: parsed.label,
+          placeholders: parsed.placeholders as
+            | Record<string, ChatMessage[]>
+            | undefined,
+        },
       );
       if (!dto) return recordAndReturn(corsJson(404, { error: "Prompt not found" }));
       return recordAndReturn(
         new Response(
           JSON.stringify({
+            type: dto.type,
             content: dto.content,
+            messages: dto.messages,
             version: dto.version,
             vars_used: dto.varsUsed,
             missing_vars: dto.missingVars,

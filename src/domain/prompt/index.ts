@@ -7,5 +7,14 @@ export { Label } from "./label.vo";
 export { extractTemplateVariables } from "./template-parser";
 export { renderTemplate } from "./template-renderer";
 export type { RenderResult } from "./template-renderer";
+export {
+  extractChatVariables,
+  extractVariablesForType,
+  parseChatMessages,
+  parsePromptType,
+  renderChat,
+  serializeChatMessages,
+} from "./chat";
+export type { ChatMessage, ChatRenderResult, ChatRole, PromptType } from "./chat";
 export { Prompt } from "./prompt.entity";
 export type { PromptDTO, PromptRow, TemplateVarMeta } from "./prompt.entity";

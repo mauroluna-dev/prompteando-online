@@ -16,4 +16,8 @@ export const CONSTANTS = {
   LABEL_PATTERN: /^[a-z][a-z0-9-]*$/,
   MAX_LABEL_LENGTH: 32,
   VIRTUAL_LATEST_LABEL: "latest",
+  // Chat prompts (P21).
+  PROMPT_TYPES: ["text", "chat"] as const,
+  CHAT_ROLES: ["system", "user", "assistant", "placeholder"] as const,
+  MAX_CHAT_MESSAGES: 100,
 } as const;

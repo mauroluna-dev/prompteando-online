@@ -85,3 +85,19 @@ export class LabelNotFoundError extends Error {
     this.name = "LabelNotFoundError";
   }
 }
+
+export class InvalidPromptTypeError extends Error {
+  readonly code = "INVALID_PROMPT_TYPE" as const;
+  constructor(value: string) {
+    super(`Invalid prompt type: "${value}"`);
+    this.name = "InvalidPromptTypeError";
+  }
+}
+
+export class InvalidChatContentError extends Error {
+  readonly code = "INVALID_CHAT_CONTENT" as const;
+  constructor(reason: string) {
+    super(`Invalid chat content: ${reason}`);
+    this.name = "InvalidChatContentError";
+  }
+}

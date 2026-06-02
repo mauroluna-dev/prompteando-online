@@ -3,7 +3,10 @@ import { Copy, Play, Variable } from "lucide-react";
 import { mutate } from "swr";
 import { toast } from "sonner";
 import {
-  extractTemplateVariables,
+  extractVariablesForType,
+  parseChatMessages,
+  type PromptType,
+  renderChat,
   renderTemplate,
   type TemplateVarMeta,
 } from "@/domain/prompt";
@@ -14,9 +17,9 @@ import { Switch } from "@/components/ui/switch";
 import { updateTemplateSettings } from "@/frontend/lib/api/prompts";
 
 /** Live var detection from editor content; never throws in the UI. */
-function detectVars(content: string): string[] {
+function detectVars(content: string, type: PromptType): string[] {
   try {
-    return extractTemplateVariables(content);
+    return extractVariablesForType(content, type);
   } catch {
     return [];
   }
@@ -27,13 +30,15 @@ export function TemplatePanel({
   isTemplate,
   varMeta,
   content,
+  type,
 }: {
   slug: string;
   isTemplate: boolean;
   varMeta: TemplateVarMeta;
   content: string;
+  type: PromptType;
 }) {
-  const vars = detectVars(content);
+  const vars = detectVars(content, type);
   const [toggling, setToggling] = useState(false);
 
   const handleToggle = async (next: boolean) => {
@@ -73,7 +78,12 @@ export function TemplatePanel({
       {isTemplate ? (
         <div className="flex flex-col gap-5">
           <VariablesEditor slug={slug} vars={vars} varMeta={varMeta} />
-          <RenderTester content={content} vars={vars} varMeta={varMeta} />
+          <RenderTester
+            content={content}
+            type={type}
+            vars={vars}
+            varMeta={varMeta}
+          />
           <RenderSnippet slug={slug} vars={vars} />
         </div>
       ) : null}
@@ -158,19 +168,47 @@ type RenderOutcome =
   | { kind: "ok"; content: string }
   | { kind: "missing"; missingVars: string[] };
 
+function renderForType(
+  content: string,
+  type: PromptType,
+  values: Record<string, string>,
+): RenderOutcome {
+  if (type === "chat") {
+    try {
+      const r = renderChat(parseChatMessages(content), values);
+      return r.missingVars.length > 0
+        ? { kind: "missing", missingVars: r.missingVars }
+        : {
+            kind: "ok",
+            content: r.messages
+              .map((m) => `${m.role}: ${m.content ?? `[${m.name}]`}`)
+              .join("\n\n"),
+          };
+    } catch {
+      return { kind: "ok", content: "(chat inválido)" };
+    }
+  }
+  const r = renderTemplate(content, values);
+  return r.missingVars.length > 0
+    ? { kind: "missing", missingVars: r.missingVars }
+    : { kind: "ok", content: r.content };
+}
+
 function RenderTester({
   content,
+  type,
   vars,
   varMeta,
 }: {
   content: string;
+  type: PromptType;
   vars: string[];
   varMeta: TemplateVarMeta;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [result, setResult] = useState<RenderOutcome | null>(null);
 
-  // Renders the LIVE editor content (same pure domain function the
+  // Renders the LIVE editor content (same pure domain functions the
   // server uses), applying declared defaults — strict like /render.
   const handleRender = () => {
     const effective: Record<string, string> = {};
@@ -183,12 +221,7 @@ function RenderTester({
         if (def != null) effective[name] = def;
       }
     }
-    const rendered = renderTemplate(content, effective);
-    setResult(
-      rendered.missingVars.length > 0
-        ? { kind: "missing", missingVars: rendered.missingVars }
-        : { kind: "ok", content: rendered.content },
-    );
+    setResult(renderForType(content, type, effective));
   };
 
   return (
