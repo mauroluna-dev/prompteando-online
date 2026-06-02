@@ -16,6 +16,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY src ./src
 COPY styles ./styles
-COPY package.json ./
+COPY scripts ./scripts
+# tsconfig.json is required at runtime: Bun reads its `paths` to resolve
+# the `@/` import aliases used across src/ and scripts/ (server boot and
+# the migrate script both rely on them).
+COPY package.json tsconfig.json ./
 EXPOSE 3010
 CMD ["bun", "start"]
