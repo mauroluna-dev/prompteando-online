@@ -353,6 +353,7 @@ swr
 react-hook-form
 @hookform/resolvers
 zod
+fflate                   # P13 — streaming ZIP writer for data export
 ```
 Frontend post-MVP (P17 + P18):
 ```

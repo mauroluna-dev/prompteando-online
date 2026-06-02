@@ -12,6 +12,9 @@ import { BunCryptoAdapter } from "@/infrastructure/crypto/bun-crypto.adapter";
 import { BunRedisCache } from "@/infrastructure/cache/bun-redis-cache.adapter";
 import { BunRedisRateLimiter } from "@/infrastructure/cache/bun-redis-rate-limiter.adapter";
 import { GetCurrentUserQuery } from "@/application/queries/get-current-user.query";
+import { ExportAllPromptsQuery } from "@/application/queries/export-all-prompts.query";
+import { ZipBundleWriter } from "@/infrastructure/export/zip-bundle-writer.adapter";
+import { makeExportHandler } from "./handlers/export.handler";
 import { CreatePromptCommand } from "@/application/commands/create-prompt.command";
 import { DeletePromptCommand } from "@/application/commands/delete-prompt.command";
 import { GetPromptBySlugQuery } from "@/application/queries/get-prompt-by-slug.query";
@@ -89,6 +92,14 @@ const saveNewVersion = new SaveNewVersionCommand(promptRepo, versionRepo, cache,
 const restoreVersion = new RestoreVersionCommand(promptRepo, versionRepo, cache, cryptoAdapter);
 const getVersion = new GetVersionQuery(promptRepo, versionRepo);
 const listVersions = new ListVersionsQuery(promptRepo, versionRepo);
+// P13 — export all prompts + versions as a streamed ZIP.
+const exportAllPrompts = new ExportAllPromptsQuery(promptRepo, versionRepo);
+const zipBundleWriter = new ZipBundleWriter();
+const exportHandler = makeExportHandler({
+  getCurrentUser,
+  exportAllPrompts,
+  zipWriter: zipBundleWriter,
+});
 const createApiKey = new CreateApiKeyCommand(apiKeyRepo, cryptoAdapter);
 const revokeApiKey = new RevokeApiKeyCommand(apiKeyRepo);
 const listApiKeys = new ListApiKeysForUserQuery(apiKeyRepo);
@@ -199,6 +210,7 @@ const app = new Elysia()
     if (!user) return new Response(null, { status: 401 });
     return Response.json(user);
   })
+  .get("/api/export.zip", ({ request }) => exportHandler(request))
   .post("/api/prompts", async ({ request }) => {
     const userOr401 = await requireUser(request, getCurrentUser);
     if (userOr401 instanceof Response) return userOr401;
@@ -606,6 +618,7 @@ const server = Bun.serve({
     "/health": (req) => app.handle(req),
     "/auth/*": (req) => app.handle(req),
     "/api/me": (req) => app.handle(req),
+    "/api/export.zip": (req) => app.handle(req),
     "/api/prompts": (req) => app.handle(req),
     "/api/prompts/*": (req) => app.handle(req),
     "/api/keys": (req) => app.handle(req),
