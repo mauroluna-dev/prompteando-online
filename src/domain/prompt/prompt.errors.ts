@@ -61,3 +61,27 @@ export class MissingTemplateVariablesError extends Error {
     this.name = "MissingTemplateVariablesError";
   }
 }
+
+export class InvalidLabelError extends Error {
+  readonly code = "INVALID_LABEL" as const;
+  constructor(value: string) {
+    super(`Invalid label: "${value}"`);
+    this.name = "InvalidLabelError";
+  }
+}
+
+export class CannotAssignVirtualLabelError extends Error {
+  readonly code = "CANNOT_ASSIGN_VIRTUAL_LABEL" as const;
+  constructor(label: string) {
+    super(`"${label}" is a virtual label and cannot be assigned manually`);
+    this.name = "CannotAssignVirtualLabelError";
+  }
+}
+
+export class LabelNotFoundError extends Error {
+  readonly code = "LABEL_NOT_FOUND" as const;
+  constructor(label: string) {
+    super(`Label not found: "${label}"`);
+    this.name = "LabelNotFoundError";
+  }
+}

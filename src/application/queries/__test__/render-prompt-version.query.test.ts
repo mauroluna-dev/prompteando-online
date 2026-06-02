@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { RenderPromptVersionQuery } from "@/application/queries/render-prompt-version.query";
+import type { LabelRepository } from "@/application/ports/label-repository.port";
 import type { PromptRepository } from "@/application/ports/prompt-repository.port";
 import type { VersionRepository } from "@/application/ports/version-repository.port";
 import {
@@ -55,7 +56,10 @@ function makeQuery(
     findByPromptIdAndNumber: async (_id: string, n: { value: number }) =>
       byNumber[n.value] ?? null,
   } as unknown as VersionRepository;
-  return new RenderPromptVersionQuery(promptRepo, versionRepo);
+  const labelRepo = {
+    findVersionIdByLabel: async () => null,
+  } as unknown as LabelRepository;
+  return new RenderPromptVersionQuery(promptRepo, versionRepo, labelRepo);
 }
 
 describe("RenderPromptVersionQuery", () => {
@@ -109,7 +113,7 @@ describe("RenderPromptVersionQuery", () => {
       templateVars: ["nombre"],
     });
     const q = makeQuery(makePrompt({}), makeVersion({}), { 1: v1 });
-    const dto = await q.execute("u1", "greeting", { nombre: "Ana" }, 1);
+    const dto = await q.execute("u1", "greeting", { nombre: "Ana" }, { version: 1 });
     expect(dto?.version).toBe(1);
     expect(dto?.content).toBe("Solo Ana.");
   });

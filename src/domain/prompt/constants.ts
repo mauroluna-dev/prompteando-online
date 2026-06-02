@@ -11,4 +11,9 @@ export const CONSTANTS = {
   MAX_TEMPLATE_VARS: 50,
   MAX_VAR_NAME_LENGTH: 64,
   MAX_VAR_VALUE_LENGTH: 10_000,
+  // Labels / aliases (P20). `latest` is virtual (always the current
+  // version); custom labels are slug-like.
+  LABEL_PATTERN: /^[a-z][a-z0-9-]*$/,
+  MAX_LABEL_LENGTH: 32,
+  VIRTUAL_LATEST_LABEL: "latest",
 } as const;
