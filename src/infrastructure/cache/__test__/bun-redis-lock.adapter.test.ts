@@ -2,7 +2,11 @@ import { afterEach, beforeAll, describe, expect, test } from "bun:test";
 import { BunRedisLock } from "../bun-redis-lock.adapter";
 import { redis } from "../redis";
 
-const skip = !process.env.REDIS_URL;
+// Skip when there's no Redis to talk to. In CI we DO set a dummy
+// REDIS_URL (so importing `env.ts` doesn't throw on `z.url()`), but
+// there's no Redis service running — `CI=true` (set by GitHub Actions)
+// forces the skip. Locally, with `CI` unset and Redis up, it runs.
+const skip = !process.env.REDIS_URL || process.env.CI === "true";
 const d = skip ? describe.skip : describe;
 
 const KEY_PREFIX = `__test:lock:${crypto.randomUUID()}:`;
