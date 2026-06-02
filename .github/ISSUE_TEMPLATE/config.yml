@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Reportar una vulnerabilidad de seguridad
+    url: https://github.com/mauroluna-dev/prompteando-online/security/advisories/new
+    about: No abras un issue público. Reportala de forma privada acá.
+  - name: 💬 Preguntas y discusión
+    url: https://github.com/mauroluna-dev/prompteando-online/discussions
+    about: Dudas de uso, ideas sueltas o charla general.

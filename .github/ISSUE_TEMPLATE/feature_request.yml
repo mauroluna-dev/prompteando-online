@@ -1,0 +1,42 @@
+name: "✨ Propuesta de feature"
+description: Una idea para mejorar Prompteando
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Antes de proponer, mirá el scope en `specs/mission.md` y el
+        `specs/roadmap.md` — quizás ya está planeado (o deliberadamente
+        fuera de scope para V1).
+  - type: textarea
+    id: problema
+    attributes:
+      label: ¿Qué problema resuelve?
+      description: Enfocá el problema del usuario, no la solución todavía.
+      placeholder: Como no-coder en n8n, no puedo fijar qué versión es la "de producción"...
+    validations:
+      required: true
+  - type: textarea
+    id: solucion
+    attributes:
+      label: Solución propuesta
+      placeholder: Un alias `@production` por prompt que el endpoint público pueda resolver...
+    validations:
+      required: true
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: Alternativas consideradas
+    validations:
+      required: false
+  - type: dropdown
+    id: persona
+    attributes:
+      label: ¿A qué persona apunta?
+      options:
+        - No-coder orquestador (n8n / Zapier / Make)
+        - Vibe-coder (Cursor / Claude Code / ChatGPT)
+        - Quien self-hostea / opera la instancia
+        - Otra
+    validations:
+      required: false
