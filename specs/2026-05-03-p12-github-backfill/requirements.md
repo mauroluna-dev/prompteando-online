@@ -9,7 +9,7 @@ sus versiones quedan en Postgres con `github_commit_sha = null` para
 siempre.
 
 P12 resuelve eso: cuando un usuario conecta GitHub por primera vez,
-se replica todo su historial existente al repo `promptstash-<login>`,
+se replica todo su historial existente al repo `prompteando-<login>`,
 en orden cronológico, con timestamps fieles al `created_at` original.
 
 Después de P12:
@@ -548,7 +548,7 @@ incremental selectivo quedan fuera de scope.
 ## Risks / open items
 
 - **Repos pre-existentes con commits viejos**: si un usuario ya
-  tenía un repo `promptstash-<login>` por una connection vieja
+  tenía un repo `prompteando-<login>` por una connection vieja
   (pre-P12), reconectarse va a backfillear sobre commits previos.
   Resultado: el git log queda con commits viejos (no-backdated)
   ANTES de los nuevos backdated. Aceptable para V1 — es exactamente

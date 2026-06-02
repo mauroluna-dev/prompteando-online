@@ -155,7 +155,7 @@ P2), así que lo dejamos commiteado.
   "scripts": {
     "db:generate": "bunx drizzle-kit generate",
     "db:migrate":  "bun scripts/migrate.ts",
-    "db:psql":     "docker compose exec postgres psql -U promptstash -d promptstash"
+    "db:psql":     "docker compose exec postgres psql -U prompteando -d prompteando"
   }
 }
 ```

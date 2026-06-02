@@ -26,7 +26,7 @@ cada uno de los 6 columns (todos nullable, sin default).
 
 1.4. Verificar con `\d user_github_connection` que las 6 columns
 existen y son nullable. (`bun run db:psql` si está en `package.json`,
-sino `docker compose exec postgres psql -U promptstash -d promptstash`.)
+sino `docker compose exec postgres psql -U prompteando -d prompteando`.)
 
 ## 2. Domain extension
 

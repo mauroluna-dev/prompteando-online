@@ -16,9 +16,9 @@ Numbered task groups. Cada grupo es una unidad coherente.
 1.3. `src/domain/api-key/helpers.ts`:
 - `generateApiKeyPlaintext()`: usa `crypto.getRandomValues` /
   `crypto.randomUUID` no — necesitamos 16 bytes hex. Bun expone
-  `crypto.getRandomValues`. Shape: `"ps_live_" + bytes.toString("hex")`.
+  `crypto.getRandomValues`. Shape: `"po_live_" + bytes.toString("hex")`.
 - `extractApiKeyPrefix(plaintext)`: devuelve `plaintext.slice(0, 16)`
-  (= `ps_live_` + 8 hex).
+  (= `po_live_` + 8 hex).
 - `API_KEY_PREFIX_LENGTH = 16`, `API_KEY_PLAINTEXT_LENGTH = 40`.
 
 1.4. `src/domain/api-key/types.ts`:
@@ -40,7 +40,7 @@ export type ApiKey = {
 1.6. Tests:
 - `__test__/api-key-name.test.ts`: accept 1-50, reject empty / 51 chars.
 - `__test__/helpers.test.ts`: `generateApiKeyPlaintext` produce string
-  con prefix `ps_live_` y 32 hex; `extractApiKeyPrefix` devuelve los
+  con prefix `po_live_` y 32 hex; `extractApiKeyPrefix` devuelve los
   primeros 16 chars.
 
 ## 2. Application: ports + commands + query

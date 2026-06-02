@@ -57,7 +57,7 @@ export interface RateLimiter {
   1. Si `headerValue == null` o no empieza con "Bearer " →
      `MissingAuthorizationHeaderError`.
   2. Strip "Bearer " → plaintext.
-  3. Validar shape (`/^ps_live_[a-f0-9]{32}$/`) → `InvalidApiKeyError`.
+  3. Validar shape (`/^po_live_[a-f0-9]{32}$/`) → `InvalidApiKeyError`.
   4. `prefix = extractApiKeyPrefix(plaintext)`.
   5. `key = repo.findByPrefix(prefix)` — null o `revokedAt != null` →
      `InvalidApiKeyError`.
@@ -262,7 +262,7 @@ const corsHeaders = {
 # Sin Authorization → 401
 curl -i http://localhost:3010/v1/prompts/test-slug
 # Con key inválida → 401
-curl -i -H "Authorization: Bearer ps_live_invalid000000000000000000000000" \
+curl -i -H "Authorization: Bearer po_live_invalid000000000000000000000000" \
   http://localhost:3010/v1/prompts/test-slug
 # Válido → 200 + DTO
 curl -i -H "Authorization: Bearer $REAL_KEY" \

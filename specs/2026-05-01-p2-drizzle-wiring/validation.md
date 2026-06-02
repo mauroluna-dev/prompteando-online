@@ -22,7 +22,7 @@ bun run db:migrate
 
 ### 2. `__drizzle_migrations` existe en Postgres
 ```bash
-docker compose exec -T postgres psql -U promptstash -d promptstash \
+docker compose exec -T postgres psql -U prompteando -d prompteando \
   -c "SELECT 1 FROM drizzle.__drizzle_migrations LIMIT 1;" 2>&1 | \
   grep -E "(0 rows|1 row)"
 # Expected: "(0 rows)" — la tabla existe (no crashea con "relation does
@@ -31,7 +31,7 @@ docker compose exec -T postgres psql -U promptstash -d promptstash \
 
 Alternativa más explícita:
 ```bash
-docker compose exec -T postgres psql -U promptstash -d promptstash \
+docker compose exec -T postgres psql -U prompteando -d prompteando \
   -c "\dt drizzle.*" | grep -q __drizzle_migrations
 # Expected: exit 0.
 ```
@@ -51,7 +51,7 @@ bun run db:generate
 
 ### 5. `bun run db:psql` abre psql en la DB
 ```bash
-bun run db:psql -- -c "SELECT current_database();" | grep -q promptstash
+bun run db:psql -- -c "SELECT current_database();" | grep -q prompteando
 # Expected: exit 0 (psql conecta dentro del container y devuelve el
 # nombre de la DB).
 ```

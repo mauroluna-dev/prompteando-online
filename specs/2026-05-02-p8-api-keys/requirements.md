@@ -3,7 +3,7 @@
 ## Why this phase
 Refer: `specs/roadmap.md` → P8. P0–P7 dejaron la app autenticada y con
 prompts versionados via UI. P8 es el primer paso para exponer
-promptstash hacia afuera: las API Keys son la credencial que la
+prompteando hacia afuera: las API Keys son la credencial que la
 **API pública** de P9 va a verificar para servir prompts a n8n /
 Zapier / curl / cualquier consumidor.
 
@@ -23,7 +23,7 @@ y rate limiting.
     id: string;
     userId: string;
     name: ApiKeyName;
-    prefix: string;       // visible portion, e.g. "ps_live_a1b2c3d4"
+    prefix: string;       // visible portion, e.g. "po_live_a1b2c3d4"
     keyHash: string;      // argon2id encoded (full hash + salt)
     lastUsedAt: Date | null;
     revokedAt: Date | null;
@@ -31,10 +31,10 @@ y rate limiting.
   };
   ```
 - Helpers:
-  - `generateApiKeyPlaintext()`: returns `ps_live_<32 hex>` (40 chars
+  - `generateApiKeyPlaintext()`: returns `po_live_<32 hex>` (40 chars
     total). 16 bytes of `crypto.randomBytes` → 32 hex chars.
   - `extractApiKeyPrefix(plaintext)`: returns the first 16 chars
-    (`ps_live_<first 8 hex>`) for storage and display.
+    (`po_live_<first 8 hex>`) for storage and display.
 
 ### Application
 - Port `ApiKeyRepository`:
@@ -159,8 +159,8 @@ trivial si aparece feedback real.
 
 ### Plaintext format y prefix
 ```
-plaintext: "ps_live_" + 32 hex chars   (40 chars, 128 bits entropía)
-prefix:    "ps_live_" + first 8 hex   (16 chars, suficiente para identificar)
+plaintext: "po_live_" + 32 hex chars   (40 chars, 128 bits entropía)
+prefix:    "po_live_" + first 8 hex   (16 chars, suficiente para identificar)
 ```
 - 32 hex = 16 bytes random — colisión astronómica.
 - prefix de 8 hex (32 bits) hace prácticamente imposible adivinar
@@ -177,7 +177,7 @@ alcanzan. La verificación en P9 (`verify`) será el path caliente.
 ```json
 {
   "apiKey": { id, userId, name, prefix, keyHash: "<...>", lastUsedAt: null, revokedAt: null, createdAt },
-  "plaintext": "ps_live_a1b2c3d4..."
+  "plaintext": "po_live_a1b2c3d4..."
 }
 ```
 **Excepción al patrón normal**: `keyHash` se incluye en este response
@@ -239,7 +239,7 @@ const listApiKeys = new ListApiKeysForUserQuery(apiKeyRepo);
 
 ## References
 - `specs/mission.md` → "API key consumption" como deliverable V1.
-- `specs/tech-stack.md` → API Keys section: format `ps_live_<...>`,
+- `specs/tech-stack.md` → API Keys section: format `po_live_<...>`,
   `key_hash` con `Bun.password` argon2id, header
   `Authorization: Bearer`.
 - `specs/roadmap.md` → P8 (canónico), P9 (consume las keys con

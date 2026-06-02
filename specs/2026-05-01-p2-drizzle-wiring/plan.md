@@ -133,7 +133,7 @@ sin errores. La primera corrida sobre una DB limpia crea
 
 8.3. Verificar la tabla en Postgres:
 ```bash
-docker compose exec -T postgres psql -U promptstash -d promptstash \
+docker compose exec -T postgres psql -U prompteando -d prompteando \
   -c "\dt drizzle.*"
 ```
 Expected: aparece `drizzle.__drizzle_migrations` (Drizzle crea su

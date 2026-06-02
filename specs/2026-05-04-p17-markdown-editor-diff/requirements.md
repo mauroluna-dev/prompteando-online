@@ -223,7 +223,7 @@ es uno de los componentes más usados).
 ## Risks / open items
 
 - **Performance del MergeView con prompts >100KB**: GitHub Markdown
-  files típicos son <10KB; promptstash limita al tamaño de un
+  files típicos son <10KB; prompteando limita al tamaño de un
   prompt razonable. Si aparece prompt grande, `MergeView` puede
   laggear. Mitigación: warning si `content.length > 50_000` y
   fallback a unified mode.

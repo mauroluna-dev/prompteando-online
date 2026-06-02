@@ -35,7 +35,7 @@ curl -s -o /dev/null -w "%{http_code}\n" \
 ### 3. 401 key con shape inválido
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" \
-  -H "Authorization: Bearer ps_live_short" \
+  -H "Authorization: Bearer po_live_short" \
   http://localhost:3010/v1/prompts/test-public
 # Expected: 401
 ```
@@ -43,7 +43,7 @@ curl -s -o /dev/null -w "%{http_code}\n" \
 ### 4. 401 key con prefix inexistente
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" \
-  -H "Authorization: Bearer ps_live_$(printf 'a%.0s' {1..32})" \
+  -H "Authorization: Bearer po_live_$(printf 'a%.0s' {1..32})" \
   http://localhost:3010/v1/prompts/test-public
 # Expected: 401
 ```

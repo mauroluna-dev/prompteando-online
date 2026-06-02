@@ -18,7 +18,7 @@ Pre-condiciones:
 - Ese user tiene **5 prompts**, cada uno con **3 versions**
   (creadas con saves espaciados). Si no tiene, crear con script o
   manualmente.
-- El repo `promptstash-<login>` en GitHub: si ya existía de un
+- El repo `prompteando-<login>` en GitHub: si ya existía de un
   ciclo anterior, **borrarlo** desde la UI de GitHub para tener un
   estado limpio (commits fresh-start).
 
@@ -51,7 +51,7 @@ Setup: el user tiene 5 prompts × 3 versions = 15 versions con
 
 Verificar pre-state:
 ```bash
-docker compose exec -T postgres psql -U promptstash -d promptstash -c "
+docker compose exec -T postgres psql -U prompteando -d prompteando -c "
   SELECT COUNT(*) AS pending
   FROM prompt_versions pv
   JOIN prompts p ON p.id = pv.prompt_id
@@ -73,7 +73,7 @@ Acción:
 
 Verificar en BD durante el progreso:
 ```bash
-docker compose exec -T postgres psql -U promptstash -d promptstash -c "
+docker compose exec -T postgres psql -U prompteando -d prompteando -c "
   SELECT backfill_status, backfill_total, backfill_processed,
          backfill_started_at, backfill_finished_at, backfill_failure_reason
   FROM user_github_connection
@@ -164,7 +164,7 @@ Resultado: el conteo de commits en GitHub no cambia.
 
 ### 7. Disconnect + reconnect resetea el backfill
 
-1. Borrar el repo `promptstash-<login>` en GitHub manualmente
+1. Borrar el repo `prompteando-<login>` en GitHub manualmente
    (para que la prueba sea limpia).
 2. En `/settings/integrations`, click "Disconnect".
    - BD: `user_github_connection` row eliminada.
@@ -230,7 +230,7 @@ loop antes de mostrarlo. Out of scope V1.)
 
 1. Empezar un backfill (≥10 versions pending).
 2. Cuando processed ~ 3-5, ir a GitHub → Settings → Applications
-   → Authorized OAuth Apps → revocar promptstash.
+   → Authorized OAuth Apps → revocar prompteando.
 3. En el siguiente commit del backfill, el gateway responde 401.
 4. UI eventualmente muestra:
    - El card de progreso desaparece.

@@ -9,7 +9,7 @@ Pre-condiciones:
 - `.env` con `ENCRYPTION_KEY` (32 bytes en base64).
 - Sesión activa en browser.
 - **Una cuenta GitHub disponible** sin un repo previo
-  `promptstash-<username>` (para validar el path de creación)
+  `prompteando-<username>` (para validar el path de creación)
   + opcionalmente una segunda con un repo existente con ese nombre
   (para validar el path de reuse).
 
@@ -61,7 +61,7 @@ Verificar:
 ### 3. Connection inexistente devuelve 404
 
 ```bash
-docker compose exec -T postgres psql -U promptstash -d promptstash \
+docker compose exec -T postgres psql -U prompteando -d prompteando \
   -c "DELETE FROM user_github_connection;"
 
 curl -s -o /dev/null -w "%{http_code}\n" -H "Cookie: $COOKIE" \
@@ -77,7 +77,7 @@ Manual (browser):
 3. Card GitHub muestra "Conectar GitHub" (estado no-conectado) +
    warning sobre el scope `repo`.
 4. Click → redirect a `https://github.com/login/oauth/authorize?...`.
-5. GitHub muestra consent screen "promptstash wants to access your
+5. GitHub muestra consent screen "prompteando wants to access your
    repositories" → Authorize.
 6. GitHub redirige a `/api/integrations/github/oauth-callback?code=...&state=...`.
 7. Server intercambia code → token, valida scope `repo`, crea repo
@@ -87,18 +87,18 @@ Manual (browser):
    "GitHub conectado".
 
 **En GitHub**: ir a https://github.com/<username> → debe aparecer
-repo `promptstash-<username>` privado con `README.md` que contiene
+repo `prompteando-<username>` privado con `README.md` que contiene
 el `README_TEMPLATE`.
 
 Verificar en DB:
 ```bash
-docker compose exec -T postgres psql -U promptstash -d promptstash \
+docker compose exec -T postgres psql -U prompteando -d prompteando \
   -c 'SELECT user_id, github_login, scopes, repo_full_name, default_branch, length(encrypted_access_token) FROM user_github_connection;'
 # Expected:
 # - 1 row con tu user_id
 # - github_login = tu username
 # - scopes = {repo} (o que incluya 'repo')
-# - repo_full_name = "<username>/promptstash-<username>"
+# - repo_full_name = "<username>/prompteando-<username>"
 # - default_branch = "main"
 # - length del ciphertext > 0 y NO se parece al token plaintext
 ```
@@ -106,7 +106,7 @@ docker compose exec -T postgres psql -U promptstash -d promptstash \
 ### 5. Encrypted token NO se parece al token original
 
 ```bash
-TOKEN_CT=$(docker compose exec -T postgres psql -U promptstash -d promptstash \
+TOKEN_CT=$(docker compose exec -T postgres psql -U prompteando -d prompteando \
   -tAc "SELECT encrypted_access_token FROM user_github_connection LIMIT 1;")
 echo "$TOKEN_CT"
 # Expected: formato <ivB64>:<ctB64>:<authTagB64>, los 3 segmentos
@@ -116,7 +116,7 @@ echo "$TOKEN_CT"
 
 ### 6. Reuse on collision
 
-1. En GitHub crear manualmente un repo `promptstash-<username>`
+1. En GitHub crear manualmente un repo `prompteando-<username>`
    privado (sin README) en la misma cuenta usada en §4.
 2. `DELETE FROM user_github_connection;` y revocar la app desde
    https://github.com/settings/applications (para que el OAuth pida
@@ -146,7 +146,7 @@ curl -s -o /dev/null -w "%{http_code}\n" -X DELETE -H "Cookie: $COOKIE" \
   https://3010.mauroluna.dev/api/integrations/github
 # Expected: 204 (idempotent — repetir 2 veces, ambas dan 204)
 
-docker compose exec -T postgres psql -U promptstash -d promptstash \
+docker compose exec -T postgres psql -U prompteando -d prompteando \
   -c "SELECT count(*) FROM user_github_connection;"
 # Expected: 0
 ```
@@ -205,7 +205,7 @@ Después de §4, sin disconnect, gatillar el flow OAuth de nuevo:
 4. Repo no se recrea (reuse path).
 
 ```bash
-docker compose exec -T postgres psql -U promptstash -d promptstash \
+docker compose exec -T postgres psql -U prompteando -d prompteando \
   -c "SELECT count(*) FROM user_github_connection WHERE user_id = '<your-id>';"
 # Expected: 1
 ```

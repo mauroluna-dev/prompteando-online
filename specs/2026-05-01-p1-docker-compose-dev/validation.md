@@ -19,9 +19,9 @@ docker compose ps --format "table {{.Service}}\t{{.Status}}"
 
 ### 2. Postgres acepta conexiones
 ```bash
-psql postgres://promptstash:promptstash@localhost:5432/promptstash \
-  -c '\l' | grep -q promptstash
-# Expected: exit 0 (la DB "promptstash" aparece en la lista).
+psql postgres://prompteando:prompteando@localhost:5432/prompteando \
+  -c '\l' | grep -q prompteando
+# Expected: exit 0 (la DB "prompteando" aparece en la lista).
 ```
 
 ### 3. Redis responde a ping
@@ -53,7 +53,7 @@ docker compose --profile full down
 
 ### 6. Build standalone del Dockerfile
 ```bash
-docker build --target prod -t promptstash:test .
+docker build --target prod -t prompteando:test .
 # Expected: termina sin error.
 ```
 
@@ -73,14 +73,14 @@ docker build --target prod -t promptstash:test .
 ### 8. Persistencia entre `down`/`up`
 ```bash
 docker compose up -d postgres
-psql postgres://promptstash:promptstash@localhost:5432/promptstash \
+psql postgres://prompteando:prompteando@localhost:5432/prompteando \
   -c "CREATE TABLE _smoke (id int);"
 docker compose down
 docker compose up -d postgres
-psql postgres://promptstash:promptstash@localhost:5432/promptstash \
+psql postgres://prompteando:prompteando@localhost:5432/prompteando \
   -c "\dt _smoke" | grep -q _smoke
 # Expected: la tabla persiste; exit 0.
-psql postgres://promptstash:promptstash@localhost:5432/promptstash \
+psql postgres://prompteando:prompteando@localhost:5432/prompteando \
   -c "DROP TABLE _smoke;"
 docker compose down
 ```

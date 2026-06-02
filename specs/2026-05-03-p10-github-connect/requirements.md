@@ -10,7 +10,7 @@ y P12 backfill cronológico).
 
 P10 entrega: el usuario clickea **"Conectar GitHub"** en
 `/settings/integrations`, autoriza permisos `repo` vía OAuth, y el
-backend asegura que exista un repo privado `promptstash-<username>`
+backend asegura que exista un repo privado `prompteando-<username>`
 con un README inicial. El repo queda listo para que P11 le commitee
 versiones.
 
@@ -25,7 +25,7 @@ repo provisionado.
    de una App es valiosa para B2B/marketplace pero excesiva para
    este product fit. `repo` da read+write a todos los repos del
    usuario; lo comunicamos honestamente en la UI ("solo tocamos
-   `promptstash-<username>`, código fuente en X.com/promptstash").
+   `prompteando-<username>`, código fuente en X.com/prompteando").
 
 2. **OAuth manual desacoplado de Auth.js**, no scope-bump del
    provider de login. Razón: el provider GitHub de Auth.js sirve
@@ -36,7 +36,7 @@ repo provisionado.
    `GITHUB_CLIENT_SECRET` (misma OAuth app, scope distinto por
    request).
 
-3. **Reuse on collision.** Si `promptstash-<username>` ya existe en
+3. **Reuse on collision.** Si `prompteando-<username>` ya existe en
    la cuenta GitHub del usuario, lo adoptamos como destination
    repo. Solo escribimos `README.md` si falta. No fallar, no
    sufijar.
@@ -52,7 +52,7 @@ repo provisionado.
    lo cambia manualmente en GitHub. Toggle en UI queda fuera de
    scope.
 
-6. **Repo name = `promptstash-<github_login>`.** `github_login` es el
+6. **Repo name = `prompteando-<github_login>`.** `github_login` es el
    `login` que devuelve `GET /user` en GitHub (puede ser el username
    personal). Si el usuario quiere conectar con una organización,
    no lo soportamos en V1 (solo cuenta personal).
@@ -67,7 +67,7 @@ repo provisionado.
   githubLogin: string              // ej "mauroluna"
   encryptedAccessToken: string     // ciphertext AES-256-GCM
   scopes: string[]                 // ej ["repo"]
-  repoFullName: string             // ej "mauroluna/promptstash-mauroluna"
+  repoFullName: string             // ej "mauroluna/prompteando-mauroluna"
   defaultBranch: string            // típicamente "main"
   connectedAt: Date
   ```
@@ -84,7 +84,7 @@ repo provisionado.
 - `constants.ts`:
   - `REQUIRED_SCOPES = ["repo"] as const`
   - `OAUTH_STATE_TTL_SECONDS = 600` (10 min)
-  - `REPO_DESCRIPTION = "Versioned prompts managed by promptstash"`
+  - `REPO_DESCRIPTION = "Versioned prompts managed by prompteando"`
   - `README_TEMPLATE` (string con explicación + link a la app)
   - `DEFAULT_BRANCH = "main"`
 
@@ -123,7 +123,7 @@ repo provisionado.
     2. Verificar `REQUIRED_SCOPES ⊆ scopes` o throw
        `GitHubInsufficientScopeError`.
     3. `gateway.getAuthenticatedUser(accessToken)` → `{ login }`.
-    4. `gateway.ensureRepo(accessToken, "promptstash-<login>")`.
+    4. `gateway.ensureRepo(accessToken, "prompteando-<login>")`.
     5. `gateway.ensureReadme(accessToken, fullName, defaultBranch)`.
     6. `crypto.encrypt(accessToken)`, construir `GitHubConnection.create(...)`,
        persistir vía `repo.save` (overwrite si ya hay connection del
@@ -169,7 +169,7 @@ repo provisionado.
       → 200 → `{ committed: false }`.
     - 404 → `octokit.repos.createOrUpdateFileContents({
       owner, repo, path: "README.md",
-      message: "chore: initial promptstash README",
+      message: "chore: initial prompteando README",
       content: btoa(README_TEMPLATE),
       branch: defaultBranch })` → `{ committed: true, sha }`.
 - **Adapter** `BunCryptoAdapter` extendido con `encrypt/decrypt`
@@ -219,7 +219,7 @@ repo provisionado.
   Card "GitHub":
   - Estado **no conectado**: copy explicando el beneficio + warning
     discreto sobre el scope ("requiere acceso a tus repos para crear
-    `promptstash-<usuario>` privado") + botón "Conectar GitHub" →
+    `prompteando-<usuario>` privado") + botón "Conectar GitHub" →
     fetch `/api/integrations/github/oauth-start` →
     `window.location.href = url`.
   - Estado **conectado**: muestra `repoFullName` + `githubLogin`,

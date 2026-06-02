@@ -1,4 +1,4 @@
-# Roadmap — promptstash
+# Roadmap — prompteando
 
 > **Convenciones canónicas: ver [`conventions.md`](./conventions.md)**.
 > Toda fase desde P10 sigue esas convenciones. P0–P9 fueron alineadas
@@ -146,7 +146,7 @@ posterior caiga en su lugar.
 ---
 
 ## P9 — API pública de consumo + rate limiting
-**Goal**: leer un prompt desde n8n / curl con `Authorization: Bearer ps_live_xxx`.
+**Goal**: leer un prompt desde n8n / curl con `Authorization: Bearer po_live_xxx`.
 **Deliverables**:
 - **Application**: `GetLatestPublishedVersionQuery` (by user_id + slug); port `RateLimiter`, port `Cache`.
 - **Infrastructure**: `BunRedisRateLimiter` (sliding window 100 req/min default), `BunRedisCache` (TTL 5min, invalidate on save), `ApiKeyAuthMiddleware` (Elysia).
@@ -207,7 +207,7 @@ curl con Bearer ok).
 ---
 
 ## P10 — GitHub repo creation on connect
-**Goal**: usuario conecta GitHub → se crea repo `promptstash-<username>` privado.
+**Goal**: usuario conecta GitHub → se crea repo `prompteando-<username>` privado.
 **Deliverables**:
 - **Domain**: entity `GitHubConnection`.
 - **Application**: `ConnectGitHubCommand`, `DisconnectGitHubCommand`, `GetGitHubConnectionQuery`; port `GitHubGateway`.
@@ -217,7 +217,7 @@ curl con Bearer ok).
 - **Frontend**: card en `/settings/integrations` con botón "Conectar GitHub". Si user signed up con Google, dispara OAuth de GitHub adicional.
 - README en repo creado: `README.md` con explicación + link a la app.
 
-**Verification**: usuario nuevo signed up con Google → conecta GitHub → repo `promptstash-<username>` aparece en su GitHub privado con README.
+**Verification**: usuario nuevo signed up con Google → conecta GitHub → repo `prompteando-<username>` aparece en su GitHub privado con README.
 **Depends on**: P9.
 
 ---
@@ -278,10 +278,10 @@ curl con Bearer ok).
 
 ## P15 — Deploy a VPS (Traefik externo)
 **Goal**: app accesible en dominio público con HTTPS.
-**Asunción**: la VPS ya tiene Traefik corriendo como reverse proxy global. promptstash solo aporta su `docker-compose.prod.yml` con labels Traefik para auto-discovery.
+**Asunción**: la VPS ya tiene Traefik corriendo como reverse proxy global. prompteando solo aporta su `docker-compose.prod.yml` con labels Traefik para auto-discovery.
 **Deliverables**:
 - `Dockerfile` de producción (multi-stage, mínimo).
-- `docker-compose.prod.yml` con app + postgres + redis. La app expone su puerto interno (no `ports:` mappeado al host) y declara labels Traefik (`traefik.enable=true`, `traefik.http.routers.promptstash.rule=Host(...)`, `...tls.certresolver=...`). Conectado a la network externa de Traefik.
+- `docker-compose.prod.yml` con app + postgres + redis. La app expone su puerto interno (no `ports:` mappeado al host) y declara labels Traefik (`traefik.enable=true`, `traefik.http.routers.prompteando.rule=Host(...)`, `...tls.certresolver=...`). Conectado a la network externa de Traefik.
 - Script `scripts/deploy.sh`: SSH al VPS, `git pull`, `docker compose -f docker-compose.prod.yml up -d --build`.
 - `.env.production.example` documentado.
 - Sección "Deploy" en `README.md`: prerequisitos (Traefik ya corriendo, network compartida, dominio apuntando), pasos de primer deploy, rotación de secrets.

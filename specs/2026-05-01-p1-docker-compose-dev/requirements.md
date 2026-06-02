@@ -20,7 +20,7 @@ agregar `docker-compose.prod.yml` y un script de deploy.
 - `.dockerignore` mínimo (node_modules, dist, .git, .env, specs).
 - Healthchecks reales (no TCP-only) para los 3 servicios.
 - Volumes nombrados para persistencia de Postgres y Redis.
-- Network nombrada `promptstash` (futureproof para Traefik en P15).
+- Network nombrada `prompteando` (futureproof para Traefik en P15).
 - Sección "Dev environment" en `README.md`.
 
 ## Out of scope
@@ -59,11 +59,11 @@ lo que el sistema necesita. Cada fase llena su valor cuando llega.
 
 ### Postgres
 - Imagen: `postgres:16-alpine`.
-- Credenciales dev: usuario `promptstash`, password `promptstash`,
-  db `promptstash`.
+- Credenciales dev: usuario `prompteando`, password `prompteando`,
+  db `prompteando`.
 - Puerto 5432 expuesto al host (para `psql`, Drizzle Studio, etc.).
 - Volume nombrado `postgres_data`.
-- Healthcheck: `pg_isready -U promptstash`.
+- Healthcheck: `pg_isready -U prompteando`.
 
 ### Redis
 - Imagen: `redis:7-alpine`.
@@ -81,7 +81,7 @@ lo que el sistema necesita. Cada fase llena su valor cuando llega.
   (Bun ya está en la imagen, sin necesidad de instalar curl/wget).
 
 ### Network
-- Named bridge `promptstash`. Los 3 servicios la usan. P15 podrá
+- Named bridge `prompteando`. Los 3 servicios la usan. P15 podrá
   declararla externa para integrarse con Traefik.
 
 ### .dockerignore

@@ -148,7 +148,7 @@ export function useCurrentUser() {
 
 9.2. Crear `src/frontend/components/Header.tsx`:
 - Top-level `<header>` con flex justify-between, padding.
-- Izquierda: texto "promptstash" (logo).
+- Izquierda: texto "prompteando" (logo).
 - Derecha: `<UserMenu />` (recibe user via props o lee `useCurrentUser`
   internamente — preferir que lo lea internamente para no pasar props
   redundantes).
