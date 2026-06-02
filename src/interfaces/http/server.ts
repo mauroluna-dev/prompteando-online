@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 import { ZodError } from "zod";
 import index from "../../frontend/index.html";
 import { env } from "@/infrastructure/config/env";
+import { initSentry, captureException } from "@/infrastructure/observability/sentry";
 import { handleAuth } from "@/infrastructure/auth/auth.handler";
 import { authJsSessionResolver } from "@/infrastructure/auth/auth-js-session-resolver.adapter";
 import { db } from "@/infrastructure/persistence/db";
@@ -75,6 +76,10 @@ import { saveVersionSchema } from "./schemas/prompt-version";
 import { createApiKeySchema } from "./schemas/api-key";
 import { requireUser } from "./lib/require-user";
 import { requireApiKey } from "./lib/require-api-key";
+
+// Opt-in error tracking (no-op unless SENTRY_DSN is set). First thing
+// at boot so any startup error is captured too.
+initSentry();
 
 // ───────────────── Composition root ─────────────────
 const cryptoAdapter = new BunCryptoAdapter();
@@ -203,6 +208,16 @@ function parsePromptSlugParam(value: string): Slug | null {
 
 // ───────────────── Routes ─────────────────
 const app = new Elysia()
+  // Unexpected (5xx) errors reach here after route handlers have already
+  // mapped known domain errors to their status codes. Report them to
+  // Sentry and return a generic 500; client-error codes fall through to
+  // Elysia's default handling.
+  .onError(({ error, code }) => {
+    if (code === "UNKNOWN" || code === "INTERNAL_SERVER_ERROR") {
+      captureException(error);
+      return jsonError(500, "Internal server error");
+    }
+  })
   .get("/health", () => ({ ok: true }))
   .all("/auth/*", ({ request }) => handleAuth(request))
   .get("/api/me", async ({ request }) => {
