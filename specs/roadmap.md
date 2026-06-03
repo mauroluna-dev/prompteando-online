@@ -574,6 +574,30 @@ externos → enganche a CI/CD.
 - **Organización**: folders / tags / búsqueda.
 **Depends on**: P19, P21.
 
+### P26 — Conexión GitHub acotada a un repo (modo "paranoico") 📝
+**Goal**: ofrecer, **además** del OAuth `repo` actual (acceso a todos
+los repos), una segunda forma de conectar la integración que dé acceso a
+**un solo repo elegido por el usuario** — vía fine-grained PAT.
+**Deliverables**:
+- Columna `connection_method` (`'oauth' | 'pat'`) + migración.
+- Command `ConnectGitHubWithTokenCommand` + gateway `verifyRepoAccess`.
+- Ruta `POST /api/integrations/github/token`.
+- UI: selector de método en `/settings/integrations` + form PAT con guía
+  paso a paso + estado conectado que muestra el repo exacto.
+- Reusa cifrado y jobs de commit/backfill (son agnósticos al método).
+  **Sin env nuevas, sin infra nueva** (clave para self-host OSS).
+**Depends on**: P10–P12. Spec:
+`specs/2026-06-03-p26-github-scoped-repo-access/`.
+
+### P27 — Conexión GitHub vía GitHub App (follow-up de P26) 🔮
+**Goal**: la UX más fluida del acceso por-repo (instalar app + tildar
+repos) con tokens efímeros minteados por JWT. Alternativa "correcta" al
+PAT para quien la prefiera; coexiste como tercer `connection_method`.
+**Costo**: registrar GitHub App (App ID + private key + webhook secret),
+auth nueva (`createAppAuth`), manejo de eventos de instalación. Por eso
+se difiere — P26 entrega el "repo específico" sin esa infra.
+**Depends on**: P26.
+
 ### Fuera de foco (territorio de Langfuse)
 Observability/tracing event-level, evaluation/scoring, análisis de
 costos. No competimos en la plataforma entera — ganamos en el slice de
