@@ -3,7 +3,7 @@ import { migrate } from "drizzle-orm/bun-sql/migrator";
 import { SQL } from "bun";
 import { env } from "@/infrastructure/config/env";
 
-const sql = new SQL(env.DATABASE_URL);
+const sql = new SQL(env.databaseUrl);
 const db = drizzle(sql);
 
 console.log("Running migrations...");

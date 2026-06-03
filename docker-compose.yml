@@ -48,7 +48,11 @@ services:
       target: prod
     env_file: .env
     environment:
-      DATABASE_URL: postgres://prompteando:prompteando@postgres:5432/prompteando
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: prompteando
+      POSTGRES_PASSWORD: prompteando
+      POSTGRES_DB: prompteando
       REDIS_URL: redis://redis:6379
     ports:
       - "3010:3010"
