@@ -57,7 +57,9 @@ export function PromptsListPage() {
     if (!q) return prompts;
     return prompts.filter(
       (p) =>
-        p.name.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q),
+        p.name.toLowerCase().includes(q) ||
+        p.slug.toLowerCase().includes(q) ||
+        p.tags.some((t) => t.toLowerCase().includes(q)),
     );
   }, [prompts, query]);
 
@@ -120,6 +122,18 @@ export function PromptsListPage() {
                     <span aria-hidden>·</span>
                     <span>Actualizado {formatRelative(p.updatedAt)}</span>
                   </div>
+                  {p.tags.length > 0 ? (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {p.tags.map((t) => (
+                        <span
+                          key={t}
+                          className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
                 <SyncBadge hasGithub={hasGithub} />
                 <ChevronRight className="text-muted-foreground group-hover:text-foreground h-4 w-4 transition-colors" />

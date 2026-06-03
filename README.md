@@ -104,6 +104,14 @@ Cada versión puede llevar **config** (model params como JSON libre:
 `/render` la devuelven en el campo `config`, así cambiás de modelo o
 tuneás parámetros sin tocar el código del consumidor.
 
+## Composición + organización
+
+- **Composición**: incluí un prompt dentro de otro con `{{>otro-slug}}` —
+  se expande al renderizar (con detección de ciclos y profundidad máxima).
+  Reutilizá headers/footers/instrucciones comunes sin duplicar.
+- **Tags + búsqueda**: etiquetá tus prompts y filtralos por nombre, slug o
+  tag desde la lista (y vía `GET /api/prompts?q=&tag=`).
+
 ## Webhooks
 
 Recibí un `POST` firmado (HMAC-SHA256) en tu endpoint cuando se crea una

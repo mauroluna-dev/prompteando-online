@@ -16,5 +16,6 @@ export {
   serializeChatMessages,
 } from "./chat";
 export type { ChatMessage, ChatRenderResult, ChatRole, PromptType } from "./chat";
+export { applyIncludes, extractIncludes } from "./composition";
 export { Prompt } from "./prompt.entity";
 export type { PromptDTO, PromptRow, TemplateVarMeta } from "./prompt.entity";

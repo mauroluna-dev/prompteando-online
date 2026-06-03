@@ -12,6 +12,7 @@ export class CreatePromptCommand {
     userId: string,
     name: string,
     description?: string,
+    tags: string[] = [],
   ): Promise<Prompt> {
     const promptName = PromptName.parse(name);
     const baseSlug = Slug.generate(name);
@@ -25,6 +26,7 @@ export class CreatePromptCommand {
       slug,
       description ?? null,
       now,
+      tags.map((t) => t.trim()).filter((t) => t.length > 0),
     );
     await this.repo.save(prompt);
     return prompt;
