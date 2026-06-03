@@ -10,7 +10,7 @@
 # The app/migrate services run a PREBUILT image pulled from a registry
 # (GitHub Container Registry by default) — prod does NOT build from
 # source. The image is published by .github/workflows/release.yml. Pin
-# a specific version with APP_IMAGE in .env.production (recommended over
+# a specific version with APP_IMAGE in .env (recommended over
 # the floating `:latest`):
 #     APP_IMAGE=ghcr.io/mauroluna-dev/prompteando-online:v1.2.3
 #
@@ -18,9 +18,9 @@
 # GHCR once before pulling — with a token that has `read:packages`:
 #     echo $GHCR_TOKEN | docker login ghcr.io -u <github-user> --password-stdin
 #
-# Deploy (interpolation + container env both come from .env.production):
-#     docker compose --env-file .env.production -f docker-compose.prod.yml pull
-#     docker compose --env-file .env.production -f docker-compose.prod.yml up -d
+# Deploy (interpolation + container env both come from .env):
+#     docker compose --env-file .env -f docker-compose.prod.yml pull
+#     docker compose --env-file .env -f docker-compose.prod.yml up -d
 #
 # Postgres and Redis are internal-only (never published to the host).
 
@@ -39,9 +39,9 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env.production}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.production}
-      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env.production}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -66,13 +66,11 @@ services:
       timeout: 5s
       retries: 5
 
-  # One-shot: applies Drizzle migrations, then exits. The app waits for
-  # it to complete successfully before booting.
   migrate:
     image: ${APP_IMAGE:-ghcr.io/mauroluna-dev/prompteando-online:latest}
     restart: "no"
     command: ["bun", "run", "db:migrate"]
-    env_file: .env.production
+    env_file: .env
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     depends_on:
@@ -84,13 +82,10 @@ services:
   app:
     image: ${APP_IMAGE:-ghcr.io/mauroluna-dev/prompteando-online:latest}
     restart: unless-stopped
-    env_file: .env.production
-    # Service-name hosts override whatever DATABASE_URL/REDIS_URL might
-    # be set in .env.production (environment wins over env_file).
+    env_file: .env
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379
-    # Internal only — reachable as `app:3010` on the prompteando network.
     expose:
       - "3010"
     depends_on:
