@@ -18,6 +18,9 @@
 # GHCR once before pulling — with a token that has `read:packages`:
 #     echo $GHCR_TOKEN | docker login ghcr.io -u <github-user> --password-stdin
 #
+# Required in .env: POSTGRES_PASSWORD (the DB credential). POSTGRES_USER
+# and POSTGRES_DB default to `prompteando` if unset. See .env.example.
+#
 # Deploy (interpolation + container env both come from .env):
 #     docker compose --env-file .env -f docker-compose.prod.yml pull
 #     docker compose --env-file .env -f docker-compose.prod.yml up -d
@@ -39,9 +42,9 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_USER: ${POSTGRES_USER:-prompteando}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-prompteando}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -72,7 +75,7 @@ services:
     command: ["bun", "run", "db:migrate"]
     env_file: .env
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: postgres://${POSTGRES_USER:-prompteando}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-prompteando}
     depends_on:
       postgres:
         condition: service_healthy
@@ -84,7 +87,7 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: postgres://${POSTGRES_USER:-prompteando}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-prompteando}
       REDIS_URL: redis://redis:6379
     expose:
       - "3010"
