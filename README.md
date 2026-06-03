@@ -28,7 +28,10 @@ Un versionador de prompts con cero fricción:
   para consumirlo desde n8n, Zapier, Make, `curl` o tu código.
 - 🐙 **Tu historial, tu repo (opcional pero flagship).** Si conectás
   GitHub, cada save se commitea en *tu* repo bajo *tu* cuenta. Si mañana
-  Prompteando desaparece, te quedás con todo.
+  Prompteando desaparece, te quedás con todo. ¿No querés darnos acceso a
+  todos tus repos? Conectá con un **token acotado a un solo repo**
+  (fine-grained PAT) y no vemos ningún otro — ver
+  [Conectar GitHub](#conectar-github).
 - 📦 **Exportable por diseño.** Aun sin GitHub, bajás todo tu historial
   en ZIP/JSON cuando quieras. Nunca rehén de un proveedor.
 - 📊 **Métricas de uso por API Key**: requests/día, p50/p95, error rate,
@@ -253,6 +256,24 @@ Para cada una: https://github.com/settings/applications/new →
 **Homepage URL** `http://localhost:3010` (o tu host público) y la
 **Authorization callback URL** correspondiente. Copiá Client ID y generá
 el Client Secret.
+
+### Conectar GitHub
+
+Desde **Settings → Conectar GitHub** hay **dos formas** de vincular tu
+historial, y elegís cuánto acceso darnos:
+
+1. **Acceso completo (recomendado, 1 click).** OAuth con scope `repo`.
+   Te creamos una carpeta privada `prompteando-<usuario>` y commiteamos
+   ahí. GitHub pide acceso a tus repos, pero solo tocamos esa carpeta.
+2. **Un solo repo (para los más cuidadosos).** Pegás un
+   [fine-grained PAT](https://github.com/settings/personal-access-tokens/new)
+   acotado a **un** repo tuyo, con permiso `Contents: Read and write`. No
+   vemos ningún otro repo. No requiere registrar nada ni variables de
+   entorno extra — el token se cifra at-rest con `ENCRYPTION_KEY`, igual
+   que el de OAuth.
+
+Las dos guardan una sola conexión por usuario; cambiar de modo es
+desconectar y reconectar.
 
 ### Google OAuth Client
 
