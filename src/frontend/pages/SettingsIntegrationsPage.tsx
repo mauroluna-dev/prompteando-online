@@ -6,17 +6,24 @@ import {
   ExternalLink,
   Github,
   Hash,
+  KeyRound,
   Loader2,
+  ShieldCheck,
   Slash,
   Unplug,
 } from "lucide-react";
 import { mutate } from "swr";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/frontend/components/states";
+import { cn } from "@/lib/utils";
 import type { GitHubConnectionView } from "@/domain/github-connection";
 import { useGithubConnection } from "@/frontend/hooks/use-github-connection";
 import {
+  connectGithubWithToken,
+  ConnectGithubTokenError,
   disconnectGithub,
   getGithubOAuthUrl,
 } from "@/frontend/lib/api/integrations";
@@ -117,7 +124,7 @@ export function SettingsIntegrationsPage() {
   const handleDisconnect = async () => {
     if (
       !confirm(
-        "¿Desconectar GitHub? Tu carpeta y las copias no se borran. Si querés, después podés quitarnos el permiso desde la configuración de tu cuenta de GitHub.",
+        "¿Desconectar GitHub? Tu repo y los commits no se borran; podés revocar el token desde github.com/settings/applications.",
       )
     ) {
       return;
@@ -156,12 +163,8 @@ export function SettingsIntegrationsPage() {
             <div className="flex flex-col">
               <h2 className="font-display text-lg font-semibold">GitHub</h2>
               <p className="text-muted-foreground text-sm">
-                Cada vez que guardás, dejamos una copia en una carpeta privada
-                de tu GitHub (
-                <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">
-                  prompteando-&lt;tu-usuario&gt;
-                </code>
-                ). Tu historial queda en tu cuenta.
+                Cada vez que guardás, dejamos una copia en tu GitHub. Tu
+                historial vive en tu cuenta.
               </p>
             </div>
           </div>
@@ -221,6 +224,8 @@ export function SettingsIntegrationsPage() {
   );
 }
 
+type ConnectMethod = "oauth" | "pat";
+
 function NotConnectedState({
   onConnect,
   connecting,
@@ -228,23 +233,213 @@ function NotConnectedState({
   onConnect: () => void;
   connecting: boolean;
 }) {
+  const [method, setMethod] = useState<ConnectMethod>("oauth");
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="bg-warning-bg text-warning-fg rounded-md border border-amber-200 p-3 text-xs">
-        <strong className="font-medium">Importante:</strong> GitHub nos pide
-        acceso a tus repositorios para poder crear y escribir tu carpeta. Solo
-        tocamos{" "}
-        <code className="font-mono">prompteando-&lt;tu-usuario&gt;</code>.
-        Nuestro código es abierto: podés revisarlo en GitHub cuando quieras.
+    <div className="flex flex-col gap-4">
+      <p className="text-muted-foreground text-sm">
+        Elegí cuánto acceso querés darnos a GitHub:
+      </p>
+
+      <div
+        className="grid gap-3 sm:grid-cols-2"
+        role="radiogroup"
+        aria-label="Tipo de acceso a GitHub"
+      >
+        <MethodCard
+          icon={ShieldCheck}
+          title="Acceso completo"
+          subtitle="Recomendado · 1 click"
+          description="Te creamos una carpeta privada prompteando-<usuario>. GitHub nos pide acceso a tus repos, pero solo tocamos esa carpeta."
+          selected={method === "oauth"}
+          onSelect={() => setMethod("oauth")}
+        />
+        <MethodCard
+          icon={KeyRound}
+          title="Elegir un solo repo"
+          subtitle="Para los más cuidadosos"
+          description="Vos generás un token acotado a un repo tuyo y lo pegás acá. No vemos ningún otro repo."
+          selected={method === "pat"}
+          onSelect={() => setMethod("pat")}
+        />
       </div>
+
+      {method === "oauth" ? (
+        <div className="flex flex-col gap-3">
+          <div className="bg-warning-bg text-warning-fg rounded-md border border-amber-200 p-3 text-xs">
+            <strong className="font-medium">Importante:</strong> GitHub nos pide
+            acceso a tus repos para poder crear y escribir tu carpeta. Solo
+            tocamos{" "}
+            <code className="font-mono">prompteando-&lt;tu-usuario&gt;</code>.
+            Nuestro código es abierto: podés revisarlo cuando quieras.
+          </div>
+          <div>
+            <Button onClick={onConnect} disabled={connecting}>
+              {connecting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Github className="mr-2 h-4 w-4" />
+              )}
+              Conectar GitHub
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <ConnectWithTokenForm />
+      )}
+    </div>
+  );
+}
+
+function MethodCard({
+  icon: Icon,
+  title,
+  subtitle,
+  description,
+  selected,
+  onSelect,
+}: {
+  icon: typeof ShieldCheck;
+  title: string;
+  subtitle: string;
+  description: string;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onSelect}
+      className={cn(
+        "flex flex-col items-start gap-1 rounded-lg border p-4 text-left transition-colors",
+        selected
+          ? "border-primary bg-primary/5 ring-primary/30 ring-1"
+          : "hover:border-foreground/20 hover:bg-accent/40",
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <Icon className="h-4 w-4" />
+        <span className="font-medium">{title}</span>
+      </div>
+      <span className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+        {subtitle}
+      </span>
+      <span className="text-muted-foreground mt-1 text-xs leading-relaxed">
+        {description}
+      </span>
+    </button>
+  );
+}
+
+const TOKEN_ERROR_COPY: Record<string, string> = {
+  "token-invalid":
+    "El token no es válido o expiró. Generá uno nuevo en GitHub y pegalo de nuevo.",
+  "repo-access-denied":
+    "El token no tiene acceso a ese repo. Revisá que owner/repo esté bien escrito y que se lo hayas dado al token.",
+  "repo-write-denied":
+    "El token llega al repo pero no puede escribir. Dale el permiso Contents: Read and write.",
+  unknown: "No pudimos conectar. Probá de nuevo en un momento.",
+};
+
+function ConnectWithTokenForm() {
+  const [repoFullName, setRepoFullName] = useState("");
+  const [token, setToken] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await connectGithubWithToken(token.trim(), repoFullName.trim());
+      await mutate("/api/integrations/github");
+      toast.success("GitHub conectado con acceso a un solo repo.");
+    } catch (err) {
+      const code =
+        err instanceof ConnectGithubTokenError ? err.code : "unknown";
+      setError(TOKEN_ERROR_COPY[code] ?? TOKEN_ERROR_COPY.unknown!);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const canSubmit = repoFullName.trim().length > 0 && token.trim().length > 0;
+
+  return (
+    <div className="bg-card flex flex-col gap-4 rounded-lg border p-4">
+      <ol className="text-muted-foreground flex flex-col gap-1.5 text-xs">
+        <li>
+          1. Abrí{" "}
+          <a
+            href="https://github.com/settings/personal-access-tokens/new"
+            target="_blank"
+            rel="noreferrer"
+            className="text-foreground inline-flex items-center gap-1 underline underline-offset-2"
+          >
+            GitHub → nuevo token acotado
+            <ExternalLink className="h-3 w-3" />
+          </a>
+          .
+        </li>
+        <li>
+          2. En <strong>Repository access</strong> elegí{" "}
+          <strong>Only select repositories</strong> y marcá tu repo.
+        </li>
+        <li>
+          3. En <strong>Repository permissions</strong> poné{" "}
+          <strong>Contents: Read and write</strong>.
+        </li>
+        <li>4. Generá el token y pegalo acá abajo.</li>
+      </ol>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="repo-full-name" className="text-xs">
+          ¿Qué repo? (formato <code className="font-mono">usuario/repo</code>)
+        </Label>
+        <Input
+          id="repo-full-name"
+          value={repoFullName}
+          onChange={(e) => setRepoFullName(e.target.value)}
+          placeholder="tu-usuario/mis-prompts"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          className="h-9 font-mono text-sm"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="github-token" className="text-xs">
+          Token
+        </Label>
+        <Input
+          id="github-token"
+          type="password"
+          value={token}
+          onChange={(e) => setToken(e.target.value)}
+          placeholder="github_pat_..."
+          autoComplete="off"
+          spellCheck={false}
+          className="h-9 font-mono text-sm"
+        />
+      </div>
+
+      {error ? (
+        <p className="text-destructive text-xs" role="alert">
+          {error}
+        </p>
+      ) : null}
+
       <div>
-        <Button onClick={onConnect} disabled={connecting}>
-          {connecting ? (
+        <Button onClick={() => void handleSubmit()} disabled={busy || !canSubmit}>
+          {busy ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
-            <Github className="mr-2 h-4 w-4" />
+            <KeyRound className="mr-2 h-4 w-4" />
           )}
-          Conectar GitHub
+          Conectar con este repo
         </Button>
       </div>
     </div>
@@ -261,12 +456,38 @@ function ConnectedState({
   disconnecting: boolean;
 }) {
   const repoUrl = `https://github.com/${connection.repoFullName}`;
+  const isPat = connection.connectionMethod === "pat";
   return (
     <div className="flex flex-col gap-4">
+      <div
+        className={cn(
+          "flex items-center gap-2 rounded-md border px-3 py-2 text-xs",
+          isPat
+            ? "bg-success-bg text-success-fg border-emerald-200"
+            : "bg-muted/40 text-muted-foreground",
+        )}
+      >
+        {isPat ? (
+          <KeyRound className="h-3.5 w-3.5 shrink-0" />
+        ) : (
+          <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+        )}
+        <span>
+          {isPat ? (
+            <>
+              Acceso <strong>solo</strong> a{" "}
+              <code className="font-mono">{connection.repoFullName}</code>. No
+              vemos ningún otro repo tuyo.
+            </>
+          ) : (
+            <>Acceso completo a tus repos · escribimos solo en esta carpeta.</>
+          )}
+        </span>
+      </div>
       <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
         <Detail label="Cuenta" value={connection.githubLogin} />
         <Detail
-          label="Carpeta en GitHub"
+          label={isPat ? "Repo conectado" : "Carpeta en GitHub"}
           value={
             <a
               href={repoUrl}
@@ -281,12 +502,13 @@ function ConnectedState({
         />
         <Detail label="Conectado" value={formatDate(connection.connectedAt)} />
       </dl>
-      <div>
+      <div className="flex flex-col gap-2">
         <Button
           variant="outline"
           size="sm"
           onClick={onDisconnect}
           disabled={disconnecting}
+          className="self-start"
         >
           {disconnecting ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -295,6 +517,21 @@ function ConnectedState({
           )}
           Desconectar
         </Button>
+        {isPat ? (
+          <p className="text-muted-foreground text-xs">
+            Desconectar borra el token que guardamos. Para revocarlo del lado de
+            GitHub también, andá a{" "}
+            <a
+              href="https://github.com/settings/personal-access-tokens"
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2"
+            >
+              tus tokens en GitHub
+            </a>
+            .
+          </p>
+        ) : null}
       </div>
     </div>
   );

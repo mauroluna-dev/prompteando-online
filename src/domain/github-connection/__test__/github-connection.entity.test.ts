@@ -128,6 +128,7 @@ describe("GitHubConnection backfill state machine", () => {
       githubLogin: "octocat",
       encryptedAccessToken: "enc",
       scopes: ["repo"],
+      connectionMethod: "oauth",
       repoFullName: "octocat/prompteando-octocat",
       defaultBranch: "main",
       connectedAt: NOW,
@@ -149,6 +150,7 @@ describe("GitHubConnection backfill state machine", () => {
       githubLogin: "octocat",
       encryptedAccessToken: "enc",
       scopes: ["repo"],
+      connectionMethod: "oauth",
       repoFullName: "octocat/prompteando-octocat",
       defaultBranch: "main",
       connectedAt: NOW,
@@ -172,5 +174,67 @@ describe("GitHubConnection backfill state machine", () => {
     expect(v.backfillTotal).toBe(3);
     expect(v.backfillProcessed).toBe(1);
     expect(v.backfillStartedAt).toEqual(NOW);
+  });
+});
+
+describe("GitHubConnection connection method (P26)", () => {
+  test("create() is an oauth connection", () => {
+    expect(fresh().connectionMethod).toBe("oauth");
+    expect(fresh().toView().connectionMethod).toBe("oauth");
+  });
+
+  test("createWithToken() is a pat connection with empty scopes", () => {
+    const c = GitHubConnection.createWithToken(
+      "u1",
+      "octocat",
+      "enc:github_pat_x",
+      RepoFullName.parse("octocat/mis-prompts"),
+      "main",
+      NOW,
+    );
+    expect(c.connectionMethod).toBe("pat");
+    expect(c.scopes).toEqual([]);
+    expect(c.repoFullName.value).toBe("octocat/mis-prompts");
+    expect(c.toView().connectionMethod).toBe("pat");
+  });
+
+  test("fromRow normalizes unknown connection_method to oauth", () => {
+    const c = GitHubConnection.fromRow({
+      userId: "u1",
+      githubLogin: "octocat",
+      encryptedAccessToken: "enc",
+      scopes: [],
+      connectionMethod: "something-weird",
+      repoFullName: "octocat/mis-prompts",
+      defaultBranch: "main",
+      connectedAt: NOW,
+      backfillStatus: null,
+      backfillTotal: null,
+      backfillProcessed: null,
+      backfillStartedAt: null,
+      backfillFinishedAt: null,
+      backfillFailureReason: null,
+    });
+    expect(c.connectionMethod).toBe("oauth");
+  });
+
+  test("fromRow preserves a valid pat method", () => {
+    const c = GitHubConnection.fromRow({
+      userId: "u1",
+      githubLogin: "octocat",
+      encryptedAccessToken: "enc",
+      scopes: [],
+      connectionMethod: "pat",
+      repoFullName: "octocat/mis-prompts",
+      defaultBranch: "main",
+      connectedAt: NOW,
+      backfillStatus: null,
+      backfillTotal: null,
+      backfillProcessed: null,
+      backfillStartedAt: null,
+      backfillFinishedAt: null,
+      backfillFailureReason: null,
+    });
+    expect(c.connectionMethod).toBe("pat");
   });
 });

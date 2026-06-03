@@ -1,0 +1,1 @@
+ALTER TABLE "user_github_connection" ADD COLUMN "connection_method" text DEFAULT 'oauth' NOT NULL;

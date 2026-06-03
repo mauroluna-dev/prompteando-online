@@ -66,6 +66,10 @@ class FakeGateway implements GitHubGateway {
     return this.userResponse;
   }
 
+  async verifyRepoAccess(): Promise<{ defaultBranch: string; canWrite: boolean }> {
+    return { defaultBranch: "main", canWrite: true };
+  }
+
   async ensureRepo(): Promise<GitHubEnsureRepoResult> {
     this.ensureRepoCalls++;
     return this.repoResponse;

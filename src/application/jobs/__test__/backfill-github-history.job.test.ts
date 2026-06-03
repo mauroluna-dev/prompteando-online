@@ -80,6 +80,7 @@ function makeFakeGateway(
   return {
     exchangeCodeForToken: mock(async () => ({ accessToken: "", scopes: [] })),
     getAuthenticatedUser: mock(async () => ({ login: "" })),
+    verifyRepoAccess: mock(async () => ({ defaultBranch: "main", canWrite: true })),
     ensureRepo: mock(async () => ({
       fullName: "",
       defaultBranch: "main",

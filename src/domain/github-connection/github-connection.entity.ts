@@ -1,3 +1,4 @@
+import { CONSTANTS, type GitHubConnectionMethod } from "./constants";
 import { BackfillStateTransitionError } from "./github-connection.errors";
 import { RepoFullName } from "./repo-full-name.vo";
 
@@ -8,6 +9,7 @@ export type GitHubConnectionRow = {
   githubLogin: string;
   encryptedAccessToken: string;
   scopes: string[];
+  connectionMethod: string;
   repoFullName: string;
   defaultBranch: string;
   connectedAt: Date;
@@ -22,6 +24,7 @@ export type GitHubConnectionRow = {
 export type GitHubConnectionView = {
   userId: string;
   githubLogin: string;
+  connectionMethod: GitHubConnectionMethod;
   repoFullName: string;
   defaultBranch: string;
   connectedAt: Date;
@@ -39,6 +42,7 @@ export class GitHubConnection {
     readonly githubLogin: string,
     readonly encryptedAccessToken: string,
     readonly scopes: readonly string[],
+    readonly connectionMethod: GitHubConnectionMethod,
     readonly repoFullName: RepoFullName,
     readonly defaultBranch: string,
     readonly connectedAt: Date,
@@ -50,6 +54,7 @@ export class GitHubConnection {
     private _backfillFailureReason: string | null,
   ) {}
 
+  /** OAuth App connection (`repo` scope, full access to all repos). */
   static create(
     userId: string,
     githubLogin: string,
@@ -64,6 +69,38 @@ export class GitHubConnection {
       githubLogin,
       encryptedAccessToken,
       scopes,
+      "oauth",
+      repoFullName,
+      defaultBranch,
+      now,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    );
+  }
+
+  /**
+   * Fine-grained PAT connection: scoped to a single user-chosen repo.
+   * No OAuth scopes apply — the token's access is defined on GitHub's
+   * side — so `scopes` is empty.
+   */
+  static createWithToken(
+    userId: string,
+    githubLogin: string,
+    encryptedAccessToken: string,
+    repoFullName: RepoFullName,
+    defaultBranch: string,
+    now: Date,
+  ): GitHubConnection {
+    return new GitHubConnection(
+      userId,
+      githubLogin,
+      encryptedAccessToken,
+      [],
+      "pat",
       repoFullName,
       defaultBranch,
       now,
@@ -82,6 +119,7 @@ export class GitHubConnection {
       row.githubLogin,
       row.encryptedAccessToken,
       row.scopes,
+      normalizeConnectionMethod(row.connectionMethod),
       RepoFullName.parse(row.repoFullName),
       row.defaultBranch,
       row.connectedAt,
@@ -172,6 +210,7 @@ export class GitHubConnection {
     return {
       userId: this.userId,
       githubLogin: this.githubLogin,
+      connectionMethod: this.connectionMethod,
       repoFullName: this.repoFullName.value,
       defaultBranch: this.defaultBranch,
       connectedAt: this.connectedAt,
@@ -201,4 +240,11 @@ function normalizeBackfillStatus(value: string | null): BackfillStatus | null {
   return (VALID_STATUSES as readonly string[]).includes(value)
     ? (value as BackfillStatus)
     : null;
+}
+
+/** Unknown/legacy values fall back to "oauth" (the original method). */
+function normalizeConnectionMethod(value: string): GitHubConnectionMethod {
+  return (CONSTANTS.CONNECTION_METHODS as readonly string[]).includes(value)
+    ? (value as GitHubConnectionMethod)
+    : "oauth";
 }

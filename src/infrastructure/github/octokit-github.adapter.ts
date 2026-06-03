@@ -8,12 +8,15 @@ import {
   type GitHubEnsureReadmeResult,
   type GitHubEnsureRepoResult,
   type GitHubGateway,
+  type GitHubRepoAccessResult,
   type GitHubTokenExchange,
 } from "@/application/ports/github-gateway.port";
 import {
   CONSTANTS,
   GitHubOAuthFailedError,
+  GitHubRepoAccessDeniedError,
   GitHubRepoCreationFailedError,
+  GitHubTokenInvalidError,
 } from "@/domain/github-connection";
 import { mapCommitError, statusOf, messageOf } from "./map-commit-error";
 
@@ -75,6 +78,31 @@ export class OctokitGitHubAdapter implements GitHubGateway {
     const octokit = buildOctokit(accessToken);
     const { data } = await octokit.users.getAuthenticated();
     return { login: data.login };
+  }
+
+  async verifyRepoAccess(
+    accessToken: string,
+    repoFullName: string,
+  ): Promise<GitHubRepoAccessResult> {
+    const [owner, repo] = repoFullName.split("/") as [string, string];
+    const octokit = buildOctokit(accessToken);
+    try {
+      const { data } = await octokit.repos.get({ owner, repo });
+      return {
+        defaultBranch: data.default_branch,
+        canWrite: data.permissions?.push === true,
+      };
+    } catch (err) {
+      if (isStatus(err, 401)) {
+        throw new GitHubTokenInvalidError(messageOf(err));
+      }
+      // 404 (repo invisible to this token) and 403 both mean the token
+      // simply can't reach this repo — surface as access denied.
+      if (isStatus(err, 404) || isStatus(err, 403)) {
+        throw new GitHubRepoAccessDeniedError(repoFullName);
+      }
+      throw err;
+    }
   }
 
   async ensureRepo(
