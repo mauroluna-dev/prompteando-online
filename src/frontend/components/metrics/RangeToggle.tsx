@@ -3,6 +3,12 @@ import { cn } from "@/lib/utils";
 
 const RANGES: MetricsRangeValue[] = ["7d", "30d", "90d"];
 
+export const RANGE_LABELS: Record<MetricsRangeValue, string> = {
+  "7d": "7 días",
+  "30d": "30 días",
+  "90d": "90 días",
+};
+
 /**
  * P18 — Toggle group for the dashboard range filter. Mirrors the
  * Pγ AppShell tab style (bg-muted pill with active item on white).
@@ -11,7 +17,7 @@ export function RangeToggle({
   value,
   onChange,
   className,
-  label = "Rango",
+  label = "Período",
 }: {
   value: MetricsRangeValue;
   onChange: (next: MetricsRangeValue) => void;
@@ -41,7 +47,7 @@ export function RangeToggle({
             )}
             aria-pressed={value === r}
           >
-            {r}
+            {RANGE_LABELS[r]}
           </button>
         ))}
       </div>

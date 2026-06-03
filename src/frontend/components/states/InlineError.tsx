@@ -16,7 +16,7 @@ export function InlineError({
   title,
   description,
   onRetry,
-  retryLabel = "Retry",
+  retryLabel = "Reintentar",
   action,
   className,
 }: {

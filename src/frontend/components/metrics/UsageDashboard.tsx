@@ -28,22 +28,22 @@ export function UsageDashboard({
     <div className={cn("flex flex-col gap-5", className)}>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          label={`Requests totales (${rangeLabel})`}
+          label={`Llamadas en total (${rangeLabel})`}
           value={summary.totals.requests.toLocaleString("es-AR")}
         />
         <MetricCard
-          label="Tasa de error"
+          label="Errores"
           value={`${errorRatePct}%`}
           sub={
             summary.totals.errors > 0
-              ? `${summary.totals.errors.toLocaleString("es-AR")} errores`
+              ? `${summary.totals.errors.toLocaleString("es-AR")} con error`
               : "sin errores"
           }
         />
         <MetricCard
-          label="Latencia p95"
+          label="Velocidad de respuesta"
           value={`${summary.latency.p95}ms`}
-          sub={`p50 ${summary.latency.p50}ms`}
+          sub={`habitual ${summary.latency.p50}ms`}
         />
         <MetricCard
           label="Prompt más usado"
@@ -56,8 +56,8 @@ export function UsageDashboard({
           }
           sub={
             topPrompt
-              ? `${topPrompt.count.toLocaleString("es-AR")} requests`
-              : "sin tráfico"
+              ? `${topPrompt.count.toLocaleString("es-AR")} llamadas`
+              : "sin uso"
           }
         />
       </div>
@@ -65,7 +65,7 @@ export function UsageDashboard({
       <section className="bg-card flex flex-col gap-3 rounded-lg border p-4">
         <header className="flex items-center justify-between">
           <h3 className="font-display text-sm font-semibold">
-            Requests por día
+            Llamadas por día
           </h3>
           <span className="text-muted-foreground text-xs">{rangeLabel}</span>
         </header>
@@ -75,7 +75,7 @@ export function UsageDashboard({
           <MiniBarChart
             data={summary.daily}
             height={140}
-            ariaLabel={`Requests por día, ${rangeLabel}`}
+            ariaLabel={`Llamadas por día, ${rangeLabel}`}
           />
         )}
       </section>
@@ -94,7 +94,7 @@ export function UsageDashboard({
 function EmptyChart() {
   return (
     <div className="bg-muted/40 text-muted-foreground flex h-[120px] items-center justify-center rounded text-sm">
-      Sin requests todavía en este rango.
+      Sin llamadas todavía en este período.
     </div>
   );
 }
