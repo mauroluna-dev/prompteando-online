@@ -20,6 +20,7 @@ import { ApiKeysPage } from "./pages/ApiKeysPage";
 import { ApiKeyDetailPage } from "./pages/ApiKeyDetailPage";
 import { SettingsProfilePage } from "./pages/SettingsProfilePage";
 import { SettingsIntegrationsPage } from "./pages/SettingsIntegrationsPage";
+import { SettingsWebhooksPage } from "./pages/SettingsWebhooksPage";
 import { RequireAuth } from "./RequireAuth";
 import { RedirectIfAuthed } from "./RedirectIfAuthed";
 
@@ -60,6 +61,7 @@ const tree = (
             <Route path="api-keys" element={<ApiKeysPage />} />
             <Route path="api-keys/:id" element={<ApiKeyDetailPage />} />
             <Route path="integrations" element={<SettingsIntegrationsPage />} />
+            <Route path="webhooks" element={<SettingsWebhooksPage />} />
           </Route>
         </Route>
       </Routes>

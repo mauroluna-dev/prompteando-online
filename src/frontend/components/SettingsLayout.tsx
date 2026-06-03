@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router";
-import { CreditCard, KeyRound, Plug, User } from "lucide-react";
+import { CreditCard, KeyRound, Plug, User, Webhook } from "lucide-react";
 
 const SECTIONS: {
   label: string;
@@ -10,6 +10,7 @@ const SECTIONS: {
   { label: "Perfil", to: "/settings/profile", icon: User },
   { label: "API Keys", to: "/settings/api-keys", icon: KeyRound },
   { label: "Integraciones", to: "/settings/integrations", icon: Plug },
+  { label: "Webhooks", to: "/settings/webhooks", icon: Webhook },
   { label: "Facturación", to: "/settings/billing", icon: CreditCard, badge: "pronto" },
 ];
 
