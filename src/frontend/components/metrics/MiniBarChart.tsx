@@ -55,7 +55,10 @@ export function MiniBarChart({
             labelFormatter={(label) =>
               typeof label === "string" ? formatTooltipDate(label) : String(label ?? "")
             }
-            formatter={(value) => [value as number, dataKey]}
+            formatter={(value) => [
+              value as number,
+              dataKey === "errors" ? "Errores" : "Llamadas",
+            ]}
           />
           <Bar
             dataKey={dataKey}

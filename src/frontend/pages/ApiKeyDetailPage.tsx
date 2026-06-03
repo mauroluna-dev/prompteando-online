@@ -13,6 +13,7 @@ import {
 import { ArrowLeft, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  RANGE_LABELS,
   RangeToggle,
   UsageDashboard,
 } from "@/frontend/components/metrics";
@@ -64,8 +65,8 @@ export function ApiKeyDetailPage() {
     return (
       <EmptyState
         icon={KeyRound}
-        title="Key no encontrada"
-        description="Puede que la hayas revocado, eliminado o que nunca haya existido en esta cuenta."
+        title="Clave no encontrada"
+        description="Puede que la hayas desactivado, eliminado o que nunca haya existido en esta cuenta."
         action={
           <Button asChild>
             <Link to="/settings/api-keys">
@@ -83,7 +84,7 @@ export function ApiKeyDetailPage() {
       <Button asChild variant="ghost" size="sm" className="self-start">
         <Link to="/settings/api-keys">
           <ArrowLeft className="mr-1 h-4 w-4" />
-          Volver a API keys
+          Volver a claves de acceso
         </Link>
       </Button>
 
@@ -109,11 +110,11 @@ export function ApiKeyDetailPage() {
         </p>
       ) : data ? (
         <>
-          <UsageDashboard summary={data} rangeLabel={range} />
-          <LatencyOverTime data={data.daily} rangeLabel={range} />
+          <UsageDashboard summary={data} rangeLabel={RANGE_LABELS[range]} />
+          <LatencyOverTime data={data.daily} rangeLabel={RANGE_LABELS[range]} />
           <StatusBreakdown
             data={data.statusBreakdown ?? []}
-            rangeLabel={range}
+            rangeLabel={RANGE_LABELS[range]}
           />
         </>
       ) : null}
@@ -147,13 +148,13 @@ function LatencyOverTime({
     <section className="bg-card flex flex-col gap-3 rounded-lg border p-4">
       <header className="flex items-center justify-between">
         <h3 className="font-display text-sm font-semibold">
-          Latencia en el tiempo
+          Velocidad de respuesta
         </h3>
         <span className="text-muted-foreground text-xs">{rangeLabel}</span>
       </header>
       {data.length === 0 ? (
         <div className="bg-muted/40 text-muted-foreground flex h-[200px] items-center justify-center rounded text-sm">
-          Sin datos de latencia en este rango.
+          Sin datos de velocidad en este período.
         </div>
       ) : (
         <div className="w-full">
@@ -205,7 +206,7 @@ function LatencyOverTime({
                 stroke="var(--color-chart-2)"
                 strokeWidth={2}
                 dot={false}
-                name="p50"
+                name="Habitual"
               />
               <Line
                 type="monotone"
@@ -213,7 +214,7 @@ function LatencyOverTime({
                 stroke="var(--color-chart-1)"
                 strokeWidth={2}
                 dot={false}
-                name="p95"
+                name="En los picos"
               />
             </LineChart>
           </ResponsiveContainer>
@@ -234,20 +235,20 @@ function StatusBreakdown({
     <section className="bg-card flex flex-col gap-3 rounded-lg border p-4">
       <header className="flex items-center justify-between">
         <h3 className="font-display text-sm font-semibold">
-          Errores por status code
+          Errores por tipo
         </h3>
         <span className="text-muted-foreground text-xs">{rangeLabel}</span>
       </header>
       {data.length === 0 ? (
         <p className="text-muted-foreground text-sm">
-          Por ahora no rastreamos el desglose por status code (V1 solo guarda
-          un total de errores). Llega en una próxima fase.
+          Por ahora mostramos solo el total de errores. El detalle por tipo
+          llega más adelante.
         </p>
       ) : (
         <table className="w-full text-sm">
           <thead className="text-muted-foreground text-left text-xs uppercase tracking-wide">
             <tr>
-              <th className="py-2 font-medium">Status</th>
+              <th className="py-2 font-medium">Tipo</th>
               <th className="py-2 text-right font-medium">Cantidad</th>
             </tr>
           </thead>

@@ -66,7 +66,7 @@ function Hero() {
     <section className="mx-auto flex w-full max-w-6xl flex-col items-center gap-8 px-6 pt-20 pb-12 text-center sm:pt-28">
       <span className="bg-muted text-muted-foreground inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-xs uppercase tracking-wide">
         <span className="bg-success-fg h-1.5 w-1.5 rounded-full" />
-        v1.0 — gratis, sin vendor lock-in
+        v1.0 — gratis para siempre · open source
       </span>
       <h1 className="font-display max-w-3xl text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
         Versioná tus prompts.
@@ -76,15 +76,15 @@ function Hero() {
         </span>
       </h1>
       <p className="text-muted-foreground max-w-2xl text-base leading-relaxed sm:text-lg">
-        Cada vez que guardás se crea una versión inmutable. Cada prompt expone
-        un endpoint que consumís desde n8n, curl o fetch. Si conectás GitHub,
-        todo se replica a TU repo.
+        Cada vez que guardás queda una versión que no se pisa. Usás cada prompt
+        desde n8n, Zapier o tu app con una sola dirección web. Y si conectás
+        GitHub, todo queda copiado en tu cuenta.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button asChild size="xl">
           <Link to="/login">
             <Github className="mr-2 h-5 w-5" />
-            Empezar gratis
+            Crear cuenta
           </Link>
         </Button>
         <Button asChild size="xl" variant="outline">
@@ -166,14 +166,14 @@ function HowItWorks() {
     {
       n: "2",
       icon: Plug,
-      title: "Generá tu API key",
-      copy: "Una key por workflow. La controlás vos y la revocás cuando quieras.",
+      title: "Creá tu clave de acceso",
+      copy: "Una clave por herramienta. La controlás vos y la desactivás cuando quieras.",
     },
     {
       n: "3",
       icon: Rocket,
-      title: "Consumilo desde donde quieras",
-      copy: "n8n, Zapier, curl, fetch. Bearer token + slug = la última versión aprobada.",
+      title: "Usalo desde donde quieras",
+      copy: "n8n, Zapier, Make o tu código. Con tu clave y el nombre corto traés siempre la última versión aprobada.",
     },
   ];
   return (
@@ -224,18 +224,18 @@ function ZeroFriction() {
     },
     {
       icon: Zap,
-      title: "API primero",
-      copy: "El endpoint público es el contrato. Sin SDKs propios, sin webhooks, sin vendor lock-in.",
+      title: "Sin ataduras",
+      copy: "Conectás con cualquier herramienta usando una dirección web estándar. Sin librerías que instalar, sin quedar atrapado en una plataforma.",
     },
     {
       icon: GitBranch,
-      title: "Espejo en GitHub",
-      copy: "Cada vez que guardás, se replica un commit en TU repo. Si cerramos mañana, te quedás con todo.",
+      title: "Copia en tu GitHub",
+      copy: "Cada vez que guardás, dejamos una copia en tu cuenta de GitHub. Si cerramos mañana, te quedás con todo.",
     },
     {
       icon: Download,
-      title: "Export en un click",
-      copy: "Sin GitHub también podés bajarte tu historial completo en ZIP o JSON.",
+      title: "Te lo llevás en un click",
+      copy: "Aunque no uses GitHub, podés descargar tu historial completo en ZIP o JSON cuando quieras.",
     },
   ];
   return (
@@ -287,18 +287,18 @@ function YourHistoryYourRepo() {
             <span className="text-muted-foreground">tu cuenta de GitHub</span>.
           </h2>
           <p className="text-muted-foreground text-base leading-relaxed">
-            Si conectás GitHub, creamos un repo privado{" "}
+            Si conectás GitHub, creamos una carpeta privada{" "}
             <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">
               prompteando-&lt;tu-usuario&gt;
             </code>
-            . Cada vez que guardás, se deja un commit con el contenido y el
-            frontmatter (versión, mensaje, timestamp). Sos el único que puede
-            leerlo. Si cerramos mañana, te quedás con todo el historial.
+            . Cada vez que guardás, dejamos una copia con el contenido y los
+            datos de la versión (número, nota y fecha). Sos el único que puede
+            leerla. Si cerramos mañana, te quedás con todo el historial.
           </p>
           <div className="flex flex-col gap-2 text-sm">
-            <ChecklistItem>Commits cronológicos con autor real</ChecklistItem>
-            <ChecklistItem>Backfill cuando conectás tarde</ChecklistItem>
-            <ChecklistItem>Desconectás en un click</ChecklistItem>
+            <ChecklistItem>Historial ordenado por fecha y a tu nombre</ChecklistItem>
+            <ChecklistItem>Copiamos tu historial aunque conectes más tarde</ChecklistItem>
+            <ChecklistItem>Desconectás cuando quieras, en un click</ChecklistItem>
           </div>
         </div>
 
@@ -365,6 +365,7 @@ function ChecklistItem({ children }: { children: React.ReactNode }) {
           stroke="currentColor"
           strokeWidth="3"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
@@ -403,8 +404,9 @@ function FinalCTA() {
           Empezá a versionar tus prompts hoy.
         </h2>
         <p className="text-background/70 max-w-xl text-sm leading-relaxed">
-          Gratis, sin prueba limitada, sin paywall. Registrate con GitHub o
-          Google y en menos de 5 minutos tenés tu primer prompt en producción.
+          Gratis y open source, para siempre. Sin planes pagos, sin tarjeta, sin
+          letra chica. Entrá con GitHub o Google y en menos de 5 minutos tenés
+          tu primer prompt funcionando.
         </p>
         <Button
           asChild
@@ -412,7 +414,7 @@ function FinalCTA() {
           className="bg-background text-foreground hover:bg-background/90"
         >
           <Link to="/login">
-            Empezar gratis
+            Crear cuenta
             <ArrowRight className="ml-2 h-5 w-5" />
           </Link>
         </Button>

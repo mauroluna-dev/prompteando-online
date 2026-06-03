@@ -46,7 +46,7 @@ export function TemplatePanel({
     try {
       await updateTemplateSettings(slug, { isTemplate: next });
       await mutate(`/api/prompts/${slug}`);
-      toast.success(next ? "Modo template activado." : "Modo template desactivado.");
+      toast.success(next ? "Plantilla activada." : "Plantilla desactivada.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No se pudo actualizar");
     } finally {
@@ -60,18 +60,18 @@ export function TemplatePanel({
         <div className="flex flex-col gap-0.5">
           <h2 className="font-display flex items-center gap-1.5 text-sm font-semibold">
             <Variable className="h-4 w-4" />
-            Modo template
+            Plantilla con variables
           </h2>
           <p className="text-muted-foreground text-xs">
-            Sustituí <code className="font-mono">{"{{variables}}"}</code> al
-            consumir el prompt por la API.
+            Dejá huecos como <code className="font-mono">{"{{nombre}}"}</code> en
+            el texto y completalos con un valor distinto cada vez que lo uses.
           </p>
         </div>
         <Switch
           checked={isTemplate}
           onCheckedChange={(next) => void handleToggle(next)}
           disabled={toggling}
-          aria-label="Activar modo template"
+          aria-label="Activar plantilla con variables"
         />
       </header>
 
@@ -118,7 +118,7 @@ function VariablesEditor({
       await updateTemplateSettings(slug, { varMeta: draft });
       await mutate(`/api/prompts/${slug}`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "No se pudo guardar la metadata");
+      toast.error(err instanceof Error ? err.message : "No se pudo guardar");
     }
   };
 
@@ -126,7 +126,7 @@ function VariablesEditor({
     return (
       <p className="text-muted-foreground rounded-md border border-dashed px-3 py-4 text-center text-xs">
         Todavía no hay variables. Escribí{" "}
-        <code className="font-mono">{"{{algo}}"}</code> en el editor y aparecen acá.
+        <code className="font-mono">{"{{algo}}"}</code> en el editor y aparece acá.
       </p>
     );
   }
@@ -154,7 +154,7 @@ function VariablesEditor({
               value={draft[name]?.default ?? ""}
               onChange={(e) => setField(name, "default", e.target.value)}
               onBlur={() => void persist()}
-              placeholder="Default (opcional → la vuelve opcional)"
+              placeholder="Valor por defecto (si lo ponés, deja de ser obligatorio)"
               className="h-8 text-xs"
             />
           </div>
@@ -185,7 +185,7 @@ function renderForType(
               .join("\n\n"),
           };
     } catch {
-      return { kind: "ok", content: "(chat inválido)" };
+      return { kind: "ok", content: "(el chat tiene un error de formato)" };
     }
   }
   const r = renderTemplate(content, values);
@@ -226,10 +226,10 @@ function RenderTester({
 
   return (
     <div className="flex flex-col gap-2">
-      <Label className="text-xs">Probar render</Label>
+      <Label className="text-xs">Vista previa</Label>
       <p className="text-muted-foreground text-xs">
-        Renderiza el texto que tenés en el editor ahora (no hace falta
-        guardar).
+        Mirá cómo queda el texto con los valores que pongas. Usa lo que tenés en
+        el editor ahora, no hace falta guardar.
       </p>
       {vars.map((name) => (
         <Input
@@ -249,7 +249,7 @@ function RenderTester({
       <div>
         <Button size="sm" onClick={handleRender}>
           <Play className="mr-2 h-4 w-4" />
-          Renderizar
+          Ver resultado
         </Button>
       </div>
       {result?.kind === "ok" ? (
@@ -284,19 +284,24 @@ function RenderSnippet({ slug, vars }: { slug: string; vars: string[] }) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <Label className="text-xs">Consumir por la API</Label>
+        <Label className="text-xs">Usar desde otras apps (n8n, Zapier, código…)</Label>
         <button
           type="button"
           onClick={() => {
             void navigator.clipboard.writeText(snippet);
-            toast.success("Snippet copiado.");
+            toast.success("Código copiado.");
           }}
           className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs transition-colors"
+          aria-label="Copiar el código de ejemplo"
         >
           <Copy className="h-3 w-3" />
           Copiar
         </button>
       </div>
+      <p className="text-muted-foreground text-xs">
+        Ejemplo para pedir el prompt ya completado. Reemplazá{" "}
+        <code className="font-mono">po_live_…</code> por tu clave de acceso.
+      </p>
       <pre className="bg-muted overflow-x-auto rounded-md p-3 text-xs">{snippet}</pre>
     </div>
   );

@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router";
-import { CreditCard, KeyRound, Plug, User, Webhook } from "lucide-react";
+import { KeyRound, Plug, User, Webhook } from "lucide-react";
 
 const SECTIONS: {
   label: string;
@@ -8,10 +8,9 @@ const SECTIONS: {
   badge?: string;
 }[] = [
   { label: "Perfil", to: "/settings/profile", icon: User },
-  { label: "API Keys", to: "/settings/api-keys", icon: KeyRound },
+  { label: "Claves de acceso", to: "/settings/api-keys", icon: KeyRound },
   { label: "Integraciones", to: "/settings/integrations", icon: Plug },
-  { label: "Webhooks", to: "/settings/webhooks", icon: Webhook },
-  { label: "Facturación", to: "/settings/billing", icon: CreditCard, badge: "pronto" },
+  { label: "Avisos automáticos", to: "/settings/webhooks", icon: Webhook },
 ];
 
 export function SettingsLayout() {

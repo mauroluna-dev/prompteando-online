@@ -39,7 +39,7 @@ function AppHeader() {
             <TabLink to="/prompts" end>
               Prompts
             </TabLink>
-            <TabLink to="/settings/api-keys">API Keys</TabLink>
+            <TabLink to="/settings/api-keys">Claves de acceso</TabLink>
             <TabLink to="/settings/profile" forceActive={settingsActive}>
               Configuración
             </TabLink>

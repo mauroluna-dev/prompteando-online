@@ -11,6 +11,13 @@ import { Textarea } from "@/components/ui/textarea";
 
 const ROLES: ChatRole[] = ["system", "user", "assistant", "placeholder"];
 
+const ROLE_LABELS: Record<ChatRole, string> = {
+  system: "Sistema (instrucciones)",
+  user: "Usuario",
+  assistant: "Asistente",
+  placeholder: "Hueco para completar",
+};
+
 function safeParse(value: string): ChatMessage[] {
   if (!value.trim()) return [];
   try {
@@ -52,11 +59,12 @@ export function ChatEditor({
               onChange={(e) =>
                 update(i, { role: e.target.value as ChatRole })
               }
+              aria-label="Quién dice este mensaje"
               className="border-input bg-background h-7 rounded-md border px-2 text-xs"
             >
               {ROLES.map((r) => (
                 <option key={r} value={r}>
-                  {r}
+                  {ROLE_LABELS[r]}
                 </option>
               ))}
             </select>
@@ -73,14 +81,16 @@ export function ChatEditor({
             <Input
               value={m.name ?? ""}
               onChange={(e) => update(i, { name: e.target.value })}
-              placeholder="nombre del placeholder (ej: history)"
+              placeholder="nombre del hueco (ej: historial)"
+              aria-label="Nombre del hueco para completar"
               className="h-8 text-xs"
             />
           ) : (
             <Textarea
               value={m.content ?? ""}
               onChange={(e) => update(i, { content: e.target.value })}
-              placeholder="Contenido del mensaje… ({{vars}} permitidas)"
+              placeholder="Escribí el mensaje… podés usar {{variables}}"
+              aria-label="Contenido del mensaje"
               className="min-h-[72px] text-sm"
             />
           )}
