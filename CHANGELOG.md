@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/mauroluna-dev/prompteando-online/compare/v0.2.0...v0.2.1) (2026-06-03)
+
+
+### CI/CD
+
+* run JS actions on Node 24 (silence Node 20 deprecation) ([#58](https://github.com/mauroluna-dev/prompteando-online/issues/58)) ([fa1c4df](https://github.com/mauroluna-dev/prompteando-online/commit/fa1c4df9d4925d7e83b0ff29f1c823b84d241a8b))
+
 ## [0.2.0](https://github.com/mauroluna-dev/prompteando-online/compare/v0.1.1...v0.2.0) (2026-06-03)
 
 
