@@ -139,7 +139,7 @@ export function PromptDetailPage() {
     try {
       config = configText.trim() ? JSON.parse(configText) : {};
     } catch {
-      toast.error("El config no es JSON válido.");
+      toast.error("Los ajustes del modelo tienen un error de formato. Revisá las comas y las comillas.");
       return;
     }
     setSaving(true);
@@ -200,7 +200,7 @@ export function PromptDetailPage() {
 
   const handleCopySlug = async () => {
     await navigator.clipboard.writeText(prompt.slug);
-    toast.success("Slug copiado.");
+    toast.success("Nombre corto copiado.");
   };
 
   const editorDirty =
@@ -226,11 +226,17 @@ export function PromptDetailPage() {
             {prompt.name}
           </h1>
           <div className="text-muted-foreground flex items-center gap-3 text-xs">
-            <code className="font-mono">{prompt.slug}</code>
+            <code
+              className="font-mono"
+              title="Nombre corto — lo usás para llamar al prompt desde otras apps"
+            >
+              {prompt.slug}
+            </code>
             <button
               type="button"
               onClick={() => void handleCopySlug()}
               className="hover:text-foreground inline-flex items-center gap-1 transition-colors"
+              aria-label="Copiar el nombre corto"
             >
               <Copy className="h-3 w-3" />
               Copiar
@@ -386,7 +392,7 @@ function ModeToggle({
         type="button"
         onClick={() => onChange("diff")}
         disabled={!canDiff}
-        title={canDiff ? undefined : "Necesitás al menos 2 versiones para comparar"}
+        title={canDiff ? undefined : "Necesitás al menos 2 versiones guardadas para comparar"}
         className={cn(
           "inline-flex items-center gap-1.5 rounded px-3 py-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50",
           mode === "diff"
@@ -396,7 +402,7 @@ function ModeToggle({
         aria-pressed={mode === "diff"}
       >
         <GitCompare className="h-3.5 w-3.5" />
-        Diff
+        Comparar
       </button>
     </div>
   );
@@ -431,21 +437,30 @@ function EditPane({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="bg-muted inline-flex self-start rounded-md p-0.5 text-sm">
+      <div
+        className="bg-muted inline-flex self-start rounded-md p-0.5 text-sm"
+        role="group"
+        aria-label="Tipo de prompt"
+      >
         {(["text", "chat"] as const).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => onTypeChange(t)}
+            title={
+              t === "text"
+                ? "Un solo bloque de texto"
+                : "Conversación con varios mensajes (sistema, usuario, asistente)"
+            }
             className={cn(
-              "rounded px-3 py-1 capitalize transition-colors",
+              "rounded px-3 py-1 transition-colors",
               type === t
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground",
             )}
             aria-pressed={type === t}
           >
-            {t}
+            {t === "text" ? "Texto simple" : "Chat"}
           </button>
         ))}
       </div>
@@ -461,19 +476,25 @@ function EditPane({
       )}
       <details className="bg-card rounded-md border p-3">
         <summary className="text-muted-foreground cursor-pointer text-xs font-medium">
-          Config (model params · JSON)
+          Ajustes del modelo (avanzado · opcional)
         </summary>
+        <p className="text-muted-foreground mt-2 text-xs">
+          Si querés, guardás junto al prompt qué modelo y configuración usar
+          (por ejemplo el modelo y la “temperatura”). Si no sabés qué poner,
+          dejalo vacío: no hace falta para usar el prompt.
+        </p>
         <Textarea
           value={configText}
           onChange={(e) => onConfigChange(e.target.value)}
           placeholder={'{\n  "model": "claude-opus-4-8",\n  "temperature": 0.7\n}'}
+          aria-label="Ajustes del modelo en formato JSON"
           className="mt-2 min-h-[120px] font-mono text-xs"
         />
       </details>
       <div className="bg-card flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-end">
         <div className="flex flex-1 flex-col gap-1.5">
           <Label htmlFor="commit-message" className="text-xs">
-            Mensaje del commit{" "}
+            ¿Qué cambiaste?{" "}
             <span className="text-muted-foreground font-normal">
               (opcional)
             </span>
@@ -482,7 +503,9 @@ function EditPane({
             id="commit-message"
             value={commitMessage}
             onChange={(e) => onCommitMessageChange(e.target.value)}
-            placeholder={isEmpty ? "Versión inicial" : "¿Qué cambió?"}
+            placeholder={
+              isEmpty ? "Versión inicial" : "Ej: acorté la respuesta a 2 oraciones"
+            }
             maxLength={200}
             className="h-9"
           />
@@ -523,7 +546,7 @@ function ViewingPane({
         <div className="flex flex-col">
           <span className="font-medium">Viendo v{versionNumber}</span>
           <span className="text-info-fg/80 text-xs">
-            {commitMessage ?? "Sin mensaje de commit."} · {formatDate(createdAt)}
+            {commitMessage ?? "Sin nota de cambio."} · {formatDate(createdAt)}
           </span>
         </div>
         <Button
@@ -572,7 +595,7 @@ function DiffPane({
   if (diffData.contentA === null || diffData.contentB === null) {
     return (
       <div className="bg-muted/40 flex h-[480px] items-center justify-center rounded-md border text-sm text-muted-foreground">
-        Elegí dos versiones del sidebar para comparar.
+        Elegí dos versiones en el historial (a la derecha) para verlas lado a lado.
       </div>
     );
   }

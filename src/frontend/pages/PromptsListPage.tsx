@@ -82,6 +82,7 @@ export function PromptsListPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar prompts…"
+              aria-label="Buscar prompts por nombre o etiqueta"
               className="h-9 w-60 pl-9"
             />
           </div>
@@ -118,7 +119,9 @@ export function PromptsListPage() {
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="truncate font-medium">{p.name}</span>
                   <div className="text-muted-foreground flex items-center gap-3 text-xs">
-                    <code className="font-mono">{p.slug}</code>
+                    <code className="font-mono" title="Nombre corto — lo usás para llamar al prompt desde otras apps">
+                      {p.slug}
+                    </code>
                     <span aria-hidden>·</span>
                     <span>Actualizado {formatRelative(p.updatedAt)}</span>
                   </div>
@@ -149,21 +152,21 @@ export function PromptsListPage() {
 function promptCountSummary(total: number, hasGithub: boolean): string {
   const base = `${total} prompt${total === 1 ? "" : "s"}`;
   if (!hasGithub) return base;
-  return `${base} · sincronizando con GitHub`;
+  return `${base} · con copia en tu GitHub`;
 }
 
 function SyncBadge({ hasGithub }: { hasGithub: boolean }) {
   if (!hasGithub) {
     return (
       <span className="text-muted-foreground inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs">
-        sin sync
+        solo acá
       </span>
     );
   }
   return (
     <span className="bg-success-bg text-success-fg inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium">
       <Github className="h-3 w-3" />
-      sincronizado
+      copia en GitHub
     </span>
   );
 }
@@ -192,7 +195,7 @@ function PromptListEmptyState() {
     <EmptyState
       icon={FileText}
       title="Todavía no hay prompts"
-      description="Creá tu primer prompt y empezá a versionar. Cada guardado es inmutable y expone un endpoint público que podés llamar desde cualquier lado."
+      description="Creá tu primer prompt y guardá cada cambio sin perder lo anterior. Después vas a poder usarlo desde otras apps como n8n o Zapier."
       action={
         <Button asChild>
           <Link to="/prompts/new">

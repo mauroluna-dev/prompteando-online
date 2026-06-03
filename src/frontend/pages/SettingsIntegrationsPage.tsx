@@ -32,35 +32,35 @@ const RECENTLY_FINISHED_WINDOW_MS = 30_000;
 
 const BACKFILL_FAILURE_COPY: Record<string, string> = {
   token_invalid:
-    "Perdimos permiso para escribir en tu repo. Desconectá y volvé a conectar para reintentar.",
+    "Perdimos permiso para escribir en tu carpeta de GitHub. Desconectá y volvé a conectar para reintentar.",
   insufficient_scope:
-    "Permisos insuficientes. Desconectá y volvé a conectar otorgando el scope `repo`.",
+    "Faltan permisos. Desconectá y volvé a conectar aceptando el acceso a tus repositorios.",
   repo_missing:
-    "No encontramos el repo en GitHub. ¿Lo borraste? Desconectá y volvé a conectar para recrearlo.",
+    "No encontramos tu carpeta en GitHub. ¿La borraste? Desconectá y volvé a conectar para recrearla.",
   lock_timeout:
-    "El sync tardó demasiado en obtener el lock. Desconectá y volvé a conectar para reintentar.",
+    "La copia tardó demasiado. Desconectá y volvé a conectar para reintentar.",
 };
 
 const ERROR_MESSAGES: Record<string, string> = {
-  cancelled: "Cancelaste la autorización en GitHub.",
-  access_denied: "Cancelaste la autorización en GitHub.",
+  cancelled: "Cancelaste la conexión con GitHub.",
+  access_denied: "Cancelaste la conexión con GitHub.",
   "invalid-state":
-    "El link de autorización expiró o fue alterado. Probá de nuevo.",
+    "El enlace de conexión expiró o fue alterado. Probá de nuevo.",
   "invalid-callback":
     "GitHub respondió con datos incompletos. Probá de nuevo.",
   "insufficient-scope":
-    "Necesitás aceptar el permiso de repositorios para conectar.",
+    "Necesitás aceptar el permiso a tus repositorios para conectar.",
   "oauth-failed":
-    "GitHub rechazó el intercambio de credenciales. Probá de nuevo.",
+    "GitHub rechazó la conexión. Probá de nuevo.",
   "repo-failed":
-    "No pudimos crear o acceder al repo. Verificá que tengas permisos en tu cuenta.",
+    "No pudimos crear o acceder a tu carpeta. Verificá que tengas permisos en tu cuenta.",
 };
 
 function failureCopy(reason: string | null | undefined): string {
-  if (!reason) return "El sync falló. Desconectá y volvé a conectar para reintentar.";
+  if (!reason) return "La copia falló. Desconectá y volvé a conectar para reintentar.";
   return (
     BACKFILL_FAILURE_COPY[reason] ??
-    `El sync falló (${reason}). Desconectá y volvé a conectar para reintentar.`
+    `La copia falló (${reason}). Desconectá y volvé a conectar para reintentar.`
   );
 }
 
@@ -216,7 +216,7 @@ export function SettingsIntegrationsPage() {
           <ComingSoonCard
             icon={<Slash className="h-5 w-5" />}
             label="Linear"
-            description="Conectá prompts con issues."
+            description="Conectá prompts con tus tareas."
           />
         </div>
       </div>
@@ -584,7 +584,7 @@ function BackfillStatusSection({
     return (
       <div className="bg-info-bg text-info-fg flex items-center gap-3 rounded-md border border-blue-200 p-3 text-sm">
         <Loader2 className="h-4 w-4 animate-spin" />
-        <span>Preparando el sync de tu historial existente a GitHub…</span>
+        <span>Preparando la copia de tu historial a GitHub…</span>
       </div>
     );
   }
@@ -596,7 +596,7 @@ function BackfillStatusSection({
         <div className="flex items-center justify-between gap-2">
           <span className="flex items-center gap-2 font-medium">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Sincronizando {processed} de {total} commits
+            Copiando {processed} de {total} versiones
           </span>
           <span className="text-xs">{pct}%</span>
         </div>
@@ -627,7 +627,7 @@ function BackfillStatusSection({
       <div className="bg-success-bg text-success-fg flex items-start justify-between gap-2 rounded-md border border-emerald-200 p-3 text-sm">
         <span className="flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4" />
-          Sync completo: {total} commits replicados a GitHub.
+          Listo: copiamos {total} versiones a tu GitHub.
         </span>
         <button className="text-xs underline" onClick={handleAck} type="button">
           Listo

@@ -8,15 +8,15 @@ type Props = {
 };
 
 const ERROR_COPY: Record<string, string> = {
-  token_invalid: "Token inválido. Reconectá GitHub.",
-  insufficient_scope: "Permisos insuficientes en GitHub.",
-  repo_missing: "No encuentro el repo en GitHub.",
-  rate_limited: "Rate limit de GitHub. Probá de nuevo en unos minutos.",
-  lock_timeout: "Sync demorado. Guardá de nuevo para reintentar.",
+  token_invalid: "Se cortó el permiso con GitHub. Reconectalo.",
+  insufficient_scope: "Faltan permisos en GitHub.",
+  repo_missing: "No encontramos tu carpeta en GitHub.",
+  rate_limited: "GitHub nos frenó por exceso de pedidos. Probá en unos minutos.",
+  lock_timeout: "La copia tardó demasiado. Guardá de nuevo para reintentar.",
 };
 
 function describeError(code: string): string {
-  return ERROR_COPY[code] ?? "Error al sincronizar con GitHub.";
+  return ERROR_COPY[code] ?? "No se pudo guardar la copia en GitHub.";
 }
 
 export function GitHubSyncBadge({
@@ -39,15 +39,15 @@ export function GitHubSyncBadge({
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        title="Sincronizado con GitHub — ver commit"
+        title="Guardado en GitHub — ver la copia"
         className="hover:text-foreground inline-flex items-center"
-        aria-label="Ver commit en GitHub"
+        aria-label="Ver la copia en GitHub"
         onClick={(e) => e.stopPropagation()}
       >
         {icon}
       </a>
     ) : (
-      <span title="Sincronizado con GitHub" className="inline-flex items-center">
+      <span title="Guardado en GitHub" className="inline-flex items-center">
         {icon}
       </span>
     );
@@ -70,9 +70,9 @@ export function GitHubSyncBadge({
 
   return (
     <span
-      title="Sincronizando con GitHub…"
+      title="Guardando copia en GitHub…"
       className="inline-flex items-center"
-      aria-label="Sincronizando con GitHub"
+      aria-label="Guardando copia en GitHub"
     >
       <Loader2
         className="text-muted-foreground h-3.5 w-3.5 animate-spin"

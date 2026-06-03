@@ -77,7 +77,8 @@ export function PromptCreatePage() {
         <CardHeader>
           <CardTitle>Nuevo prompt</CardTitle>
           <CardDescription>
-            El slug se genera automáticamente a partir del nombre.
+            Ponele un nombre y listo. A partir de ahí generamos un nombre
+            corto que vas a usar para llamarlo desde otras apps.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -109,14 +110,15 @@ export function PromptCreatePage() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="tags">Tags (opcional)</Label>
+              <Label htmlFor="tags">Etiquetas (opcional)</Label>
               <Input
                 id="tags"
                 {...register("tags")}
                 placeholder="marketing, email, onboarding"
               />
               <p className="text-muted-foreground text-xs">
-                Separadas por coma. Sirven para filtrar en la lista.
+                Separá con comas. Te sirven para encontrarlo más rápido en la
+                lista.
               </p>
             </div>
 

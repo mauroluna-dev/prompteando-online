@@ -120,11 +120,13 @@ export function VersionHistory({
                     <ABToggle
                       label="A"
                       active={isA}
+                      title={`Mostrar v${v.versionNumber} del lado izquierdo`}
                       onClick={() => diffSelect.onSelectA(v.versionNumber)}
                     />
                     <ABToggle
                       label="B"
                       active={isB}
+                      title={`Mostrar v${v.versionNumber} del lado derecho`}
                       onClick={() => diffSelect.onSelectB(v.versionNumber)}
                     />
                   </div>
@@ -151,18 +153,22 @@ export function VersionHistory({
 function ABToggle({
   label,
   active,
+  title,
   onClick,
 }: {
   label: "A" | "B";
   active: boolean;
+  title?: string;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      title={title}
+      aria-label={title}
       className={[
-        "rounded border px-2 py-0.5 font-mono text-[10px] font-semibold transition-colors",
+        "rounded border px-2 py-0.5 font-mono text-[11px] font-semibold transition-colors",
         active
           ? "bg-primary text-primary-foreground border-primary"
           : "border-border text-muted-foreground hover:bg-muted",

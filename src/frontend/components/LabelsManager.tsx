@@ -36,7 +36,7 @@ export function LabelsManager({
       await assignLabel(slug, label, version);
       await mutate(key);
       setName("");
-      toast.success(`Label "${label}" → v${version}.`);
+      toast.success(`Apodo "${label}" → v${version}.`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No se pudo asignar");
     } finally {
@@ -57,8 +57,13 @@ export function LabelsManager({
     <section className="bg-card flex flex-col gap-3 rounded-md border p-3">
       <h2 className="font-display flex items-center gap-1.5 text-sm font-semibold">
         <Tag className="h-4 w-4" />
-        Labels de deploy
+        Apodos de versión
       </h2>
+      <p className="text-muted-foreground text-xs">
+        Poné un apodo (como <code className="font-mono">produccion</code>) a una
+        versión. Después podés pedir siempre esa versión desde otras apps usando
+        el apodo, sin tener que cambiar nada cuando publicás una nueva.
+      </p>
 
       {labels.length > 0 ? (
         <ul className="flex flex-wrap gap-1.5">
@@ -82,21 +87,20 @@ export function LabelsManager({
         </ul>
       ) : (
         <p className="text-muted-foreground text-xs">
-          Sin labels. Asigná <code className="font-mono">production</code> a
-          una versión para consumirla por <code className="font-mono">?label=production</code>.
+          Todavía no pusiste ningún apodo.
         </p>
       )}
 
       <div className="flex items-end gap-2">
         <div className="flex flex-1 flex-col gap-1">
           <Label htmlFor="label-name" className="text-xs">
-            Label
+            Apodo
           </Label>
           <Input
             id="label-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="production"
+            placeholder="produccion"
             className="h-8 text-xs"
           />
         </div>

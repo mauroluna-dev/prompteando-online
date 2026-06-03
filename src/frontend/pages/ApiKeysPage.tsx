@@ -33,6 +33,7 @@ import {
   Skeleton,
 } from "@/frontend/components/states";
 import {
+  RANGE_LABELS,
   RangeToggle,
   UsageDashboard,
 } from "@/frontend/components/metrics";
@@ -55,7 +56,7 @@ function formatDate(d: Date | string) {
 }
 
 function lastUsedLabel(k: ApiKeyView): string {
-  if (k.revokedAt) return `Revocada el ${formatDate(k.revokedAt)}`;
+  if (k.revokedAt) return `Desactivada el ${formatDate(k.revokedAt)}`;
   if (k.lastUsedAt) return `Usada por última vez el ${formatDate(k.lastUsedAt)}`;
   return `Creada el ${formatDate(k.createdAt)} · sin uso`;
 }
@@ -87,7 +88,7 @@ export function ApiKeysPage() {
       await mutate("/api/keys");
     } catch (err) {
       setCreateError(
-        err instanceof Error ? err.message : "No se pudo crear la key",
+        err instanceof Error ? err.message : "No se pudo crear la clave",
       );
     } finally {
       setCreating(false);
@@ -97,7 +98,7 @@ export function ApiKeysPage() {
   const handleRevoke = async (id: string, keyName: string) => {
     if (
       !confirm(
-        `¿Revocar "${keyName}"? Las integraciones que usen esta key van a dejar de funcionar.`,
+        `¿Desactivar "${keyName}"? Las apps que estén usando esta clave van a dejar de funcionar.`,
       )
     )
       return;
@@ -105,10 +106,10 @@ export function ApiKeysPage() {
     try {
       await revokeApiKey(id);
       await mutate("/api/keys");
-      toast.success(`Key "${keyName}" revocada.`);
+      toast.success(`Clave "${keyName}" desactivada.`);
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "No se pudo revocar la key",
+        err instanceof Error ? err.message : "No se pudo desactivar la clave",
       );
     } finally {
       setRevokingId(null);
@@ -119,7 +120,7 @@ export function ApiKeysPage() {
     if (!revealedKey) return;
     await navigator.clipboard.writeText(revealedKey.plaintext);
     setCopied(true);
-    toast.success("Key copiada al portapapeles");
+    toast.success("Clave copiada");
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -127,13 +128,13 @@ export function ApiKeysPage() {
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
         <h1 className="font-display text-3xl font-semibold tracking-tight">
-          API Keys
+          Claves de acceso
         </h1>
         <p className="text-muted-foreground text-sm">
-          Usá estas keys para leer prompts desde n8n, curl, fetch o cualquier
-          otro consumidor.{" "}
+          Funcionan como una contraseña para conectar tus prompts con otras apps
+          (n8n, Zapier, Make o tu propio código).{" "}
           <span className="font-medium">
-            {activeCount} / {API_KEY_QUOTA} activas
+            {activeCount} de {API_KEY_QUOTA} activas
           </span>
           .
         </p>
@@ -149,12 +150,12 @@ export function ApiKeysPage() {
               disabled={atQuota}
               title={
                 atQuota
-                  ? `Llegaste al límite de ${API_KEY_QUOTA} keys activas. Revocá una primero.`
+                  ? `Llegaste al límite de ${API_KEY_QUOTA} claves activas. Desactivá una primero.`
                   : undefined
               }
             >
               <Plus className="mr-2 h-4 w-4" />
-              Generar key
+              Crear clave
             </Button>
           )}
         </div>
@@ -163,9 +164,10 @@ export function ApiKeysPage() {
       {showForm ? (
         <div className="bg-card flex flex-col gap-3 rounded-lg border p-5">
           <div className="flex flex-col gap-1">
-            <h2 className="font-display text-base font-semibold">Nueva API key</h2>
+            <h2 className="font-display text-base font-semibold">Nueva clave de acceso</h2>
             <p className="text-muted-foreground text-sm">
-              Ponele un nombre que te ayude a identificarla después.
+              Ponele un nombre que te ayude a reconocerla después (por ejemplo,
+              dónde la vas a usar).
             </p>
           </div>
           <div className="flex flex-col gap-2">
@@ -208,12 +210,12 @@ export function ApiKeysPage() {
       ) : keys.length === 0 ? (
         <EmptyState
           icon={KeyRound}
-          title="Todavía no hay API keys"
-          description="Generá tu primera key para empezar a consumir prompts vía la API pública desde n8n, curl o cualquier cliente HTTP."
+          title="Todavía no hay claves de acceso"
+          description="Creá tu primera clave para empezar a usar tus prompts desde otras apps como n8n, Zapier o el código de tu proyecto."
           action={
             <Button onClick={() => setShowForm(true)}>
               <Plus className="mr-1 h-4 w-4" />
-              Generar primera key
+              Crear primera clave
             </Button>
           }
         />
@@ -245,9 +247,9 @@ export function ApiKeysPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>API key creada</DialogTitle>
+            <DialogTitle>Clave creada</DialogTitle>
             <DialogDescription>
-              Copiala ahora.{" "}
+              Copiala ahora y guardala en un lugar seguro.{" "}
               <span className="font-medium">No se va a mostrar de nuevo.</span>
             </DialogDescription>
           </DialogHeader>
@@ -258,7 +260,7 @@ export function ApiKeysPage() {
                 <code className="font-mono text-sm">{revealedKey.name}</code>
               </div>
               <div className="flex flex-col gap-1">
-                <Label className="text-xs">Key</Label>
+                <Label className="text-xs">Clave</Label>
                 <div className="bg-muted flex items-center gap-2 rounded-md border p-2">
                   <code className="flex-1 break-all font-mono text-xs">{revealedKey.plaintext}</code>
                   <Button size="sm" variant="outline" onClick={() => void handleCopy()}>
@@ -331,8 +333,8 @@ function ApiKeyRow({
               <div className="flex items-center gap-2">
                 <span className="truncate text-sm font-medium">{k.name}</span>
                 {isRevoked ? (
-                  <span className="border-border text-muted-foreground rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide">
-                    Revocada
+                  <span className="border-border text-muted-foreground rounded-full border px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide">
+                    Desactivada
                   </span>
                 ) : null}
               </div>
@@ -365,7 +367,7 @@ function ApiKeyRow({
             ) : (
               <Trash2 className="mr-2 h-4 w-4" />
             )}
-            Revocar
+            Desactivar
           </Button>
         ) : null}
       </div>
@@ -407,7 +409,7 @@ function KeyMetrics({
       </p>
     );
   if (!data) return null;
-  return <UsageDashboard summary={data} rangeLabel={range} />;
+  return <UsageDashboard summary={data} rangeLabel={RANGE_LABELS[range]} />;
 }
 
 function ListSkeleton() {
