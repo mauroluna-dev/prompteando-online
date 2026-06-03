@@ -495,7 +495,13 @@ prompt-management, mejor. Ver [`mission.md`](./mission.md) → V2.
 Orden por leverage. Cada fase sigue las convenciones y se especifica en
 detalle (requirements/plan/validation) al arrancarla, como P19.
 
-### P20 — Labels / aliases de deploy
+> **Status: ✅ V2 COMPLETO (2026-06-02).** P20–P25 implementados,
+> testeados y mergeados a `master`:
+> P19 templates (#36/#37) · P20 labels (#39) · P21 chat (#40) ·
+> P22 config (#41) · P23 SDKs (#42) · P24 webhooks (#43) ·
+> P25 composición + tags (#44). Suite: 196 tests verdes.
+
+### P20 — Labels / aliases de deploy ✅
 **Goal**: pedir un prompt por *label* (`production`, `staging`,
 `latest`, custom) en vez de por número. Deploy = mover un label;
 rollback = re-asignarlo. Es el primitivo que vuelve el versionado un
@@ -514,7 +520,7 @@ rollback = re-asignarlo. Es el primitivo que vuelve el versionado un
   ahora; RBAC real cuando/si haya teams).
 **Depends on**: P7, P9, P19.
 
-### P21 — Chat prompts + message placeholders
+### P21 — Chat prompts + message placeholders ✅
 **Goal**: además de texto plano, prompts tipo **chat** (array de mensajes
 con roles `system`/`user`/`assistant`) y placeholders de mensajes.
 **Deliverables**:
@@ -527,7 +533,7 @@ con roles `system`/`user`/`assistant`) y placeholders de mensajes.
 - **UI**: editor de chat (mensajes por rol) en el editor existente.
 **Depends on**: P19.
 
-### P22 — Config por versión
+### P22 — Config por versión ✅
 **Goal**: model params versionados junto al prompt (cambiar de modelo
 sin tocar código).
 **Deliverables**:
@@ -537,7 +543,7 @@ sin tocar código).
 - **UI**: editor de config (JSON / key-value) por versión.
 **Depends on**: P7.
 
-### P23 — SDKs oficiales (TS + Python)
+### P23 — SDKs oficiales (TS + Python) ✅
 **Goal**: consumir desde código con ergonomía — el feature de
 distribución para el vibe-coder.
 **Deliverables**:
@@ -549,7 +555,7 @@ distribución para el vibe-coder.
 **Depends on**: P9, P19; idealmente después de P20–P22 para que el SDK
 cubra labels, chat y config.
 
-### P24 — Webhooks
+### P24 — Webhooks ✅
 **Goal**: notificar cambios (nueva versión, cambio de label) a sistemas
 externos → enganche a CI/CD.
 **Deliverables**:
@@ -560,7 +566,7 @@ externos → enganche a CI/CD.
 - **UI**: `settings/webhooks`.
 **Depends on**: P7, P20.
 
-### P25 — Composición + organización
+### P25 — Composición + organización ✅
 **Goal**: prompts que referencian a otros + organización a escala.
 **Deliverables**:
 - **Composición**: incluir un prompt dentro de otro (`{{>slug}}` o
