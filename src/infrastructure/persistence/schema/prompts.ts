@@ -34,6 +34,8 @@ export const prompts = pgTable(
       .$type<TemplateVarMeta>()
       .notNull()
       .default({}),
+    // P25 — organization tags.
+    tags: jsonb("tags").$type<string[]>().notNull().default([]),
     createdAt: timestamp("created_at", { mode: "date" })
       .notNull()
       .defaultNow(),

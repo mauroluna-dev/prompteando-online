@@ -18,6 +18,7 @@ function makePrompt(over: Partial<PromptRow> = {}): Prompt {
     currentVersionId: null,
     isTemplate: false,
     templateVarMeta: {},
+    tags: [],
     createdAt: new Date("2026-01-01T00:00:00Z"),
     updatedAt: new Date("2026-01-01T00:00:00Z"),
     ...over,

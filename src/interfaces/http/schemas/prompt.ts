@@ -4,6 +4,7 @@ import { CONSTANTS } from "@/domain/prompt";
 export const createPromptSchema = z.object({
   name: z.string().trim().min(1).max(100),
   description: z.string().max(500).optional(),
+  tags: z.array(z.string().trim().max(40)).max(20).optional(),
 });
 
 export type CreatePromptBody = z.infer<typeof createPromptSchema>;

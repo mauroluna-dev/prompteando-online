@@ -343,6 +343,7 @@ const app = new Elysia()
         userOr401.id,
         parsed.name,
         parsed.description,
+        parsed.tags,
       );
       return new Response(JSON.stringify(prompt), {
         status: 201,
@@ -356,10 +357,13 @@ const app = new Elysia()
       throw err;
     }
   })
-  .get("/api/prompts", async ({ request }) => {
+  .get("/api/prompts", async ({ request, query }) => {
     const userOr401 = await requireUser(request, getCurrentUser);
     if (userOr401 instanceof Response) return userOr401;
-    const prompts = await listPromptsForUser.execute(userOr401.id);
+    const prompts = await listPromptsForUser.execute(userOr401.id, {
+      q: typeof query.q === "string" ? query.q : undefined,
+      tag: typeof query.tag === "string" ? query.tag : undefined,
+    });
     return Response.json(prompts);
   })
   .get("/api/prompts/:slug", async ({ request, params }) => {

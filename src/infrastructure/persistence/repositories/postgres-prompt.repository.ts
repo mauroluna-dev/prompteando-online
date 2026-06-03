@@ -19,6 +19,7 @@ export class PostgresPromptRepository implements PromptRepository {
         currentVersionId: prompt.currentVersionId,
         isTemplate: prompt.isTemplate,
         templateVarMeta: prompt.templateVarMeta,
+        tags: prompt.tags,
         createdAt: prompt.createdAt,
         updatedAt: prompt.updatedAt,
       })
@@ -31,6 +32,7 @@ export class PostgresPromptRepository implements PromptRepository {
           currentVersionId: prompt.currentVersionId,
           isTemplate: prompt.isTemplate,
           templateVarMeta: prompt.templateVarMeta,
+          tags: prompt.tags,
           updatedAt: prompt.updatedAt,
         },
       });

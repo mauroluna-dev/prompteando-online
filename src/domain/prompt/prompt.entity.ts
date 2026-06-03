@@ -22,6 +22,7 @@ export type PromptRow = {
   currentVersionId: string | null;
   isTemplate: boolean;
   templateVarMeta: TemplateVarMeta;
+  tags: string[];
   createdAt: Date;
   updatedAt: Date;
 };
@@ -36,6 +37,7 @@ export class Prompt {
     private _currentVersionId: string | null,
     private _isTemplate: boolean,
     private _templateVarMeta: TemplateVarMeta,
+    private _tags: string[],
     readonly createdAt: Date,
     private _updatedAt: Date,
   ) {}
@@ -47,6 +49,7 @@ export class Prompt {
     slug: Slug,
     description: string | null,
     now: Date,
+    tags: string[] = [],
   ): Prompt {
     Prompt.assertDescriptionLength(description);
     return new Prompt(
@@ -58,6 +61,7 @@ export class Prompt {
       null,
       false,
       {},
+      tags,
       now,
       now,
     );
@@ -73,6 +77,7 @@ export class Prompt {
       row.currentVersionId,
       row.isTemplate,
       row.templateVarMeta,
+      row.tags,
       row.createdAt,
       row.updatedAt,
     );
@@ -93,6 +98,9 @@ export class Prompt {
   get templateVarMeta(): TemplateVarMeta {
     return this._templateVarMeta;
   }
+  get tags(): string[] {
+    return this._tags;
+  }
   get updatedAt(): Date {
     return this._updatedAt;
   }
@@ -112,6 +120,11 @@ export class Prompt {
     this._updatedAt = now;
   }
 
+  setTags(tags: string[], now: Date): void {
+    this._tags = tags;
+    this._updatedAt = now;
+  }
+
   toJSON(): PromptDTO {
     return {
       id: this.id,
@@ -122,6 +135,7 @@ export class Prompt {
       currentVersionId: this._currentVersionId,
       isTemplate: this._isTemplate,
       templateVarMeta: this._templateVarMeta,
+      tags: this._tags,
       createdAt: this.createdAt,
       updatedAt: this._updatedAt,
     };
@@ -143,6 +157,7 @@ export type PromptDTO = {
   currentVersionId: string | null;
   isTemplate: boolean;
   templateVarMeta: TemplateVarMeta;
+  tags: string[];
   createdAt: Date;
   updatedAt: Date;
 };

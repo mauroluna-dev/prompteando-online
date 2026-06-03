@@ -2,11 +2,14 @@ import type { LabelRepository } from "@/application/ports/label-repository.port"
 import type { PromptRepository } from "@/application/ports/prompt-repository.port";
 import type { VersionRepository } from "@/application/ports/version-repository.port";
 import {
+  applyIncludes,
   type ChatMessage,
   CONSTANTS,
+  extractIncludes,
   MissingTemplateVariablesError,
   NotATemplateError,
   parseChatMessages,
+  PromptCompositionCycleError,
   renderChat,
   renderTemplate,
   Slug,
@@ -87,7 +90,13 @@ export class RenderPromptVersionQuery {
       };
     }
 
-    const result = renderTemplate(version.content, values);
+    const expanded = await this.expandIncludes(
+      ownerId,
+      version.content,
+      new Set([parsedSlug.value]),
+      0,
+    );
+    const result = renderTemplate(expanded, values);
     if (result.missingVars.length > 0) {
       throw new MissingTemplateVariablesError(result.missingVars);
     }
@@ -100,6 +109,44 @@ export class RenderPromptVersionQuery {
       varsUsed: result.varsUsed,
       missingVars: [],
     };
+  }
+
+  /**
+   * Recursively expands `{{>slug}}` includes against the owner's other
+   * prompts (their current version). Cycles throw; unknown slugs and
+   * over-depth references are left literal.
+   */
+  private async expandIncludes(
+    ownerId: string,
+    content: string,
+    visited: ReadonlySet<string>,
+    depth: number,
+  ): Promise<string> {
+    const includes = extractIncludes(content);
+    if (includes.length === 0 || depth >= CONSTANTS.MAX_INCLUDE_DEPTH) {
+      return content;
+    }
+    const resolved: Record<string, string> = {};
+    for (const slug of includes) {
+      if (visited.has(slug)) throw new PromptCompositionCycleError(slug);
+      let parsed: Slug;
+      try {
+        parsed = Slug.parse(slug);
+      } catch {
+        continue;
+      }
+      const prompt = await this.promptRepo.findBySlug(ownerId, parsed);
+      if (!prompt) continue;
+      const version = await this.versionRepo.findCurrentForPrompt(prompt.id);
+      if (!version || version.type !== "text") continue;
+      resolved[slug] = await this.expandIncludes(
+        ownerId,
+        version.content,
+        new Set([...visited, slug]),
+        depth + 1,
+      );
+    }
+    return applyIncludes(content, resolved);
   }
 
   private async loadVersion(

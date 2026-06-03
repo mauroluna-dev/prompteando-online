@@ -25,6 +25,7 @@ const formSchema = z.object({
     .min(1, "El nombre es obligatorio")
     .max(100, "Máximo 100 caracteres"),
   description: z.string().max(500, "Máximo 500 caracteres").optional(),
+  tags: z.string().max(300).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -39,15 +40,20 @@ export function PromptCreatePage() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { name: "", description: "" },
+    defaultValues: { name: "", description: "", tags: "" },
   });
 
   const onSubmit = async (values: FormValues) => {
     setSubmitError(null);
     try {
+      const tags = (values.tags ?? "")
+        .split(",")
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0);
       const prompt = await createPrompt({
         name: values.name,
         description: values.description?.trim() || undefined,
+        tags: tags.length > 0 ? tags : undefined,
       });
       await mutate("/api/prompts");
       navigate(`/prompts/${prompt.slug}`, { replace: true });
@@ -100,6 +106,18 @@ export function PromptCreatePage() {
               {errors.description ? (
                 <p className="text-destructive text-xs">{errors.description.message}</p>
               ) : null}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="tags">Tags (opcional)</Label>
+              <Input
+                id="tags"
+                {...register("tags")}
+                placeholder="marketing, email, onboarding"
+              />
+              <p className="text-muted-foreground text-xs">
+                Separadas por coma. Sirven para filtrar en la lista.
+              </p>
             </div>
 
             {submitError ? (

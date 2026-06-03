@@ -21,6 +21,7 @@ export async function getPrompt(slug: string): Promise<Prompt | null> {
 export async function createPrompt(input: {
   name: string;
   description?: string;
+  tags?: string[];
 }): Promise<Prompt> {
   const res = await fetch("/api/prompts", {
     method: "POST",

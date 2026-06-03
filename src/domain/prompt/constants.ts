@@ -20,4 +20,7 @@ export const CONSTANTS = {
   PROMPT_TYPES: ["text", "chat"] as const,
   CHAT_ROLES: ["system", "user", "assistant", "placeholder"] as const,
   MAX_CHAT_MESSAGES: 100,
+  // Composition (P25): `{{>other-slug}}` includes another prompt.
+  INCLUDE_PATTERN: /\{\{>\s*([a-z0-9][a-z0-9-]*)\s*\}\}/g,
+  MAX_INCLUDE_DEPTH: 5,
 } as const;

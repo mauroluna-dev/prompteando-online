@@ -101,3 +101,11 @@ export class InvalidChatContentError extends Error {
     this.name = "InvalidChatContentError";
   }
 }
+
+export class PromptCompositionCycleError extends Error {
+  readonly code = "PROMPT_COMPOSITION_CYCLE" as const;
+  constructor(slug: string) {
+    super(`Prompt composition cycle detected at "${slug}"`);
+    this.name = "PromptCompositionCycleError";
+  }
+}
