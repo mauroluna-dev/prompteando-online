@@ -1,16 +1,17 @@
 name: Release image
 
-# Builds the production Docker image (Dockerfile `prod` target) and
-# pushes it to GitHub Container Registry (GHCR). docker-compose.prod.yml
-# pulls this image instead of building from source.
+# Continuous image for the latest master: builds the production Docker
+# image (Dockerfile `prod` target) and pushes it to GHCR on every push
+# to master. docker-compose.prod.yml pulls this image instead of
+# building from source.
 #
-# Tags produced:
-#   - push to master         -> :latest and :sha-<short>
-#   - push of a git tag v1.2.3 -> :1.2.3, :1.2, :latest
+# Tags produced (master only): :latest and :sha-<short>.
+#
+# Versioned release images (:vX.Y.Z, :X.Y) are built by
+# release-please.yml when a release is cut — see that workflow.
 on:
   push:
     branches: [master]
-    tags: ["v*.*.*"]
   workflow_dispatch:
 
 env:
@@ -41,8 +42,6 @@ jobs:
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=sha-,enable={{is_default_branch}}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
