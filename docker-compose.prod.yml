@@ -7,8 +7,20 @@
 # existing proxy container to the network:
 #     docker network connect prompteando <your-proxy-container>
 #
+# The app/migrate services run a PREBUILT image pulled from a registry
+# (GitHub Container Registry by default) — prod does NOT build from
+# source. The image is published by .github/workflows/release.yml. Pin
+# a specific version with APP_IMAGE in .env.production (recommended over
+# the floating `:latest`):
+#     APP_IMAGE=ghcr.io/mauroluna-dev/prompteando-online:v1.2.3
+#
+# The image is private (private repo), so the host must authenticate to
+# GHCR once before pulling — with a token that has `read:packages`:
+#     echo $GHCR_TOKEN | docker login ghcr.io -u <github-user> --password-stdin
+#
 # Deploy (interpolation + container env both come from .env.production):
-#     docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+#     docker compose --env-file .env.production -f docker-compose.prod.yml pull
+#     docker compose --env-file .env.production -f docker-compose.prod.yml up -d
 #
 # Postgres and Redis are internal-only (never published to the host).
 
@@ -57,10 +69,7 @@ services:
   # One-shot: applies Drizzle migrations, then exits. The app waits for
   # it to complete successfully before booting.
   migrate:
-    build:
-      context: .
-      target: prod
-    image: prompteando-app
+    image: ${APP_IMAGE:-ghcr.io/mauroluna-dev/prompteando-online:latest}
     restart: "no"
     command: ["bun", "run", "db:migrate"]
     env_file: .env.production
@@ -73,10 +82,7 @@ services:
       - prompteando
 
   app:
-    build:
-      context: .
-      target: prod
-    image: prompteando-app
+    image: ${APP_IMAGE:-ghcr.io/mauroluna-dev/prompteando-online:latest}
     restart: unless-stopped
     env_file: .env.production
     # Service-name hosts override whatever DATABASE_URL/REDIS_URL might
