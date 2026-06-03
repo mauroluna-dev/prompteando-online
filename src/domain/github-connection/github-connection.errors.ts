@@ -30,6 +30,34 @@ export class GitHubRepoCreationFailedError extends Error {
   }
 }
 
+/** PAT mode: the provided token is missing/expired/revoked (GitHub 401). */
+export class GitHubTokenInvalidError extends Error {
+  readonly code = "GITHUB_TOKEN_INVALID" as const;
+  constructor(reason?: string) {
+    const suffix = reason ? `: ${reason}` : "";
+    super(`GitHub token invalid${suffix}`);
+    this.name = "GitHubTokenInvalidError";
+  }
+}
+
+/** PAT mode: the token has no access to the requested repo (GitHub 403/404). */
+export class GitHubRepoAccessDeniedError extends Error {
+  readonly code = "GITHUB_REPO_ACCESS_DENIED" as const;
+  constructor(readonly repoFullName: string) {
+    super(`GitHub token has no access to repo: ${repoFullName}`);
+    this.name = "GitHubRepoAccessDeniedError";
+  }
+}
+
+/** PAT mode: the token can read the repo but lacks write (Contents) access. */
+export class GitHubRepoWriteDeniedError extends Error {
+  readonly code = "GITHUB_REPO_WRITE_DENIED" as const;
+  constructor(readonly repoFullName: string) {
+    super(`GitHub token lacks write access to repo: ${repoFullName}`);
+    this.name = "GitHubRepoWriteDeniedError";
+  }
+}
+
 export class InvalidOAuthStateError extends Error {
   readonly code = "INVALID_OAUTH_STATE" as const;
   constructor(reason: string) {

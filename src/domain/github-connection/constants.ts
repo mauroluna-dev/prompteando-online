@@ -1,5 +1,6 @@
 export const CONSTANTS = {
   REQUIRED_SCOPES: ["repo"],
+  CONNECTION_METHODS: ["oauth", "pat"] as const,
   OAUTH_STATE_TTL_SECONDS: 600,
   REPO_DESCRIPTION: "Prompts versionados con prompteando",
   DEFAULT_BRANCH: "main",
@@ -23,3 +24,7 @@ Podés desconectarlo cuando quieras desde la configuración de
 prompteando — tus datos se quedan acá igual.
 `,
 } as const;
+
+/** How the user authorized the GitHub integration. */
+export type GitHubConnectionMethod =
+  (typeof CONSTANTS.CONNECTION_METHODS)[number];

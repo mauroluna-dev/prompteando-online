@@ -13,6 +13,11 @@ export type GitHubEnsureRepoResult = {
   wasCreated: boolean;
 };
 
+export type GitHubRepoAccessResult = {
+  defaultBranch: string;
+  canWrite: boolean;
+};
+
 export type GitHubEnsureReadmeResult = {
   committed: boolean;
   sha?: string;
@@ -65,6 +70,17 @@ export interface GitHubGateway {
   exchangeCodeForToken(code: string): Promise<GitHubTokenExchange>;
 
   getAuthenticatedUser(accessToken: string): Promise<GitHubAuthenticatedUser>;
+
+  /**
+   * PAT mode: check that `accessToken` can reach `repoFullName` and
+   * whether it has push (write) access. Throws
+   * `GitHubRepoAccessDeniedError` when the repo is invisible to the
+   * token (404/403) and `GitHubTokenInvalidError` on 401.
+   */
+  verifyRepoAccess(
+    accessToken: string,
+    repoFullName: string,
+  ): Promise<GitHubRepoAccessResult>;
 
   ensureRepo(
     accessToken: string,

@@ -52,6 +52,7 @@ import { GetApiKeyMetricsQuery } from "@/application/queries/get-api-key-metrics
 import { BunRedisMetricsCounter } from "@/infrastructure/cache/bun-redis-metrics-counter.adapter";
 import { PostgresApiKeyMetricsRepository } from "@/infrastructure/persistence/repositories/postgres-api-key-metrics.repository";
 import { ConnectGitHubCommand } from "@/application/commands/connect-github.command";
+import { ConnectGitHubWithTokenCommand } from "@/application/commands/connect-github-with-token.command";
 import { DisconnectGitHubCommand } from "@/application/commands/disconnect-github.command";
 import { GetGitHubConnectionQuery } from "@/application/queries/get-github-connection.query";
 import { OctokitGitHubAdapter } from "@/infrastructure/github/octokit-github.adapter";
@@ -66,9 +67,14 @@ import {
 import {
   GitHubInsufficientScopeError,
   GitHubOAuthFailedError,
+  GitHubRepoAccessDeniedError,
   GitHubRepoCreationFailedError,
+  GitHubRepoWriteDeniedError,
+  GitHubTokenInvalidError,
   InvalidOAuthStateError,
+  InvalidRepoFullNameError,
 } from "@/domain/github-connection";
+import { connectGithubTokenSchema } from "./schemas/github-integration";
 import {
   ApiKeyAlreadyRevokedError,
   ApiKeyNotFoundError,
@@ -183,6 +189,11 @@ const githubGateway = new OctokitGitHubAdapter({
   clientSecret: env.GITHUB_INTEGRATIONS_CLIENT_SECRET,
 });
 const connectGithub = new ConnectGitHubCommand(
+  githubConnectionRepo,
+  githubGateway,
+  cryptoAdapter,
+);
+const connectGithubWithToken = new ConnectGitHubWithTokenCommand(
   githubConnectionRepo,
   githubGateway,
   cryptoAdapter,
@@ -830,6 +841,53 @@ const app = new Elysia()
       }
       if (err instanceof GitHubRepoCreationFailedError) {
         return back("error=repo-failed");
+      }
+      throw err;
+    }
+  })
+  // P26 — Connect with a fine-grained PAT scoped to a single repo (the
+  // "paranoid" alternative to the OAuth `repo` flow above).
+  .post("/api/integrations/github/token", async ({ request }) => {
+    const userOr401 = await requireUser(request, getCurrentUser);
+    if (userOr401 instanceof Response) return userOr401;
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return jsonError(400, "Invalid JSON body");
+    }
+
+    try {
+      const { token, repoFullName } = connectGithubTokenSchema.parse(body);
+      await connectGithubWithToken.execute(userOr401.id, token, repoFullName);
+      // Same backfill as OAuth: replay pre-existing prompt history.
+      dispatchBackfill(userOr401.id, false);
+      return Response.json({ connected: true });
+    } catch (err) {
+      if (err instanceof ZodError) {
+        return jsonError(400, err.issues[0]?.message ?? "Invalid input");
+      }
+      if (err instanceof InvalidRepoFullNameError) {
+        return jsonError(400, "Usá el formato owner/repo.");
+      }
+      if (err instanceof GitHubTokenInvalidError) {
+        return Response.json(
+          { error: "token-invalid" },
+          { status: 422 },
+        );
+      }
+      if (err instanceof GitHubRepoAccessDeniedError) {
+        return Response.json(
+          { error: "repo-access-denied" },
+          { status: 422 },
+        );
+      }
+      if (err instanceof GitHubRepoWriteDeniedError) {
+        return Response.json(
+          { error: "repo-write-denied" },
+          { status: 422 },
+        );
       }
       throw err;
     }

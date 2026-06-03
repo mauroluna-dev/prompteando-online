@@ -9,6 +9,7 @@ export const userGithubConnection = pgTable("user_github_connection", {
   githubLogin: text("github_login").notNull(),
   encryptedAccessToken: text("encrypted_access_token").notNull(),
   scopes: text("scopes").array().notNull(),
+  connectionMethod: text("connection_method").notNull().default("oauth"),
   repoFullName: text("repo_full_name").notNull(),
   defaultBranch: text("default_branch").notNull().default("main"),
   connectedAt: timestamp("connected_at", { mode: "date" })
