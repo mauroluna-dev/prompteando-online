@@ -104,6 +104,14 @@ Cada versión puede llevar **config** (model params como JSON libre:
 `/render` la devuelven en el campo `config`, así cambiás de modelo o
 tuneás parámetros sin tocar el código del consumidor.
 
+## Webhooks
+
+Recibí un `POST` firmado (HMAC-SHA256) en tu endpoint cuando se crea una
+versión (`version.created`) o se mueve un label (`label.assigned`).
+Verificá el header `x-prompteando-signature` (`sha256=<hmac>`) con el
+secret que se muestra al crear el webhook. Se gestionan en
+**Settings → Webhooks**. Entrega best-effort con reintentos (1s/3s/9s).
+
 ## SDKs
 
 Clientes oficiales para consumir tus prompts desde código, con caching +

@@ -35,6 +35,18 @@ import { AssignLabelCommand } from "@/application/commands/assign-label.command"
 import { RemoveLabelCommand } from "@/application/commands/remove-label.command";
 import { ListLabelsQuery } from "@/application/queries/list-labels.query";
 import { PostgresLabelRepository } from "@/infrastructure/persistence/repositories/postgres-label.repository";
+import { CreateWebhookCommand } from "@/application/commands/create-webhook.command";
+import { DeleteWebhookCommand } from "@/application/commands/delete-webhook.command";
+import { ListWebhooksQuery } from "@/application/queries/list-webhooks.query";
+import { DispatchWebhookEventCommand } from "@/application/commands/dispatch-webhook-event.command";
+import { PostgresWebhookRepository } from "@/infrastructure/persistence/repositories/postgres-webhook.repository";
+import { FetchWebhookDeliverer } from "@/infrastructure/webhook/fetch-webhook-deliverer.adapter";
+import {
+  InvalidWebhookEventError,
+  InvalidWebhookUrlError,
+  WebhookNotFoundError,
+} from "@/domain/webhook";
+import { createWebhookSchema } from "./schemas/webhook";
 import { RecordApiKeyHitCommand } from "@/application/commands/record-api-key-hit.command";
 import { GetApiKeyMetricsQuery } from "@/application/queries/get-api-key-metrics.query";
 import { BunRedisMetricsCounter } from "@/infrastructure/cache/bun-redis-metrics-counter.adapter";
@@ -144,6 +156,16 @@ const updateTemplateSettings = new UpdatePromptTemplateSettingsCommand(promptRep
 const assignLabel = new AssignLabelCommand(promptRepo, versionRepo, labelRepo);
 const removeLabel = new RemoveLabelCommand(promptRepo, labelRepo);
 const listLabels = new ListLabelsQuery(promptRepo, versionRepo, labelRepo);
+// P24 — webhooks
+const webhookRepo = new PostgresWebhookRepository(db);
+const webhookDeliverer = new FetchWebhookDeliverer();
+const createWebhook = new CreateWebhookCommand(webhookRepo, cryptoAdapter);
+const deleteWebhook = new DeleteWebhookCommand(webhookRepo);
+const listWebhooks = new ListWebhooksQuery(webhookRepo);
+const dispatchWebhookEvent = new DispatchWebhookEventCommand(
+  webhookRepo,
+  webhookDeliverer,
+);
 // P18 — API key usage metrics
 const apiKeyMetricsRepo = new PostgresApiKeyMetricsRepository(db);
 const metricsCounter = new BunRedisMetricsCounter();
@@ -397,6 +419,11 @@ const app = new Elysia()
           result.version.promptId,
           result.version.id,
         );
+        void dispatchWebhookEvent.execute(userOr401.id, "version.created", {
+          slug: params.slug,
+          version: result.version.versionNumber.value,
+          type: result.version.type,
+        });
       }
       return new Response(JSON.stringify(result.version), {
         status: result.isNoOp ? 200 : 201,
@@ -462,6 +489,11 @@ const app = new Elysia()
           result.version.promptId,
           result.version.id,
         );
+        void dispatchWebhookEvent.execute(userOr401.id, "version.created", {
+          slug: params.slug,
+          version: result.version.versionNumber.value,
+          type: result.version.type,
+        });
       }
       return new Response(JSON.stringify(result.version), {
         status: result.isNoOp ? 200 : 201,
@@ -585,6 +617,11 @@ const app = new Elysia()
         params.label,
         VersionNumber.parse(parsed.versionNumber),
       );
+      void dispatchWebhookEvent.execute(userOr401.id, "label.assigned", {
+        slug: params.slug,
+        label: params.label,
+        version: parsed.versionNumber,
+      });
       return new Response(null, { status: 204 });
     } catch (err) {
       const mapped = mapLabelRouteError(err);
@@ -601,6 +638,62 @@ const app = new Elysia()
     } catch (err) {
       const mapped = mapLabelRouteError(err);
       if (mapped) return mapped;
+      throw err;
+    }
+  })
+  // P24 — webhooks (session)
+  .get("/api/webhooks", async ({ request }) => {
+    const userOr401 = await requireUser(request, getCurrentUser);
+    if (userOr401 instanceof Response) return userOr401;
+    return Response.json(await listWebhooks.execute(userOr401.id));
+  })
+  .post("/api/webhooks", async ({ request }) => {
+    const userOr401 = await requireUser(request, getCurrentUser);
+    if (userOr401 instanceof Response) return userOr401;
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return jsonError(400, "Invalid JSON body");
+    }
+    try {
+      const parsed = createWebhookSchema.parse(body);
+      const wh = await createWebhook.execute(
+        userOr401.id,
+        parsed.url,
+        parsed.events,
+      );
+      // Secret returned once, on creation.
+      return new Response(
+        JSON.stringify({
+          id: wh.id,
+          url: wh.url,
+          events: wh.events,
+          active: wh.active,
+          secret: wh.secret,
+          createdAt: wh.createdAt,
+        }),
+        { status: 201, headers: { "content-type": "application/json" } },
+      );
+    } catch (err) {
+      if (err instanceof ZodError) return jsonError(400, err.issues[0]?.message ?? "Invalid input");
+      if (
+        err instanceof InvalidWebhookUrlError ||
+        err instanceof InvalidWebhookEventError
+      ) {
+        return jsonError(400, err.message);
+      }
+      throw err;
+    }
+  })
+  .delete("/api/webhooks/:id", async ({ request, params }) => {
+    const userOr401 = await requireUser(request, getCurrentUser);
+    if (userOr401 instanceof Response) return userOr401;
+    try {
+      await deleteWebhook.execute(userOr401.id, params.id);
+      return new Response(null, { status: 204 });
+    } catch (err) {
+      if (err instanceof WebhookNotFoundError) return jsonError(404, err.message);
       throw err;
     }
   })
@@ -936,6 +1029,8 @@ const server = Bun.serve({
     "/api/keys": (req) => app.handle(req),
     "/api/keys/*": (req) => app.handle(req),
     "/api/integrations/*": (req) => app.handle(req),
+    "/api/webhooks": (req) => app.handle(req),
+    "/api/webhooks/*": (req) => app.handle(req),
     "/v1/prompts/*": (req) => app.handle(req),
     "/*": index,
   },
