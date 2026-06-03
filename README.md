@@ -203,8 +203,9 @@ docker compose down -v                   # borra volumes (DB limpia)
 ```
 
 Credenciales dev de Postgres: usuario `prompteando`, password
-`prompteando`, db `prompteando`. La connection string ya viene en
-`.env.example` como `DATABASE_URL`.
+`prompteando`, db `prompteando`. La app arma la conexión a partir de los
+`POSTGRES_*` (`POSTGRES_HOST/PORT/USER/PASSWORD/DB`) que ya vienen en
+`.env.example` — no hay `DATABASE_URL`.
 
 ## DB ops
 
@@ -292,8 +293,12 @@ desconectar y reconectar.
 Copiá [`.env.example`](.env.example) y completá. Variables principales:
 
 ```env
-# Data services
-DATABASE_URL=postgres://prompteando:prompteando@localhost:5432/prompteando
+# Data services (the app builds the Postgres URL from these parts)
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=prompteando
+POSTGRES_PASSWORD=prompteando
+POSTGRES_DB=prompteando
 REDIS_URL=redis://localhost:6379
 
 # Auth.js

@@ -32,7 +32,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ci
+      POSTGRES_PASSWORD: ci
+      POSTGRES_DB: ci
       REDIS_URL: redis://localhost:6379
       AUTH_SECRET: "0123456789012345678901234567890123"
       AUTH_URL: http://localhost:3010

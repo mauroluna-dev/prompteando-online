@@ -3,7 +3,7 @@ import { SQL } from "bun";
 import { env } from "@/infrastructure/config/env";
 import * as schema from "./schema";
 
-const sql = new SQL(env.DATABASE_URL);
+const sql = new SQL(env.databaseUrl);
 
 export const db = drizzle(sql, { schema });
 export type DB = typeof db;

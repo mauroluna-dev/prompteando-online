@@ -75,7 +75,11 @@ services:
     command: ["bun", "run", "db:migrate"]
     env_file: .env
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-prompteando}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-prompteando}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-prompteando}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-prompteando}
     depends_on:
       postgres:
         condition: service_healthy
@@ -87,7 +91,11 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-prompteando}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-prompteando}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-prompteando}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-prompteando}
       REDIS_URL: redis://redis:6379
     expose:
       - "3010"
